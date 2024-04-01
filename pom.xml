@@ -1,10 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.networknt</groupId>
-    <artifactId>middleware-function</artifactId>
+    <artifactId>lambda-native</artifactId>
     <version>2.1.33</version>
     <packaging>jar</packaging>
-    <name>middleware-function</name>
+    <name>lambda-native</name>
     <description>A middleware Lambda function that handles all the cross-cutting concerns for the downstream Lambda function.</description>
 
     <developers>
