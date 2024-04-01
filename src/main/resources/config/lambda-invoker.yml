@@ -1,0 +1,5 @@
+enabled: ${lambda-invoker.enabled:true}
+functions: ${lambda-invoker.functions:}
+region: ${lambda-invoker.region:}
+endpointOverride: ${lambda-invoker.endpointOverride:}
+logType: ${lambda-invoker.logType:Tail}

@@ -1,0 +1,50 @@
+enabled: false
+
+
+# Everything below here will NOT be used since the handler is disabled.
+# We use as a comparison to ensure that the header values are NOT changed.
+request:
+  remove:
+    - header1
+    - header2
+  update:
+    key1: value1
+    key2: value2
+response:
+  remove:
+    - header3
+    - header4
+  update:
+    key3: value3
+    key4: value4
+pathPrefixHeader:
+  /petstore:
+    request:
+      remove:
+        - headerA
+        - headerB
+      update:
+        keyA: valueA
+        keyB: valueB
+    response:
+      remove:
+        - headerC
+        - headerD
+      update:
+        keyC: valueC
+        keyD: valueD
+  /market:
+    request:
+      remove:
+        - headerE
+        - headerF
+      update:
+        keyE: valueE
+        keyF: valueF
+    response:
+      remove:
+        - headerG
+        - headerH
+      update:
+        keyG: valueG
+        keyH: valueH

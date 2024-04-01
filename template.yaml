@@ -1,0 +1,148 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  light-function
+
+  Sample SAM Template for Light Function
+
+Globals:
+  Function:
+    Timeout: 20
+Parameters:
+  ParamVpceId:
+    Type: String
+    Description: VPC Private API Endpoint
+    Default: vpce-00deadbeef00
+  ParamSecurityGroups:
+    Type: List<String>
+    Description: Security Group for account
+    Default: sg-00deadbeef00
+  ParamSubnetIds:
+    Type: List<String>
+    Description: Subnets for use
+    Default: subnet-00deadbeef00, subnet-00deadbeef01
+  ParamBackendFunctionHandler:
+    Type: String
+    Description: classpath of your handler function
+    Default: helloworld.App::handleRequest
+  ParamStage:
+    Type: String
+    Description: Deployment stage.
+    Default: Prod
+  ParamServiceId:
+    Type: String
+    Description: Unique Service Id for you application
+    Default: eadp-petstore-0.0.1-SNAPSHOT
+
+
+Resources:
+  ProxyIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ParamServiceId}-iam-role'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: logs:CreateLogGroup
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS:AccountId}:*'
+          - Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ParamServiceId}-proxy-function:*'
+          - Effect: Allow
+            Action:
+              - ec2:CreateNetworkInterface
+              - ec2:DeleteNetworkInterface
+              - ec2:DescribeNetworkInterfaces
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+              - lambda:InvokeAsync
+            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ParamServiceId}-function'
+          - !Ref SecretsManagerReadWrite
+          - Effect: Deny
+            Action:
+              - lambda:InvokeFunction
+              - lambda:InvokeAsync
+            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ParamServiceId}-function'
+            Condition:
+              StringNotEquals:
+                aws:SourceVpce:
+                  !Ref ParamVpceId
+
+  APIEndpoint:
+    Type: AWS::Serverless::Api
+    Properties:
+      EndpointConfiguration:
+        Type: PRIVATE
+        VPCEndpointIds:
+          - !Ref ParamVpceId
+      StageName: !Ref ParamStage
+      Auth:
+        ResourcePolicy:
+          CustomStatements:
+            - Effect: Allow
+              Principal: '*'
+              Action: execute-api:Invoke
+              Resource:
+                !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*'
+            - Effect: Deny
+              Principal: '*'
+              Action: execute-api:Invoke
+              Resource:
+                !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*'
+              Condition:
+                StringNotEquals:
+                  aws:SourceVpce:
+                    !Ref ParamVpceId
+
+  ProxyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ParamServiceId}-proxy-function'
+      CodeUri: ProxyFunction
+      Handler: com.networknt.aws.lambda.proxy.LambdaProxy::handleRequest
+      Environment:
+        Variables:
+          JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+      Events:
+        Backend:
+          Type: Api
+          Properties:
+            RestApiId: !Ref APIEndpoint
+            Path: /
+            Method: post
+      VpcConfig:
+        SecurityGroupIds:
+          !Ref ParamSecurityGroups
+        SubnetIds:
+          !Ref ParamSubnetIds
+
+  BackendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ParamServiceId}-function'
+      CodeUri: BackendFunction
+      Handler: !Ref ParamBackendFunctionHandler
+      VpcConfig:
+        SecurityGroupIds:
+          !Ref ParamSecurityGroups
+        SubnetIds:
+          !Ref ParamSubnetIds
+
+Outputs:
+  APIEndpoint:
+    Description: !Sub 'API Gateway endpoint URL for ${ParamStage} stage for Hello World function'
+    Value: !Sub "https://${APIEndpoint}-${ParamVpceId}.execute-api.${AWS::Region}.amazonaws.com/${ParamStage}/"
+  ProxyFunction:
+    Description: "ProxyFunction ARN"
+    Value: !GetAtt ProxyFunction.Arn
+  BackendFunction:
+    Description: "Backend business function ARN"
+    Value: BackendFunction.Arn
+  ProxyIAMRole:
+    Description: "Implicit IAM Role created for the proxy function"
+    Value: !GetAtt ProxyIAMRole.Arn
