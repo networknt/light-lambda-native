@@ -2,15 +2,15 @@ package com.networknt.aws.lambda.middleware.sanitizer;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.sanitizer.SanitizerMiddleware;
-import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
+import com.networknt.sanitizer.SanitizerConfig;
+
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -44,7 +44,8 @@ public class SanitizerMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
         Chain requestChain = new Chain(false);
-        SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware();
+        SanitizerConfig sanitizerConfig = SanitizerConfig.load("sanitizer_test");
+        SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware(sanitizerConfig);
         requestChain.addChainable(sanitizerMiddleware);
         requestChain.setupGroupedChain();
 
@@ -54,7 +55,12 @@ public class SanitizerMiddlewareTest {
         requestEvent = exchange.getRequest();
         Map<String, String> headerMapResult = requestEvent.getHeaders();
         String param = headerMapResult.get("param");
-        Assert.assertTrue(param.contains("<script>alert(\\'header test\\')</script>"));
+        // linux vs Windows
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+            Assert.assertTrue(param.contains("<script>alert(\'header test\')</script>"));
+        } else {
+            Assert.assertTrue(param.contains("<script>alert(\\'header test\\')</script>"));
+        }
     }
 
     @Test
@@ -70,7 +76,8 @@ public class SanitizerMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
         Chain requestChain = new Chain(false);
-        SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware();
+        SanitizerConfig sanitizerConfig = SanitizerConfig.load("sanitizer_test");
+        SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware(sanitizerConfig);
         requestChain.addChainable(sanitizerMiddleware);
         requestChain.setupGroupedChain();
 
@@ -80,7 +87,12 @@ public class SanitizerMiddlewareTest {
         requestEvent = exchange.getRequest();
         String bodyResult = requestEvent.getBody();
         Map<String, Object> map = JsonMapper.string2Map(bodyResult);
-        Assert.assertEquals("<script>alert(\\'test\\')</script>", map.get("key"));
+        // linux vs Windows
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+            Assert.assertEquals("<script>alert(\'test\')</script>", map.get("key"));
+        } else {
+            Assert.assertEquals("<script>alert(\\'test\\')</script>", map.get("key"));
+        }
     }
 
 }

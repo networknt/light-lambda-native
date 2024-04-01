@@ -9,6 +9,8 @@ import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.limit.LimitMiddleware;
+import com.networknt.limit.LimitConfig;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -29,7 +31,8 @@ public class LimitMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
         Chain requestChain = new Chain(false);
-        LimitMiddleware limitMiddleware = new LimitMiddleware();
+        LimitConfig limitConfig = LimitConfig.load("limit_test");
+        LimitMiddleware limitMiddleware = new LimitMiddleware(limitConfig);
         requestChain.addChainable(limitMiddleware);
         requestChain.setupGroupedChain();
 

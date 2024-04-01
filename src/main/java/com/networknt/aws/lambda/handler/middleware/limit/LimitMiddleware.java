@@ -5,14 +5,11 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
-import com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.aws.lambda.utility.HeaderValue;
 import com.networknt.config.Config;
-import com.networknt.header.HeaderConfig;
 import com.networknt.limit.LimitConfig;
 import com.networknt.limit.RateLimitResponse;
-import com.networknt.status.HttpStatus;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
@@ -39,6 +36,20 @@ public class LimitMiddleware implements MiddlewareHandler {
         }
     }
 
+    /**
+     * Constructor with configuration for testing purpose only
+     * @param cfg LimitConfig
+     */
+    public LimitMiddleware(LimitConfig cfg) {
+        if (LOG.isInfoEnabled()) LOG.info("LimitMiddleware is constructed for unit tests");
+        CONFIG = cfg;
+        try {
+            rateLimiter = new RateLimiter(CONFIG);
+        } catch (Exception e) {
+            LOG.error("Exception:", e);
+        }
+    }
+
     @Override
     public Status execute(final LightLambdaExchange exchange) throws InterruptedException {
         if(LOG.isDebugEnabled()) LOG.debug("LimitMiddleware.execute starts.");
@@ -55,7 +66,8 @@ public class LimitMiddleware implements MiddlewareHandler {
             headers.put(Constants.RATELIMIT_REMAINING, rateLimitResponse.getHeaders().get(Constants.RATELIMIT_REMAINING));
             headers.put(Constants.RATELIMIT_RESET, rateLimitResponse.getHeaders().get(Constants.RATELIMIT_RESET));
             responseEvent.setHeaders(headers);
-            responseEvent.setStatusCode(status.getStatusCode());
+            int statusCode = CONFIG.getErrorCode()==0 ? 429:CONFIG.getErrorCode();
+            responseEvent.setStatusCode(statusCode);
             responseEvent.setBody(status.toString());
             exchange.setResponse(responseEvent);
             if(LOG.isDebugEnabled()) LOG.warn("LimitHandler.handleRequest ends with an error code {}", RATE_LIMIT_EXCEEDED);

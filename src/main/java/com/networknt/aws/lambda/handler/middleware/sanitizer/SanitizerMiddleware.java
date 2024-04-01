@@ -29,6 +29,15 @@ public class SanitizerMiddleware implements MiddlewareHandler {
         headerEncoder = new EncoderWrapper(Encoders.forName(CONFIG.getHeaderEncoder()), CONFIG.getHeaderAttributesToIgnore(), CONFIG.getHeaderAttributesToEncode());
     }
 
+    /**
+     * Constructor with configuration for testing purpose only
+     * @param cfg SanitizerConfig
+     */
+    public SanitizerMiddleware(SanitizerConfig cfg) {
+        CONFIG = cfg;
+        LOG.info("SanitizerMiddleware is constructed");
+    }
+
     @Override
     public Status execute(LightLambdaExchange exchange) throws InterruptedException {
         if (LOG.isDebugEnabled()) LOG.trace("SanitizerMiddleware.execute starts.");
