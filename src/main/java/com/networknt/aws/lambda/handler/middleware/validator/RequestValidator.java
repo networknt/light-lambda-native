@@ -167,9 +167,7 @@ public class RequestValidator {
         return null;
     }
 
-    private Status validateHeaderParameters(final LightLambdaExchange exchange,
-                                            final OpenApiOperation openApiOperation) {
-
+    private Status validateHeaderParameters(final LightLambdaExchange exchange, final OpenApiOperation openApiOperation) {
         // validate path level parameters for headers first.
         Optional<Status> optional = validatePathLevelHeaders(exchange, openApiOperation);
         if(optional.isPresent()) {
@@ -209,48 +207,6 @@ public class RequestValidator {
                 .findFirst();
     }
 
-    private Status validateCookieParameters(final LightLambdaExchange exchange,
-                                            final OpenApiOperation openApiOperation) {
-
-        // validate path level parameters for cookies first.
-        Optional<Status> optional = validatePathLevelCookies(exchange, openApiOperation);
-        if (optional.isPresent()) {
-            return optional.get();
-        } else {
-            // validate operation level parameter for cookies second.
-            optional = validateOperationLevelCookies(exchange, openApiOperation);
-            return optional.orElse(null);
-        }
-    }
-
-    private Optional<Status> validatePathLevelCookies(final LightLambdaExchange exchange, final OpenApiOperation openApiOperation) {
-        ValidationResult result = validateDeserializedValues(exchange, openApiOperation.getPathObject().getParameters(), ParameterType.COOKIE);
-
-        if (null!=result.getStatus() || result.getSkippedParameters().isEmpty()) {
-            return Optional.ofNullable(result.getStatus());
-        }
-
-        return result.getSkippedParameters().stream()
-                .map(p -> validateHeader(exchange, openApiOperation, p))
-                .filter(s -> s != null)
-                .findFirst();
-    }
-
-
-
-    private Optional<Status> validateOperationLevelCookies(final LightLambdaExchange exchange, final OpenApiOperation openApiOperation) {
-        ValidationResult result = validateDeserializedValues(exchange, openApiOperation.getOperation().getParameters(), ParameterType.COOKIE);
-
-        if (null!=result.getStatus() || result.getSkippedParameters().isEmpty()) {
-            return Optional.ofNullable(result.getStatus());
-        }
-
-        return result.getSkippedParameters().stream()
-                .map(p -> validateHeader(exchange, openApiOperation, p))
-                .filter(s -> s != null)
-                .findFirst();
-    }
-
     private Status validateHeader(final LightLambdaExchange exchange,
                                   final OpenApiOperation openApiOperation,
                                   final Parameter headerParameter) {
@@ -268,8 +224,6 @@ public class RequestValidator {
 
     private ValidationResult validateDeserializedValues(final LightLambdaExchange exchange, final Collection<Parameter> parameters, final ParameterType type) {
         ValidationResult validationResult = new ValidationResult();
-        SchemaValidatorsConfig config = new SchemaValidatorsConfig();
-        config.setTypeLoose(true);
 
         parameters.stream()
                 .filter(p -> ParameterType.is(p.getIn(), type))
@@ -278,8 +232,7 @@ public class RequestValidator {
                     if (null==deserializedValue) {
                         validationResult.addSkipped(p);
                     }else {
-                        JsonNodePath instanceLocation = new JsonNodePath(config.getPathType()).append(p.getName());
-                        Status s = schemaValidator.validate(deserializedValue, Overlay.toJson((SchemaImpl)(p.getSchema())), config, instanceLocation);
+                        Status s = schemaValidator.validate(deserializedValue, Overlay.toJson((SchemaImpl)(p.getSchema())));
                         validationResult.addStatus(s);
                     }
                 });

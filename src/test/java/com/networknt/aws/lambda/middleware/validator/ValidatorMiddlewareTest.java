@@ -32,12 +32,80 @@ public class ValidatorMiddlewareTest {
     }
 
     @Test
-    public void testSanitizerMiddlewareHeader() {
+    public void testValidatorWithCorrectBodyTraceabilityHeader() {
         var apiGatewayProxyRequestEvent = TestUtils.createTestRequestEvent();
         apiGatewayProxyRequestEvent.setPath("/v1/pets");
         Map<String, String> headerMap = new HashMap<>();
         headerMap.put("X-Traceability-Id", "abc");
         apiGatewayProxyRequestEvent.setHeaders(headerMap);
+        // set request body
+        apiGatewayProxyRequestEvent.setBody("{\"id\": 1, \"name\": \"dog\"}");
+        InvocationResponse invocation = InvocationResponse.builder()
+                .requestId("12345")
+                .event(apiGatewayProxyRequestEvent)
+                .build();
+        APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
+        Context lambdaContext = new LambdaContext(invocation.getRequestId());
+
+        Chain requestChain = new Chain(false);
+        OpenApiMiddleware openApiMiddleware = new OpenApiMiddleware();
+        requestChain.addChainable(openApiMiddleware);
+        ValidatorMiddleware validatorMiddleware = new ValidatorMiddleware();
+        requestChain.addChainable(validatorMiddleware);
+        requestChain.setupGroupedChain();
+
+        this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
+        this.exchange.setRequest(requestEvent);
+        this.exchange.executeChain();
+
+        APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
+        // no error, the response should be null.
+        Assertions.assertNull(responseEvent);
+    }
+
+    @Test
+    public void testValidatorWithIncorrectBodyTraceabilityHeader() {
+        var apiGatewayProxyRequestEvent = TestUtils.createTestRequestEvent();
+        apiGatewayProxyRequestEvent.setPath("/v1/pets");
+        Map<String, String> headerMap = new HashMap<>();
+        headerMap.put("X-Traceability-Id", "abc");
+        apiGatewayProxyRequestEvent.setHeaders(headerMap);
+        // set request body
+        apiGatewayProxyRequestEvent.setBody("{\"name\": \"dog\"}");
+        InvocationResponse invocation = InvocationResponse.builder()
+                .requestId("12345")
+                .event(apiGatewayProxyRequestEvent)
+                .build();
+        APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
+        Context lambdaContext = new LambdaContext(invocation.getRequestId());
+
+        Chain requestChain = new Chain(false);
+        OpenApiMiddleware openApiMiddleware = new OpenApiMiddleware();
+        requestChain.addChainable(openApiMiddleware);
+        ValidatorMiddleware validatorMiddleware = new ValidatorMiddleware();
+        requestChain.addChainable(validatorMiddleware);
+        requestChain.setupGroupedChain();
+
+        this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
+        this.exchange.setRequest(requestEvent);
+        this.exchange.executeChain();
+
+        APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
+        // body validation error, the response should not be null.
+        Assertions.assertNotNull(responseEvent);
+        Assertions.assertEquals(400, responseEvent.getStatusCode());
+        LOG.info("status: " + responseEvent.getBody());
+    }
+
+    @Test
+    public void testValidatorWithoutTraceabilityHeader() {
+        var apiGatewayProxyRequestEvent = TestUtils.createTestRequestEvent();
+        apiGatewayProxyRequestEvent.setPath("/v1/pets");
+        Map<String, String> headerMap = new HashMap<>();
+        //headerMap.put("X-Traceability-Id", "abc");
+        apiGatewayProxyRequestEvent.setHeaders(headerMap);
+        // set request body
+        apiGatewayProxyRequestEvent.setBody("{\"id\": 1, \"name\": \"dog\"}");
         InvocationResponse invocation = InvocationResponse.builder()
                 .requestId("12345")
                 .event(apiGatewayProxyRequestEvent)
@@ -59,7 +127,7 @@ public class ValidatorMiddlewareTest {
         APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
         Assertions.assertNotNull(responseEvent);
         Assertions.assertEquals(400, responseEvent.getStatusCode());
-        LOG.info("responseStatus: " + responseEvent.getStatusCode());
+        LOG.info("status: " + responseEvent.getBody());
     }
 
 }
