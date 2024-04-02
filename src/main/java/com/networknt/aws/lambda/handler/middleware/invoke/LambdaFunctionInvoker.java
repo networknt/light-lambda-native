@@ -117,17 +117,17 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
 
     @Override
     public void reload() {
-        throw new NotImplementedException();
+
     }
 
     @Override
     public boolean isContinueOnFailure() {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override
     public boolean isAudited() {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override

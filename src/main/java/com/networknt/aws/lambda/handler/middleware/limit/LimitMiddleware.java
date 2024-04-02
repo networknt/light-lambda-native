@@ -77,7 +77,7 @@ public class LimitMiddleware implements MiddlewareHandler {
 
     @Override
     public void getCachedConfigurations() {
-        throw new NotImplementedException();
+
     }
 
     @Override
@@ -97,7 +97,7 @@ public class LimitMiddleware implements MiddlewareHandler {
 
     @Override
     public void reload() {
-        throw new NotImplementedException();
+
     }
 
     @Override
