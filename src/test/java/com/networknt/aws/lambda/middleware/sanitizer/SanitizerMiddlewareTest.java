@@ -55,12 +55,8 @@ public class SanitizerMiddlewareTest {
         requestEvent = exchange.getRequest();
         Map<String, String> headerMapResult = requestEvent.getHeaders();
         String param = headerMapResult.get("param");
-        // linux vs Windows
-        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-            Assert.assertTrue(param.contains("<script>alert(\'header test\')</script>"));
-        } else {
-            Assert.assertTrue(param.contains("<script>alert(\\'header test\\')</script>"));
-        }
+        // works on both linux and Windows due to EncodeWrapper
+        Assert.assertTrue(param.contains("<script>alert(\\'header test\\')</script>"));
     }
 
     @Test
@@ -87,12 +83,8 @@ public class SanitizerMiddlewareTest {
         requestEvent = exchange.getRequest();
         String bodyResult = requestEvent.getBody();
         Map<String, Object> map = JsonMapper.string2Map(bodyResult);
-        // linux vs Windows
-        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-            Assert.assertEquals("<script>alert(\'test\')</script>", map.get("key"));
-        } else {
-            Assert.assertEquals("<script>alert(\\'test\\')</script>", map.get("key"));
-        }
+        // works on both linux and Windows due to EncodeWrapper
+        Assert.assertEquals("<script>alert(\\'test\\')</script>", map.get("key"));
     }
 
 }
