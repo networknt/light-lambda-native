@@ -122,7 +122,12 @@ public class SchemaValidator {
                 ((ObjectNode)schema).set(COMPONENTS_FIELD, jsonNode);
             }
             JsonSchema jsonSchema = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(schema, config);
-            final JsonNode content = Config.getInstance().getMapper().valueToTree(value);
+            JsonNode content = null;
+            if(value instanceof String) {
+                content = Config.getInstance().getMapper().readTree((String)value);
+            } else {
+                content = Config.getInstance().getMapper().valueToTree(value);
+            }
             processingReport = jsonSchema.validate(jsonSchema.createExecutionContext(), content, content, instanceLocation);
         } catch (Exception e) {
             e.printStackTrace();
