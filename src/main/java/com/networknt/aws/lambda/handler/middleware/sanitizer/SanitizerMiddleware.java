@@ -23,10 +23,10 @@ public class SanitizerMiddleware implements MiddlewareHandler {
     EncoderWrapper headerEncoder;
 
     public SanitizerMiddleware() {
-        if (LOG.isInfoEnabled()) LOG.info("SanitizerMiddleware is constructed");
         CONFIG = SanitizerConfig.load();
         bodyEncoder = new EncoderWrapper(Encoders.forName(CONFIG.getBodyEncoder()), CONFIG.getBodyAttributesToIgnore(), CONFIG.getBodyAttributesToEncode());
         headerEncoder = new EncoderWrapper(Encoders.forName(CONFIG.getHeaderEncoder()), CONFIG.getHeaderAttributesToIgnore(), CONFIG.getHeaderAttributesToEncode());
+        if (LOG.isInfoEnabled()) LOG.info("SanitizerMiddleware is constructed");
     }
 
     /**
@@ -35,6 +35,8 @@ public class SanitizerMiddleware implements MiddlewareHandler {
      */
     public SanitizerMiddleware(SanitizerConfig cfg) {
         CONFIG = cfg;
+        bodyEncoder = new EncoderWrapper(Encoders.forName(CONFIG.getBodyEncoder()), CONFIG.getBodyAttributesToIgnore(), CONFIG.getBodyAttributesToEncode());
+        headerEncoder = new EncoderWrapper(Encoders.forName(CONFIG.getHeaderEncoder()), CONFIG.getHeaderAttributesToIgnore(), CONFIG.getHeaderAttributesToEncode());
         LOG.info("SanitizerMiddleware is constructed");
     }
 
