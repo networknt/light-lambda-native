@@ -23,8 +23,6 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
 
     @Override
     public void getCachedConfigurations() {
-        // TODO
-        throw new NotImplementedException();
     }
 
     @Override
@@ -34,12 +32,12 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
 
     @Override
     public void register() {
-        throw new NotImplementedException();
+
     }
 
     @Override
     public void reload() {
-        throw new NotImplementedException();
+
     }
 
     @Override

@@ -66,7 +66,7 @@ public class TraceabilityMiddleware implements MiddlewareHandler {
 
     @Override
     public void reload() {
-        throw new NotImplementedException();
+
     }
 
     @Override

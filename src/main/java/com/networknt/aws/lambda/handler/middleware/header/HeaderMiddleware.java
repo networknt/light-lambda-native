@@ -144,7 +144,6 @@ public class HeaderMiddleware implements MiddlewareHandler {
 
     @Override
     public void getCachedConfigurations() {
-        throw new NotImplementedException();
     }
 
     @Override
@@ -164,7 +163,7 @@ public class HeaderMiddleware implements MiddlewareHandler {
 
     @Override
     public void reload() {
-        throw new NotImplementedException();
+
     }
 
     @Override
@@ -174,7 +173,7 @@ public class HeaderMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isAudited() {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override

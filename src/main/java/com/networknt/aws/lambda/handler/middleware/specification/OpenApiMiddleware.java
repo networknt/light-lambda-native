@@ -103,10 +103,21 @@ public class OpenApiMiddleware implements MiddlewareHandler {
         }
     }
 
+    // this is used to get the basePath from the OpenApiMiddleware.
+    public static String getBasePath(String requestPath) {
+        String basePath = "";
+        // assume there is a single spec.
+        if (helper != null) {
+            basePath = helper.basePath;
+            if (LOG.isTraceEnabled())
+                LOG.trace("Found basePath for single spec from OpenApiMiddleware helper: {}", basePath);
+        }
+        return basePath;
+    }
 
     @Override
     public void getCachedConfigurations() {
-        throw new NotImplementedException();
+
     }
 
     @Override
@@ -126,17 +137,17 @@ public class OpenApiMiddleware implements MiddlewareHandler {
 
     @Override
     public void reload() {
-        throw new NotImplementedException();
+
     }
 
     @Override
     public boolean isContinueOnFailure() {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override
     public boolean isAudited() {
-        throw new NotImplementedException();
+        return false;
     }
 
     @Override

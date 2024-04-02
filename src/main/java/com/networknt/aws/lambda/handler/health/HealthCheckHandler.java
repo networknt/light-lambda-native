@@ -96,7 +96,7 @@ public class HealthCheckHandler implements LambdaHandler {
 
     @Override
     public void reload() {
-        throw new NotImplementedException();
+
     }
 
     @Override

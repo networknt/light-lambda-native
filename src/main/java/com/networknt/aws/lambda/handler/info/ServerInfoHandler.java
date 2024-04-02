@@ -70,7 +70,7 @@ public class ServerInfoHandler implements LambdaHandler {
 
     @Override
     public void reload() {
-        throw new NotImplementedException();
+
     }
 
     @Override
