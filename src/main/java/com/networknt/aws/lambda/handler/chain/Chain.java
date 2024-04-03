@@ -54,7 +54,7 @@ public class Chain {
         var group = new ArrayList<LambdaHandler>();
         for (var chainable : this.chain) {
 
-            if (this.forceSynchronousExecution) {
+            if (this.forceSynchronousExecution || (!chainable.isAsynchronous() && group.isEmpty())) {
                 this.cutGroup(group, chainable);
                 group = new ArrayList<>();
 
@@ -64,10 +64,6 @@ public class Chain {
             } else if (!chainable.isAsynchronous() && !group.isEmpty()) {
                 this.groupedChain.add(group);
                 group = new ArrayList<>();
-                this.cutGroup(group, chainable);
-                group = new ArrayList<>();
-
-            } else if (!chainable.isAsynchronous() && group.isEmpty()) {
                 this.cutGroup(group, chainable);
                 group = new ArrayList<>();
             }
