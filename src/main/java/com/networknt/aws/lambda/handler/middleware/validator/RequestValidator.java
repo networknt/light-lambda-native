@@ -3,6 +3,7 @@ package com.networknt.aws.lambda.handler.middleware.validator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.utility.MapUtil;
 import com.networknt.config.Config;
 import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.Parameter;
@@ -225,13 +226,13 @@ public class RequestValidator {
     private Status validateHeader(final LightLambdaExchange exchange,
                                   final OpenApiOperation openApiOperation,
                                   final Parameter headerParameter) {
-        final String headerValue = exchange.getRequest().getHeaders().get(headerParameter.getName());
-        if ((headerValue == null || headerValue.isEmpty())) {
+        final Optional<String> headerValue = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), headerParameter.getName());
+        if (headerValue.isEmpty()) {
             if(headerParameter.getRequired()) {
                 return new Status(VALIDATOR_REQUEST_PARAMETER_HEADER_MISSING, headerParameter.getName(), openApiOperation.getPathString().original());
             }
         } else {
-            return headerParameter.getSchema() != null ? schemaValidator.validate(new TextNode(headerValue), Overlay.toJson((SchemaImpl)headerParameter.getSchema())) : null;
+            return headerParameter.getSchema() != null ? schemaValidator.validate(new TextNode(headerValue.get()), Overlay.toJson((SchemaImpl)headerParameter.getSchema())) : null;
         }
         return null;
     }
