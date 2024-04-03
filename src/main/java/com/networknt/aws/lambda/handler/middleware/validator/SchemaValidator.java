@@ -18,7 +18,6 @@ package com.networknt.aws.lambda.handler.middleware.validator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.networknt.config.Config;
 import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.OpenApi3;
 import com.networknt.oas.model.impl.OpenApi3Impl;
@@ -42,7 +41,7 @@ public class SchemaValidator {
     static final String VALIDATOR_SCHEMA = "ERR11004";
 
     private final OpenApi3 api;
-    private JsonNode jsonNode;
+    private final JsonNode jsonNode;
     private final SchemaValidatorsConfig defaultConfig;
 
     /**
@@ -73,23 +72,11 @@ public class SchemaValidator {
      *
      * @param value The value to validate
      * @param schema The property schema to validate the value against
-     *
-     * @return A status containing error code and description
-     */
-    public Status validate(final Object value, final JsonNode schema) {
-        return doValidate(value, schema, defaultConfig, null);
-    }
-
-    /**
-     * Validate the given value against the given property schema.
-     *
-     * @param value The value to validate
-     * @param schema The property schema to validate the value against
      * @param config The config model for some validator
      *
      * @return A status containing error code and description
      */
-    public Status validate(final Object value, final JsonNode schema, SchemaValidatorsConfig config) {
+    public Status validate(final JsonNode value, final JsonNode schema, SchemaValidatorsConfig config) {
         return doValidate(value, schema, config, null);
     }
 
@@ -99,18 +86,22 @@ public class SchemaValidator {
      * @param value The value to validate
      * @param schema The property schema to validate the value against
      * @param config The config model for some validator
-     * @param instanceLocation The instance location
+     * @param instanceLocation The JsonNodePath being validated
      * @return Status object
      */
-    public Status validate(final Object value, final JsonNode schema, SchemaValidatorsConfig config, JsonNodePath instanceLocation) {
+    public Status validate(final JsonNode value, final JsonNode schema, SchemaValidatorsConfig config, JsonNodePath instanceLocation) {
         return doValidate(value, schema, config, instanceLocation);
     }
 
-    public Status validate(final Object value, final JsonNode schema, JsonNodePath instanceLocation) {
+    public Status validate(final JsonNode value, final JsonNode schema) {
+        return doValidate(value, schema, defaultConfig, null);
+    }
+
+    public Status validate(final JsonNode value, final JsonNode schema, JsonNodePath instanceLocation) {
         return doValidate(value, schema, defaultConfig, instanceLocation);
     }
 
-    private Status doValidate(final Object value, final JsonNode schema, SchemaValidatorsConfig config, JsonNodePath instanceLocation) {
+    private Status doValidate(final JsonNode value, final JsonNode schema, SchemaValidatorsConfig config, JsonNodePath instanceLocation) {
         requireNonNull(schema, "A schema is required");
         if (instanceLocation == null)
             instanceLocation = new JsonNodePath(config.getPathType());
@@ -122,18 +113,12 @@ public class SchemaValidator {
                 ((ObjectNode)schema).set(COMPONENTS_FIELD, jsonNode);
             }
             JsonSchema jsonSchema = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(schema, config);
-            JsonNode content = null;
-            if(value instanceof String) {
-                content = Config.getInstance().getMapper().readTree((String)value);
-            } else {
-                content = Config.getInstance().getMapper().valueToTree(value);
-            }
-            processingReport = jsonSchema.validate(jsonSchema.createExecutionContext(), content, content, instanceLocation);
+            processingReport = jsonSchema.validate(jsonSchema.createExecutionContext(), value, value, instanceLocation);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        if(processingReport != null && processingReport.size() > 0) {
+        if(processingReport != null && !processingReport.isEmpty()) {
             ValidationMessage vm = processingReport.iterator().next();
             status = new Status(VALIDATOR_SCHEMA, vm.getMessage());
         }

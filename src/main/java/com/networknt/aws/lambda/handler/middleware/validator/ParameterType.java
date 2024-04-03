@@ -8,9 +8,8 @@ import java.util.Map;
 public enum ParameterType {
 	PATH,
 	QUERY,
-	HEADER,
-	COOKIE;
-	
+	HEADER;
+
 	private static Map<String, ParameterType> lookup = new HashMap<>();
 	
 	static {

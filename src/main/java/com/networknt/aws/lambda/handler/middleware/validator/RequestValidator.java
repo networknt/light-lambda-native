@@ -1,6 +1,9 @@
 package com.networknt.aws.lambda.handler.middleware.validator;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.config.Config;
 import com.networknt.jsonoverlay.Overlay;
 import com.networknt.oas.model.Parameter;
 import com.networknt.oas.model.RequestBody;
@@ -8,7 +11,6 @@ import com.networknt.oas.model.impl.RequestBodyImpl;
 import com.networknt.oas.model.impl.SchemaImpl;
 import com.networknt.openapi.NormalisedPath;
 import com.networknt.openapi.OpenApiOperation;
-import com.networknt.schema.JsonNodePath;
 import com.networknt.schema.SchemaValidatorsConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.StringUtils;
@@ -27,6 +29,7 @@ public class RequestValidator {
     static final String VALIDATOR_REQUEST_BODY_MISSING = "ERR11014";
     static final String VALIDATOR_REQUEST_PARAMETER_HEADER_MISSING = "ERR11017";
     static final String VALIDATOR_REQUEST_PARAMETER_QUERY_MISSING = "ERR11000";
+    static final String CONTENT_TYPE_MISMATCH = "ERR10015";
 
     private final SchemaValidator schemaValidator;
 
@@ -83,8 +86,19 @@ public class RequestValidator {
         SchemaValidatorsConfig config = new SchemaValidatorsConfig();
         config.setTypeLoose(false);
         config.setHandleNullableField(ValidatorMiddleware.CONFIG.isHandleNullableField());
-
-        return schemaValidator.validate(requestBody, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), config);
+        // the body can be converted to JsonNode here. If not, an error is returned.
+        JsonNode requestNode = null;
+        requestBody = requestBody.trim();
+        if(requestBody.startsWith("{") || requestBody.startsWith("[")) {
+            try {
+                requestNode = Config.getInstance().getMapper().readTree(requestBody);
+            } catch (Exception e) {
+                return new Status(CONTENT_TYPE_MISMATCH, "application/json");
+            }
+        } else {
+            return new Status(CONTENT_TYPE_MISMATCH, "application/json");
+        }
+        return schemaValidator.validate(requestNode, Overlay.toJson((SchemaImpl)specBody.getContentMediaType("application/json").getSchema()), config);
     }
 
     private Status validateRequestParameters(final LightLambdaExchange exchange, final NormalisedPath requestPath, final OpenApiOperation openApiOperation) {
@@ -127,7 +141,8 @@ public class RequestValidator {
                 } catch (Exception e) {
                     LOG.info("Path parameter cannot be decoded, it will be used directly");
                 }
-                return schemaValidator.validate(paramValue, Overlay.toJson((SchemaImpl)(parameter.get().getSchema())));
+
+                return schemaValidator.validate(new TextNode(paramValue), Overlay.toJson((SchemaImpl)(parameter.get().getSchema())));
             }
         }
         return status;
@@ -162,7 +177,7 @@ public class RequestValidator {
                 return new Status(VALIDATOR_REQUEST_PARAMETER_QUERY_MISSING, queryParameter.getName(), openApiOperation.getPathString().original());
             }
         } else {
-            return schemaValidator.validate(queryParameterValue, Overlay.toJson((SchemaImpl)queryParameter.getSchema()));
+            return schemaValidator.validate(new TextNode(queryParameterValue), Overlay.toJson((SchemaImpl)queryParameter.getSchema()));
         }
         return null;
     }
@@ -216,7 +231,7 @@ public class RequestValidator {
                 return new Status(VALIDATOR_REQUEST_PARAMETER_HEADER_MISSING, headerParameter.getName(), openApiOperation.getPathString().original());
             }
         } else {
-            return headerParameter.getSchema() != null ? schemaValidator.validate(headerValue, Overlay.toJson((SchemaImpl)headerParameter.getSchema())) : null;
+            return headerParameter.getSchema() != null ? schemaValidator.validate(new TextNode(headerValue), Overlay.toJson((SchemaImpl)headerParameter.getSchema())) : null;
         }
         return null;
     }
@@ -228,11 +243,11 @@ public class RequestValidator {
         parameters.stream()
                 .filter(p -> ParameterType.is(p.getIn(), type))
                 .forEach(p->{
-                    Object deserializedValue = getDeserializedValue(exchange, p.getName(), type);
+                    String deserializedValue = getDeserializedValue(exchange, p.getName(), type);
                     if (null==deserializedValue) {
                         validationResult.addSkipped(p);
                     }else {
-                        Status s = schemaValidator.validate(deserializedValue, Overlay.toJson((SchemaImpl)(p.getSchema())));
+                        Status s = schemaValidator.validate(new TextNode(deserializedValue), Overlay.toJson((SchemaImpl)(p.getSchema())));
                         validationResult.addStatus(s);
                     }
                 });
@@ -240,7 +255,7 @@ public class RequestValidator {
         return validationResult;
     }
 
-    private Object getDeserializedValue(final LightLambdaExchange exchange, final String name, final ParameterType type) {
+    private String getDeserializedValue(final LightLambdaExchange exchange, final String name, final ParameterType type) {
         if (null != type && StringUtils.isNotBlank(name)) {
             switch(type){
                 case QUERY:

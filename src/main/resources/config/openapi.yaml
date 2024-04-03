@@ -33,7 +33,7 @@ paths:
       description: Returns a single pet
       operationId: getPetById
       parameters:
-      - name: x-traceability-id
+      - name: X-Traceability-Id
         in: header
         description: Common header parameters for centralized logging
         required: true
@@ -102,7 +102,7 @@ paths:
       description: Updates a pet record and returns data notification
       operationId: updatePet
       parameters:
-      - name: x-traceability-id
+      - name: X-Traceability-Id
         in: header
         description: Common header parameters for centeralized logging
         required: true
@@ -178,7 +178,7 @@ paths:
       description: Deletes a pet record and returns data notification
       operationId: deletePet
       parameters:
-      - name: x-traceability-id
+      - name: X-Traceability-Id
         in: header
         description: Common header parameters for centralized logging
         required: true
@@ -248,7 +248,7 @@ paths:
       description: Creates and returns newly created pet with name and ID
       operationId: createPet
       parameters:
-      - name: x-traceability-id
+      - name: X-Traceability-Id
         in: header
         description: Common header parameters for centralized logging
         required: true
@@ -316,7 +316,7 @@ paths:
       description: Returns a list of all the pets
       operationId: getAllPets
       parameters:
-      - name: x-traceability-id
+      - name: X-Traceability-Id
         in: header
         description: Common header parameters for centeralized logging
         required: true
