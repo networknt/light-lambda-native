@@ -1,10 +1,9 @@
 package com.networknt.aws.lambda.handler.middleware.security;
 
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.security.SecurityConfig;
 import com.networknt.status.Status;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

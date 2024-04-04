@@ -1,7 +1,7 @@
 package com.networknt.aws.lambda.handler.chain;
 
 import com.networknt.aws.lambda.handler.LambdaHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.MiddlewareRunnable;
 import com.networknt.config.Config;
 import com.networknt.status.Status;
@@ -23,7 +23,6 @@ public class PooledChainLinkExecutor extends ThreadPoolExecutor {
     private static final Logger LOG = LoggerFactory.getLogger(PooledChainLinkExecutor.class);
     private static final String CONFIG_NAME = "pooled-chain-executor";
     private static final PooledChainConfig CONFIG = (PooledChainConfig) Config.getInstance().getJsonObjectConfig(CONFIG_NAME, PooledChainConfig.class);
-
     private final LinkedList<Status> chainResults = new LinkedList<>();
     private static final String MIDDLEWARE_THREAD_INTERRUPT = "ERR14003";
     private static final String MIDDLEWARE_UNHANDLED_EXCEPTION = "ERR14000";
@@ -49,14 +48,16 @@ public class PooledChainLinkExecutor extends ThreadPoolExecutor {
 
             /* await worker completion */
             this.awaitChainWorkerFutures(chainLinkWorkerFutures);
-            if (this.isTerminating() || this.isTerminated() || this.isShutdown())
+
+            if (this.isTerminating() || this.isTerminated() || this.isShutdown() || exchange.hasFailedState()) {
                 break;
+            }
 
             chainLinkWorkerGroup.clear();
             chainLinkWorkerFutures.clear();
         }
 
-        this.shutdown();
+        //this.shutdown();
     }
 
     /**
@@ -146,13 +147,14 @@ public class PooledChainLinkExecutor extends ThreadPoolExecutor {
     private final ChainLinkCallback chainLinkCallback = new ChainLinkCallback() {
 
         @Override
-        public void callback(final LightLambdaExchange eventWrapper, Status status) {
+        public void callback(final LightLambdaExchange exchange, Status status) {
+            exchange.updateExchangeStatus(status);
             PooledChainLinkExecutor.this.addChainableResult(status);
         }
 
         /* handles any generic throwable that occurred during middleware execution. */
         @Override
-        public void exceptionCallback(final LightLambdaExchange eventWrapper, Throwable throwable) {
+        public void exceptionCallback(final LightLambdaExchange exchange, Throwable throwable) {
 
             if (throwable instanceof InterruptedException) {
                 LOG.error("Interrupted thread and cancelled middleware execution", throwable);

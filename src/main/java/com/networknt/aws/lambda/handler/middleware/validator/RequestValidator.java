@@ -2,7 +2,7 @@ package com.networknt.aws.lambda.handler.middleware.validator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.utility.MapUtil;
 import com.networknt.config.Config;
 import com.networknt.jsonoverlay.Overlay;

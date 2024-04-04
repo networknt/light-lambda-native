@@ -1,5 +1,6 @@
 package com.networknt.aws.lambda.handler.middleware;
 
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.LambdaHandler;
 import com.networknt.aws.lambda.handler.chain.ChainLinkCallback;
 
@@ -19,10 +20,15 @@ public class MiddlewareRunnable implements Runnable {
     @Override
     public void run() {
         try {
-            var status = middlewareHandler.execute(exchange);
+            var status = this.middlewareHandler.execute(this.exchange);
             this.callback.callback(this.exchange, status);
 
-        } catch (Throwable e) {
+        } catch (Exception e) {
+
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+
             this.callback.exceptionCallback(this.exchange, e);
         }
 

@@ -1,9 +1,6 @@
 package com.networknt.aws.lambda.middleware.chain;
 
-import com.networknt.aws.lambda.InvocationResponse;
-import com.networknt.aws.lambda.LambdaContext;
-import com.networknt.aws.lambda.TestUtils;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.*;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware;
 import com.networknt.header.HeaderConfig;
@@ -51,7 +48,7 @@ class PooledChainLinkExecutorTest {
 
         /* create a new exchange with the disabled header chain + fake context (LightLambdaExchange uses PooledChainLinkExecutor to execute request/response chains) */
         var exchange = new LightLambdaExchange(lambdaContext, chain);
-        exchange.setRequest(requestEvent);
+        exchange.setInitialRequest(requestEvent);
 
         exchange.executeChain();
 

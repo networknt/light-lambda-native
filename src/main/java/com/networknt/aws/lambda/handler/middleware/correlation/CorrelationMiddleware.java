@@ -1,6 +1,6 @@
 package com.networknt.aws.lambda.handler.middleware.correlation;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.aws.lambda.utility.LoggerKey;
 import com.networknt.config.Config;
@@ -8,7 +8,6 @@ import com.networknt.correlation.CorrelationConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.ModuleRegistry;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -37,7 +36,7 @@ public class CorrelationMiddleware implements MiddlewareHandler {
         if (cid == null && CONFIG.isAutogenCorrelationID()) {
             cid = this.getUUID();
             exchange.getRequest().getHeaders().put(HeaderKey.CORRELATION, cid);
-            exchange.addRequestAttachment(CORRELATION_ATTACHMENT_KEY, cid);
+            exchange.addAttachment(CORRELATION_ATTACHMENT_KEY, cid);
             var tid = exchange.getRequest().getHeaders().get(HeaderKey.TRACEABILITY);
 
             if (tid != null && LOG.isInfoEnabled())

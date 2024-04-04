@@ -3,14 +3,11 @@ package com.networknt.aws.lambda.handler.middleware.header;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
-import com.networknt.aws.lambda.handler.middleware.correlation.CorrelationMiddleware;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
-import com.networknt.correlation.CorrelationConfig;
 import com.networknt.header.HeaderConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.ModuleRegistry;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -5,7 +5,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.traceability.TraceabilityMiddleware;
 import com.networknt.aws.lambda.middleware.MiddlewareTestBase;
 import com.networknt.aws.lambda.handler.chain.Chain;
@@ -41,11 +41,11 @@ class TraceabilityMiddlewareTest extends MiddlewareTestBase {
         requestChain.setupGroupedChain();
 
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
+        this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
 
         // X-Traceability-Id should be added to the exchange as an attachment.
-        String traceabilityId = (String) this.exchange.getRequestAttachment(TraceabilityMiddleware.TRACEABILITY_ATTACHMENT_KEY);
+        String traceabilityId = (String) this.exchange.getAttachment(TraceabilityMiddleware.TRACEABILITY_ATTACHMENT_KEY);
         Assertions.assertEquals("123-123-123", traceabilityId);
 
         var res = this.invokeLocalLambdaFunction(exchange);

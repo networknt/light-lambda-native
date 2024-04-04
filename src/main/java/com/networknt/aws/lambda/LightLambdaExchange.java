@@ -1,11 +1,13 @@
-package com.networknt.aws.lambda.handler.middleware;
+package com.networknt.aws.lambda;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
+import com.networknt.aws.lambda.exception.LambdaExchangeStateException;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.handler.chain.PooledChainLinkExecutor;
 import com.networknt.aws.lambda.handler.chain.Chain;
+import com.networknt.aws.lambda.handler.middleware.ExceptionUtil;
 import com.networknt.status.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +23,6 @@ import java.util.Map;
  * Shared object among middleware threads containing information on the request/response event.
  */
 public final class LightLambdaExchange {
-
     private static final Logger LOG = LoggerFactory.getLogger(LightLambdaExchange.class);
 
     // TODO change these request, response members to a more generic type to handle other more edge cases (i.e. lambda stream request/response)
@@ -38,7 +39,7 @@ public final class LightLambdaExchange {
     private static final int INITIAL_STATE = 0;
 
     // Request chain ready for execution
-    private static final int FLAG_STARTING_REQUEST_READY = 1 << 1;
+    private static final int FLAG_REQUEST_SET = 1 << 1;
 
     // Request chain execution complete
     private static final int FLAG_REQUEST_DONE = 1 << 2;
@@ -47,7 +48,7 @@ public final class LightLambdaExchange {
     private static final int FLAG_REQUEST_HAS_FAILURE = 1 << 3;
 
     // Received response from backend lambda and we are preparing to execute the response chain
-    private static final int FLAG_STARTING_RESPONSE_READY = 1 << 4;
+    private static final int FLAG_RESPONSE_SET = 1 << 4;
 
     // Response chain execution complete
     private static final int FLAG_RESPONSE_DONE = 1 << 5;
@@ -65,53 +66,9 @@ public final class LightLambdaExchange {
     }
 
     public void executeChain() {
-
-        if (stateHasAllFlags(FLAG_STARTING_REQUEST_READY)) {
+        if (stateHasAllFlags(FLAG_REQUEST_SET)) {
             this.executor.executeChain(this, this.chain);
-            this.state &= ~FLAG_STARTING_REQUEST_READY;
-
-            if (stateHasAllFlagsClear(FLAG_REQUEST_DONE)) {
-                for (var res : this.executor.getChainResults()) {
-
-                    if (this.hasErrorCode(res)) {
-                        this.state |= FLAG_REQUEST_HAS_FAILURE;
-                        this.statusCode = res.getStatusCode();
-                        break;
-                    }
-                }
-            }
-
-            this.state |= FLAG_REQUEST_DONE;
-
         }
-    }
-
-//    public void executeResponseChain() {
-//        if (stateHasAllFlags(FLAG_STARTING_RESPONSE_READY)) {
-//            this.executor.executeChain(this, this.responseChain);
-//            this.state &= ~FLAG_STARTING_RESPONSE_READY;
-//
-//            if (stateHasAllFlagsClear(FLAG_RESPONSE_DONE)) {
-//
-//                for (var res : this.executor.getChainResults()) {
-//
-//                    if (this.hasErrorCode(res)) {
-//                        this.state |= FLAG_RESPONSE_HAS_FAILURE;
-//                        this.statusCode = res.getStatusCode();
-//                        break;
-//                    }
-//                }
-//                this.state |= FLAG_RESPONSE_DONE;
-//            }
-//
-//        }
-//
-//    }
-
-    private boolean hasErrorCode(final Status status) {
-
-        // TODO - change this to something more reliable than a string check
-        return status.getCode().startsWith("ERR");
     }
 
     /**
@@ -119,14 +76,14 @@ public final class LightLambdaExchange {
      *
      * @param response -
      */
-    public void setResponse(APIGatewayProxyResponseEvent response) {
+    public void setInitialResponse(final APIGatewayProxyResponseEvent response) {
 
-        if (stateHasAnyFlags(FLAG_STARTING_RESPONSE_READY | FLAG_RESPONSE_DONE | FLAG_RESPONSE_HAS_FAILURE))
+        if (stateHasAnyFlags(FLAG_RESPONSE_SET))
             return;
 
         this.response = response;
         this.statusCode = response.getStatusCode();
-        this.state |= FLAG_STARTING_RESPONSE_READY;
+        this.state |= FLAG_RESPONSE_SET;
     }
 
     /**
@@ -134,13 +91,14 @@ public final class LightLambdaExchange {
      *
      * @param request -
      */
-    public void setRequest(APIGatewayProxyRequestEvent request) {
+    public void setInitialRequest(APIGatewayProxyRequestEvent request) {
 
-        if (stateHasAnyFlags(FLAG_STARTING_REQUEST_READY | FLAG_REQUEST_DONE | FLAG_REQUEST_HAS_FAILURE))
-            return;
+        if (this.state != INITIAL_STATE) {
+            throw LambdaExchangeStateException.invalidStateException(this.state, INITIAL_STATE);
+        }
 
         this.request = request;
-        this.state |= FLAG_STARTING_REQUEST_READY;
+        this.state |= FLAG_REQUEST_SET;
     }
 
     /**
@@ -149,23 +107,63 @@ public final class LightLambdaExchange {
      * @return - return formatted response event.
      */
     public APIGatewayProxyResponseEvent getResponse() {
-        if(this.response != null) {
-            return this.response;
-        } else {
-            if (stateHasAnyFlags(FLAG_REQUEST_HAS_FAILURE))
-                return ExceptionUtil.convert(this.executor.getChainResults());
 
-            if (stateHasAnyFlags(FLAG_RESPONSE_HAS_FAILURE))
-                return ExceptionUtil.convert(this.executor.getChainResults());
+        if (stateHasAnyFlagsClear(FLAG_RESPONSE_SET)) {
+            throw LambdaExchangeStateException.missingStateException(this.state, FLAG_RESPONSE_SET);
+
+        } else if (stateHasAnyFlags(FLAG_RESPONSE_DONE)) {
+            throw LambdaExchangeStateException.invalidStateException(this.state, FLAG_RESPONSE_DONE);
         }
-        return null;
+
+        return response;
     }
 
     public Context getContext() {
         return context;
     }
+
     public APIGatewayProxyRequestEvent getRequest() {
+
+        if (stateHasAnyFlagsClear(FLAG_REQUEST_SET)) {
+            throw LambdaExchangeStateException.missingStateException(this.state, FLAG_REQUEST_SET);
+
+        } else if (stateHasAnyFlags(FLAG_REQUEST_DONE)) {
+            throw LambdaExchangeStateException.invalidStateException(this.state, FLAG_REQUEST_DONE);
+        }
+
         return request;
+    }
+
+    public APIGatewayProxyRequestEvent getFinalizedRequest() {
+
+        if (stateHasAnyFlags(FLAG_REQUEST_DONE)) {
+            throw LambdaExchangeStateException.invalidStateException(this.state, FLAG_REQUEST_DONE);
+
+        } else if (stateHasAnyFlagsClear(FLAG_REQUEST_SET)) {
+            throw LambdaExchangeStateException.missingStateException(this.state, FLAG_REQUEST_SET);
+        }
+
+        this.state |= FLAG_REQUEST_DONE;
+        return request;
+    }
+
+    public APIGatewayProxyResponseEvent getFinalizedResponse() {
+
+        if (stateHasAnyFlags(FLAG_REQUEST_HAS_FAILURE | FLAG_RESPONSE_HAS_FAILURE)) {
+            LOG.error("Exchange has an error, returning middleware status.");
+            this.state |= FLAG_RESPONSE_DONE;
+            return ExceptionUtil.convert(this.executor.getChainResults());
+        }
+
+        if (stateHasAnyFlags(FLAG_RESPONSE_DONE)) {
+            throw LambdaExchangeStateException.invalidStateException(this.state, FLAG_RESPONSE_DONE);
+
+        } else if (stateHasAnyFlagsClear(FLAG_RESPONSE_SET)) {
+            throw LambdaExchangeStateException.missingStateException(this.state, FLAG_RESPONSE_SET);
+        }
+
+        this.state |= FLAG_RESPONSE_DONE;
+        return response;
     }
 
     /**
@@ -175,19 +173,8 @@ public final class LightLambdaExchange {
      * @param o - object value.
      * @param <T> - Middleware key type.
      */
-    public <T extends MiddlewareHandler> void addRequestAttachment(final Attachable<T> key, final Object o) {
+    public <T extends MiddlewareHandler> void addAttachment(final Attachable<T> key, final Object o) {
         this.requestAttachments.put(key, o);
-    }
-
-    /**
-     * Adds a response attachment to the exchange.
-     *
-     * @param key - Attachable key.
-     * @param o - object value.
-     * @param <T> - Middleware key type.
-     */
-    public <T extends MiddlewareHandler> void addResponseAttachment(final Attachable<T> key, final Object o) {
-        this.responseAttachments.put(key, o);
     }
 
     /**
@@ -196,18 +183,23 @@ public final class LightLambdaExchange {
      * @param attachable - middleware key
      * @return - returns the object for the provided key. Can return null if it does not exist.
      */
-    public Object getRequestAttachment(final Attachable<?> attachable) {
+    public Object getAttachment(final Attachable<?> attachable) {
         return this.requestAttachments.get(attachable);
     }
 
-    /**
-     * Get response attachment object for given key.
-     *
-     * @param attachable - middleware key
-     * @return - returns the object for the provided. Can return null if it does not exist.
-     */
-    public Object getResponseAttachment(final Attachable<?> attachable) {
-        return this.responseAttachments.get(attachable);
+    public void updateExchangeStatus(Status status) {
+        if (status.getSeverity().startsWith("ERR")) {
+
+            if (this.isRequestInProgress()) {
+                LOG.error("Exchange has an error in the request phase.");
+                this.state |= FLAG_REQUEST_HAS_FAILURE;
+            }
+
+            if (this.isResponseInProgress()) {
+                LOG.error("Exchange has an error in the response phase.");
+                this.state |= FLAG_RESPONSE_HAS_FAILURE;
+            }
+        }
     }
 
     /**
@@ -226,8 +218,12 @@ public final class LightLambdaExchange {
      * @return - returns true if the exchange is handing the request.
      */
     public boolean isRequestInProgress() {
-        return this.stateHasAllFlags(FLAG_STARTING_REQUEST_READY)
+        return this.stateHasAllFlags(FLAG_REQUEST_SET)
                 && this.stateHasAllFlagsClear(FLAG_REQUEST_DONE);
+    }
+
+    public boolean isRequestComplete() {
+        return this.stateHasAllFlags(FLAG_REQUEST_DONE);
     }
 
     /**
@@ -237,8 +233,12 @@ public final class LightLambdaExchange {
      * @return - return true if the exchange is handling the response.
      */
     public boolean isResponseInProgress() {
-        return this.stateHasAllFlags(FLAG_REQUEST_DONE | FLAG_STARTING_RESPONSE_READY)
+        return this.stateHasAllFlags(FLAG_REQUEST_DONE | FLAG_RESPONSE_SET)
                 && this.stateHasAllFlagsClear(FLAG_RESPONSE_DONE);
+    }
+
+    public boolean isResponseComplete() {
+        return this.stateHasAllFlags(FLAG_RESPONSE_DONE);
     }
 
     /**
@@ -298,8 +298,6 @@ public final class LightLambdaExchange {
                 ", requestAttachments=" + requestAttachments +
                 ", responseAttachments=" + responseAttachments +
                 ", executor=" + executor +
-//                ", requestChain=" + requestChain +
-//                ", responseChain=" + responseChain +
                 ", state=" + state +
                 ", statusCode=" + statusCode +
                 '}';
@@ -331,6 +329,24 @@ public final class LightLambdaExchange {
         public static <T extends MiddlewareHandler> Attachable<T> createMiddlewareAttachable(final Class<T> middleware) {
             return new Attachable<>(middleware);
         }
+    }
+
+    public static class LambdaRequest<T> {
+        T request;
+
+        public LambdaRequest(T request) {
+            this.request = request;
+        }
+    }
+
+    public static class LambdaResponse<T> {
+        T response;
+
+        public LambdaResponse(T response) {
+            this.response = response;
+        }
+
+
     }
 
 

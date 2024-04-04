@@ -2,13 +2,12 @@ package com.networknt.aws.lambda.handler.middleware.audit;
 
 import com.networknt.audit.AuditConfig;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.proxy.LambdaProxyConfig;
 import com.networknt.config.Config;
 import com.networknt.status.Status;
 import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.StringUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

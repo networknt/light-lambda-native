@@ -6,7 +6,7 @@ import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.sanitizer.SanitizerMiddleware;
 import com.networknt.config.JsonMapper;
 import com.networknt.sanitizer.SanitizerConfig;
@@ -50,7 +50,7 @@ public class SanitizerMiddlewareTest {
         requestChain.setupGroupedChain();
 
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
+        this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
         requestEvent = exchange.getRequest();
         Map<String, String> headerMapResult = requestEvent.getHeaders();
@@ -78,7 +78,7 @@ public class SanitizerMiddlewareTest {
         requestChain.setupGroupedChain();
 
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
+        this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
         requestEvent = exchange.getRequest();
         String bodyResult = requestEvent.getBody();

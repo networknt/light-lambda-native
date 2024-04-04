@@ -8,12 +8,10 @@ import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
-import com.networknt.aws.lambda.handler.middleware.sanitizer.SanitizerMiddleware;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware;
 import com.networknt.aws.lambda.handler.middleware.validator.ValidatorMiddleware;
 import com.networknt.config.Config;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -80,7 +78,7 @@ public class ValidatorMiddlewareTest {
         requestChain.setupGroupedChain();
 
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
+        this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
 
         APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
@@ -112,7 +110,7 @@ public class ValidatorMiddlewareTest {
         requestChain.setupGroupedChain();
 
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
+        this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
 
         APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
@@ -146,7 +144,7 @@ public class ValidatorMiddlewareTest {
         requestChain.setupGroupedChain();
 
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
+        this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
 
         APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
@@ -179,10 +177,10 @@ public class ValidatorMiddlewareTest {
         requestChain.setupGroupedChain();
 
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
+        this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
 
-        APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
+        APIGatewayProxyResponseEvent responseEvent = exchange.getFinalizedResponse();
         // no error, the response should be null.
         Assertions.assertNull(responseEvent);
     }

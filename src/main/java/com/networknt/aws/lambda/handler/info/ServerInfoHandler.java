@@ -2,15 +2,13 @@ package com.networknt.aws.lambda.handler.info;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.handler.LambdaHandler;
-import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.info.ServerInfoConfig;
 import com.networknt.info.ServerInfoUtil;
 import com.networknt.status.Status;
 import com.networknt.utility.ModuleRegistry;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +36,7 @@ public class ServerInfoHandler implements LambdaHandler {
                     .withHeaders(headers)
                     .withBody(JsonMapper.toJson((infoMap)));
 
-            exchange.setResponse(res);
+            exchange.setInitialResponse(res);
 
         } else {
 
@@ -47,7 +45,7 @@ public class ServerInfoHandler implements LambdaHandler {
                     .withStatusCode(status.getStatusCode())
                     .withHeaders(headers)
                     .withBody(status.toString());
-            exchange.setResponse(res);
+            exchange.setInitialResponse(res);
             return status;
         }
         if (logger.isTraceEnabled()) logger.trace("ServerInfoHandler.handleRequest ends.");

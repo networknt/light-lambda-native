@@ -1,7 +1,7 @@
 package com.networknt.aws.lambda.middleware;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;

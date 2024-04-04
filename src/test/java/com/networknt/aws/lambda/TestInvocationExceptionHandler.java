@@ -1,23 +1,25 @@
-package com.networknt.aws.lambda.handler.middleware.metrics;
+package com.networknt.aws.lambda;
 
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.status.Status;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class MetricsMiddleware implements MiddlewareHandler {
-    private static final Logger LOG = LoggerFactory.getLogger(MetricsMiddleware.class);
-
+public class TestInvocationExceptionHandler implements MiddlewareHandler {
     @Override
     public Status execute(LightLambdaExchange exchange) throws InterruptedException {
-        if(LOG.isDebugEnabled()) LOG.debug("MetricsMiddleware.execute starts.");
-        return null;
+        APIGatewayProxyRequestEvent finalizedRequest = exchange.getFinalizedRequest();
+        // ... invoke a function
+        APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent();
+        responseEvent.setStatusCode(500);
+        exchange.setInitialResponse(responseEvent);
+
+        return new Status("ERR10086", "some-function");
     }
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return true;
     }
 
     @Override

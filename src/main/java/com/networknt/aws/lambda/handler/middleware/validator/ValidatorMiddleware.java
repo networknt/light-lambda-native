@@ -1,7 +1,7 @@
 package com.networknt.aws.lambda.handler.middleware.validator;
 
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.aws.lambda.utility.HeaderValue;
@@ -13,12 +13,9 @@ import com.networknt.openapi.ValidatorConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 
 import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.AUDIT_ATTACHMENT_KEY;
@@ -56,7 +53,7 @@ public class ValidatorMiddleware implements MiddlewareHandler {
         }
         final NormalisedPath requestPath = new ApiNormalisedPath(reqPath, OpenApiMiddleware.getBasePath(reqPath));
         OpenApiOperation openApiOperation = null;
-        Map<String, Object> auditInfo = (Map<String, Object>)exchange.getRequestAttachment(AUDIT_ATTACHMENT_KEY);
+        Map<String, Object> auditInfo = (Map<String, Object>)exchange.getAttachment(AUDIT_ATTACHMENT_KEY);
         if(auditInfo != null) {
             openApiOperation = (OpenApiOperation)auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
         }

@@ -1,6 +1,6 @@
 package com.networknt.aws.lambda.handler.middleware.limit.key;
 
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 
 /**
  * When rate limit is used, we need to define a key to identify a unique client or a unique IP address.

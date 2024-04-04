@@ -2,7 +2,7 @@ package com.networknt.aws.lambda.handler.middleware.specification;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.Path;
@@ -11,7 +11,6 @@ import com.networknt.service.SingletonServiceFactory;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,10 +70,10 @@ public class OpenApiMiddleware implements MiddlewareHandler {
         final OpenApiOperation openApiOperation = new OpenApiOperation(openApiPathString, path, httpMethod, operation);
 
         String endpoint = openApiPathString.normalised() + "@" + httpMethod.toLowerCase();
-        Map<String, Object> auditInfo = (exchange.getRequestAttachment(AUDIT_ATTACHMENT_KEY) != null) ? (Map<String, Object>) exchange.getRequestAttachment(AUDIT_ATTACHMENT_KEY) : new HashMap<>();
+        Map<String, Object> auditInfo = (exchange.getAttachment(AUDIT_ATTACHMENT_KEY) != null) ? (Map<String, Object>) exchange.getAttachment(AUDIT_ATTACHMENT_KEY) : new HashMap<>();
         auditInfo.put(Constants.ENDPOINT_STRING, endpoint);
         auditInfo.put(Constants.OPENAPI_OPERATION_STRING, openApiOperation);
-        exchange.addRequestAttachment(AUDIT_ATTACHMENT_KEY, auditInfo);
+        exchange.addAttachment(AUDIT_ATTACHMENT_KEY, auditInfo);
 
         if (LOG.isDebugEnabled())
             LOG.debug("OpenApiMiddleware.executeMiddleware ends.");

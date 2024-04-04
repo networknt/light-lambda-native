@@ -5,7 +5,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.handler.Handler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.config.Config;
 import com.networknt.utility.ModuleRegistry;
@@ -46,9 +46,9 @@ public class LambdaProxy implements RequestHandler<APIGatewayProxyRequestEvent, 
         Chain chain = Handler.getChain(requestPath + "@" + requestMethod.toLowerCase());
         if(chain == null) chain = Handler.getDefaultChain();
         final var exchange = new LightLambdaExchange(context, chain);
-        exchange.setRequest(apiGatewayProxyRequestEvent);
+        exchange.setInitialRequest(apiGatewayProxyRequestEvent);
         exchange.executeChain();
-        APIGatewayProxyResponseEvent response = exchange.getResponse();
+        APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse();
         LOG.debug("Lambda CCC --end with response: {}", response);
         return response;
     }

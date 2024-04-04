@@ -3,7 +3,7 @@ package com.networknt.aws.lambda.handler.logger;
 import ch.qos.logback.classic.LoggerContext;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.handler.LambdaHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.logging.model.LoggerConfig;
@@ -71,7 +71,7 @@ public class LoggerGetHandler implements LambdaHandler {
                     .withStatusCode(200)
                     .withHeaders(headers)
                     .withBody(JsonMapper.toJson((loggersList)));
-            exchange.setResponse(res);
+            exchange.setInitialResponse(res);
         } else {
             return new Status(HANDLER_IS_DISABLED, "LoggerGetHandler");
         }

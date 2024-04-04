@@ -7,9 +7,7 @@ import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.Handler;
 import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.aws.lambda.handler.info.ServerInfoHandler;
-import com.networknt.aws.lambda.handler.logger.LoggerGetHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.proxy.LambdaProxy;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +21,7 @@ public class LoggerHandlerTest {
         Chain chain = Handler.getChain("/adm/logger@get");
         Context lambdaContext = new LambdaContext("1");
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, chain);
-        exchange.setRequest(requestEvent);
+        exchange.setInitialRequest(requestEvent);
         APIGatewayProxyResponseEvent responseEvent = lambdaProxy.handleRequest(requestEvent, lambdaContext);
         System.out.println(responseEvent.toString());
 
@@ -39,7 +37,7 @@ public class LoggerHandlerTest {
         Chain chain = Handler.getChain("/adm/logger@post");
         Context lambdaContext = new LambdaContext("1");
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, chain);
-        exchange.setRequest(requestEvent);
+        exchange.setInitialRequest(requestEvent);
         APIGatewayProxyResponseEvent responseEvent = lambdaProxy.handleRequest(requestEvent, lambdaContext);
         System.out.println(responseEvent.toString());
     }

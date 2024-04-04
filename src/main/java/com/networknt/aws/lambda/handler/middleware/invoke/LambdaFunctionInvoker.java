@@ -2,16 +2,13 @@ package com.networknt.aws.lambda.handler.middleware.invoke;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.networknt.audit.AuditConfig;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
-import com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.status.Status;
 import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.StringUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.SdkBytes;
@@ -60,7 +57,7 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
 
             LOG.debug("Invoke Time - Finish: {}", System.currentTimeMillis());
             var responseEvent = JsonMapper.fromJson(res, APIGatewayProxyResponseEvent.class);
-            exchange.setResponse(responseEvent);
+            exchange.setInitialResponse(responseEvent);
             if(LOG.isTraceEnabled()) LOG.trace("LambdaFunctionInvoker.execute ends.");
             return this.successMiddlewareStatus();
         } else {
@@ -72,7 +69,7 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
     private String invokeFunction(final LambdaClient client, String functionName, final LightLambdaExchange exchange) {
         String serializedEvent = null;
         try {
-            serializedEvent = Config.getInstance().getMapper().writeValueAsString(exchange.getRequest());
+            serializedEvent = Config.getInstance().getMapper().writeValueAsString(exchange.getFinalizedRequest());
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

@@ -1,14 +1,13 @@
 package com.networknt.aws.lambda.handler.middleware.traceability;
 
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.aws.lambda.utility.LoggerKey;
 import com.networknt.config.Config;
 import com.networknt.status.Status;
 import com.networknt.traceability.TraceabilityConfig;
 import com.networknt.utility.ModuleRegistry;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -35,7 +34,7 @@ public class TraceabilityMiddleware implements MiddlewareHandler {
 
         if (tid != null) {
             MDC.put(LoggerKey.TRACEABILITY, tid);
-            exchange.addRequestAttachment(TRACEABILITY_ATTACHMENT_KEY, tid);
+            exchange.addAttachment(TRACEABILITY_ATTACHMENT_KEY, tid);
         }
 
         if (LOG.isDebugEnabled())

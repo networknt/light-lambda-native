@@ -1,6 +1,6 @@
 package com.networknt.aws.lambda.handler.chain;
 
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.status.Status;
 
 public interface ChainLinkCallback {

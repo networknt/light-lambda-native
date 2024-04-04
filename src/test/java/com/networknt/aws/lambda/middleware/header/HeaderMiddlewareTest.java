@@ -5,7 +5,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware;
 import com.networknt.aws.lambda.middleware.MiddlewareTestBase;
 import com.networknt.aws.lambda.handler.chain.Chain;
@@ -51,7 +51,7 @@ class HeaderMiddlewareTest extends MiddlewareTestBase {
         requestChain.setupGroupedChain();
 
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
+        this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
 
         requestEvent = exchange.getRequest();

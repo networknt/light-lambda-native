@@ -6,7 +6,7 @@ import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware;
 import com.networknt.aws.lambda.middleware.MiddlewareTestBase;
 import org.junit.jupiter.api.Assertions;
@@ -43,7 +43,7 @@ public class OpenApiMiddlewareTest extends MiddlewareTestBase {
         requestChain.setupGroupedChain();
 
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
+        this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
 
         requestEvent = exchange.getRequest();
