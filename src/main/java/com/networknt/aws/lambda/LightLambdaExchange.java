@@ -8,15 +8,16 @@ import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.handler.chain.PooledChainLinkExecutor;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.aws.lambda.handler.middleware.ExceptionUtil;
+import com.networknt.aws.lambda.listener.LambdaExchangeFailureListener;
+import com.networknt.aws.lambda.listener.LambdaRequestCompleteListener;
+import com.networknt.aws.lambda.listener.LambdaResponseCompleteListener;
 import com.networknt.status.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -24,37 +25,43 @@ import java.util.Map;
  */
 public final class LightLambdaExchange {
     private static final Logger LOG = LoggerFactory.getLogger(LightLambdaExchange.class);
-
-    // TODO change these request, response members to a more generic type to handle other more edge cases (i.e. lambda stream request/response)
     private APIGatewayProxyRequestEvent request;
     private InputStream streamRequest;
     private APIGatewayProxyResponseEvent response;
     private OutputStream streamResponse;
     private final Context context;
-    private final Map<Attachable<?>, Object> requestAttachments = Collections.synchronizedMap(new HashMap<>());
-    private final Map<Attachable<?>, Object> responseAttachments = Collections.synchronizedMap(new HashMap<>());
+    private final Map<Attachable<?>, Object> attachments = Collections.synchronizedMap(new HashMap<>());
     private final PooledChainLinkExecutor executor;
+    private final List<LambdaResponseCompleteListener> responseCompleteListeners = Collections.synchronizedList(new ArrayList<>());
+    private final List<LambdaRequestCompleteListener> requestCompleteListeners = Collections.synchronizedList(new ArrayList<>());
+    private final List<LambdaExchangeFailureListener> exchangeFailedListeners = Collections.synchronizedList(new ArrayList<>());
 
     // Initial state
     private static final int INITIAL_STATE = 0;
 
-    // Request chain ready for execution
+    // Request data has been initialized in the exchange.
     private static final int FLAG_REQUEST_SET = 1 << 1;
 
-    // Request chain execution complete
+    // Request portion of the exchange is complete.
     private static final int FLAG_REQUEST_DONE = 1 << 2;
 
-    // Request chain execution complete but had an exception occur
+    // Failure occurred during request execution.
     private static final int FLAG_REQUEST_HAS_FAILURE = 1 << 3;
 
-    // Received response from backend lambda and we are preparing to execute the response chain
+    // Response data has been initialized in the exchange.
     private static final int FLAG_RESPONSE_SET = 1 << 4;
 
-    // Response chain execution complete
+    // Response portion of the exchange is complete.
     private static final int FLAG_RESPONSE_DONE = 1 << 5;
 
-    // Response chain execution complete but had an exception occur
+    // Failure occurred during response execution.
     private static final int FLAG_RESPONSE_HAS_FAILURE = 1 << 6;
+
+    // The chain has been fully executed
+    private static final int FLAG_CHAIN_EXECUTED = 1 << 7;
+
+    // the exchange is complete
+    private static final int FLAG_EXCHANGE_COMPLETE = 1 << 8;
     private int state = INITIAL_STATE;
     private int statusCode = 200;
     private final Chain chain;
@@ -66,9 +73,17 @@ public final class LightLambdaExchange {
     }
 
     public void executeChain() {
-        if (stateHasAllFlags(FLAG_REQUEST_SET)) {
-            this.executor.executeChain(this, this.chain);
-        }
+
+        if (stateHasAnyFlags(FLAG_CHAIN_EXECUTED | FLAG_EXCHANGE_COMPLETE))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_CHAIN_EXECUTED | FLAG_EXCHANGE_COMPLETE);
+
+        if (stateHasAnyFlagsClear(FLAG_REQUEST_SET))
+            throw LambdaExchangeStateException
+                    .missingStateException(this.state, FLAG_REQUEST_SET);
+
+        this.executor.executeChain(this, this.chain);
+        this.state |= FLAG_CHAIN_EXECUTED;
     }
 
     /**
@@ -79,7 +94,8 @@ public final class LightLambdaExchange {
     public void setInitialResponse(final APIGatewayProxyResponseEvent response) {
 
         if (stateHasAnyFlags(FLAG_RESPONSE_SET))
-            return;
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_RESPONSE_SET);
 
         this.response = response;
         this.statusCode = response.getStatusCode();
@@ -93,9 +109,10 @@ public final class LightLambdaExchange {
      */
     public void setInitialRequest(APIGatewayProxyRequestEvent request) {
 
-        if (this.state != INITIAL_STATE) {
-            throw LambdaExchangeStateException.invalidStateException(this.state, INITIAL_STATE);
-        }
+        if (this.state != INITIAL_STATE)
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, INITIAL_STATE);
+
 
         this.request = request;
         this.state |= FLAG_REQUEST_SET;
@@ -108,12 +125,17 @@ public final class LightLambdaExchange {
      */
     public APIGatewayProxyResponseEvent getResponse() {
 
-        if (stateHasAnyFlagsClear(FLAG_RESPONSE_SET)) {
-            throw LambdaExchangeStateException.missingStateException(this.state, FLAG_RESPONSE_SET);
+        if (stateHasAnyFlags(FLAG_CHAIN_EXECUTED | FLAG_EXCHANGE_COMPLETE))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_CHAIN_EXECUTED | FLAG_EXCHANGE_COMPLETE);
 
-        } else if (stateHasAnyFlags(FLAG_RESPONSE_DONE)) {
-            throw LambdaExchangeStateException.invalidStateException(this.state, FLAG_RESPONSE_DONE);
-        }
+        if (stateHasAnyFlagsClear(FLAG_RESPONSE_SET))
+            throw LambdaExchangeStateException
+                    .missingStateException(this.state, FLAG_RESPONSE_SET);
+
+        if (stateHasAnyFlags(FLAG_RESPONSE_DONE))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_RESPONSE_DONE);
 
         return response;
     }
@@ -124,80 +146,125 @@ public final class LightLambdaExchange {
 
     public APIGatewayProxyRequestEvent getRequest() {
 
-        if (stateHasAnyFlagsClear(FLAG_REQUEST_SET)) {
-            throw LambdaExchangeStateException.missingStateException(this.state, FLAG_REQUEST_SET);
+        if (stateHasAnyFlags(FLAG_CHAIN_EXECUTED | FLAG_EXCHANGE_COMPLETE))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_CHAIN_EXECUTED | FLAG_EXCHANGE_COMPLETE);
 
-        } else if (stateHasAnyFlags(FLAG_REQUEST_DONE)) {
-            throw LambdaExchangeStateException.invalidStateException(this.state, FLAG_REQUEST_DONE);
-        }
+        if (stateHasAnyFlagsClear(FLAG_REQUEST_SET))
+            throw LambdaExchangeStateException
+                    .missingStateException(this.state, FLAG_REQUEST_SET);
+
+        if (stateHasAnyFlags(FLAG_REQUEST_DONE))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_REQUEST_DONE);
+
 
         return request;
     }
 
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    /**
+     * Terminates the request portion of the exchange and invokes the exchangeRequestCompleteListeners.
+     * You cannot finalize a request that has already been finalized.
+     *
+     * @return - returns the complete and final request event.
+     */
     public APIGatewayProxyRequestEvent getFinalizedRequest() {
 
-        if (stateHasAnyFlags(FLAG_REQUEST_DONE)) {
-            throw LambdaExchangeStateException.invalidStateException(this.state, FLAG_REQUEST_DONE);
+        if (stateHasAnyFlags(FLAG_REQUEST_DONE))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_REQUEST_DONE);
 
-        } else if (stateHasAnyFlagsClear(FLAG_REQUEST_SET)) {
-            throw LambdaExchangeStateException.missingStateException(this.state, FLAG_REQUEST_SET);
-        }
+        if (stateHasAnyFlagsClear(FLAG_REQUEST_SET))
+            throw LambdaExchangeStateException
+                    .missingStateException(this.state, FLAG_REQUEST_SET);
 
         this.state |= FLAG_REQUEST_DONE;
+
+        for (var requestListener : requestCompleteListeners)
+            requestListener.requestCompleteEvent(this);
+
         return request;
     }
 
+    /**
+     * Terminates the response portion of the exchange and invokes the exchangeResponseCompleteListeners.
+     * You cannot finalize a response that has already been finalized.
+     *
+     * @return - returns the complete and final response event.
+     */
     public APIGatewayProxyResponseEvent getFinalizedResponse() {
 
+        /*
+         * Check for failures first because a failed request could mean
+         * that we never set the response in the first place.
+         */
         if (stateHasAnyFlags(FLAG_REQUEST_HAS_FAILURE | FLAG_RESPONSE_HAS_FAILURE)) {
             LOG.error("Exchange has an error, returning middleware status.");
             this.state |= FLAG_RESPONSE_DONE;
             return ExceptionUtil.convert(this.executor.getChainResults());
         }
 
-        if (stateHasAnyFlags(FLAG_RESPONSE_DONE)) {
-            throw LambdaExchangeStateException.invalidStateException(this.state, FLAG_RESPONSE_DONE);
+        if (stateHasAnyFlagsClear(FLAG_CHAIN_EXECUTED))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_CHAIN_EXECUTED);
 
-        } else if (stateHasAnyFlagsClear(FLAG_RESPONSE_SET)) {
-            throw LambdaExchangeStateException.missingStateException(this.state, FLAG_RESPONSE_SET);
-        }
+        if (stateHasAnyFlags(FLAG_RESPONSE_DONE | FLAG_EXCHANGE_COMPLETE))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_RESPONSE_DONE | FLAG_EXCHANGE_COMPLETE);
+
+        if (stateHasAnyFlagsClear(FLAG_RESPONSE_SET))
+            throw LambdaExchangeStateException
+                    .missingStateException(this.state, FLAG_RESPONSE_SET);
+
 
         this.state |= FLAG_RESPONSE_DONE;
+        for (var responseListener : responseCompleteListeners)
+            responseListener.responseCompleteEvent(this);
+
+        this.state |= FLAG_EXCHANGE_COMPLETE;
         return response;
     }
 
     /**
-     * Adds a request attachment to the exchange.
+     * Update the exchange. This happens automatically after each middleware execution,
+     * but it can be invoked manually by user logic.
+     * <p>
+     * Once an exchange is marked as failed, no longer handle updates.
      *
-     * @param key - Attachable key.
-     * @param o - object value.
-     * @param <T> - Middleware key type.
+     * @param status - status to update the exchange with.
      */
-    public <T extends MiddlewareHandler> void addAttachment(final Attachable<T> key, final Object o) {
-        this.requestAttachments.put(key, o);
-    }
+    public void updateExchangeStatus(final Status status) {
 
-    /**
-     * Get request attachment object for given key.
-     *
-     * @param attachable - middleware key
-     * @return - returns the object for the provided key. Can return null if it does not exist.
-     */
-    public Object getAttachment(final Attachable<?> attachable) {
-        return this.requestAttachments.get(attachable);
-    }
+        /* No need to update anything if the exchange is marked as complete/failed. */
+        if (stateHasAnyFlags(FLAG_REQUEST_HAS_FAILURE | FLAG_RESPONSE_HAS_FAILURE | FLAG_EXCHANGE_COMPLETE)) {
+            return;
+        }
 
-    public void updateExchangeStatus(Status status) {
         if (status.getSeverity().startsWith("ERR")) {
 
-            if (this.isRequestInProgress()) {
+            int oldState = this.state;
+
+            /* if we are making the update from a handler or a request complete listener. */
+            if ((this.isRequestInProgress() && !this.isResponseInProgress())
+                    || (this.isRequestComplete() && !this.isResponseInProgress())) {
                 LOG.error("Exchange has an error in the request phase.");
+                this.statusCode = status.getStatusCode();
                 this.state |= FLAG_REQUEST_HAS_FAILURE;
+
+            } else if (this.isResponseInProgress()) {
+                LOG.error("Exchange has an error in the response phase.");
+                this.statusCode = status.getStatusCode();
+                this.state |= FLAG_RESPONSE_HAS_FAILURE;
             }
 
-            if (this.isResponseInProgress()) {
-                LOG.error("Exchange has an error in the response phase.");
-                this.state |= FLAG_RESPONSE_HAS_FAILURE;
+            /* if a failure occurred, run failure listeners */
+            if (oldState != this.state) {
+                for (var failureListener : this.exchangeFailedListeners)
+                    failureListener.exchangeFailedEvent(this);
             }
         }
     }
@@ -237,12 +304,25 @@ public final class LightLambdaExchange {
                 && this.stateHasAllFlagsClear(FLAG_RESPONSE_DONE);
     }
 
+    /**
+     * Checks to see if the exchange has the response portion complete.
+     *
+     * @return - true if the response is complete.
+     */
     public boolean isResponseComplete() {
         return this.stateHasAllFlags(FLAG_RESPONSE_DONE);
     }
 
     /**
-     * Checks to see if the exchange is in the response in progress state.
+     * Checks to see if the exchange is complete.
+     *
+     * @return - true if the exchange is complete.
+     */
+    public boolean isExchangeComplete() {
+        return this.stateHasAllFlags(FLAG_EXCHANGE_COMPLETE);
+    }
+
+    /**
      * @return int state
      */
     public int getState() {
@@ -289,18 +369,60 @@ public final class LightLambdaExchange {
         return (this.state & flags) == 0;
     }
 
-    @Override
-    public String toString() {
-        return "LightLambdaExchange{" +
-                "request=" + request +
-                ", response=" + response +
-                ", context=" + context +
-                ", requestAttachments=" + requestAttachments +
-                ", responseAttachments=" + responseAttachments +
-                ", executor=" + executor +
-                ", state=" + state +
-                ", statusCode=" + statusCode +
-                '}';
+    public LightLambdaExchange addExchangeFailedListener(final LambdaExchangeFailureListener listener) {
+
+        if (this.stateHasAnyFlags(FLAG_RESPONSE_DONE))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_RESPONSE_DONE);
+
+        this.exchangeFailedListeners.add(listener);
+        return this;
+    }
+
+    public LightLambdaExchange addResponseCompleteListener(final LambdaResponseCompleteListener listener) {
+
+        if (this.stateHasAnyFlags(FLAG_RESPONSE_DONE))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_RESPONSE_DONE);
+
+        this.responseCompleteListeners.add(listener);
+        return this;
+    }
+
+    public LightLambdaExchange addRequestCompleteListener(final LambdaRequestCompleteListener listener) {
+
+        if (this.stateHasAnyFlags(FLAG_REQUEST_DONE | FLAG_RESPONSE_DONE))
+            throw LambdaExchangeStateException
+                    .invalidStateException(this.state, FLAG_REQUEST_DONE | FLAG_RESPONSE_DONE);
+
+
+        this.requestCompleteListeners.add(listener);
+        return this;
+    }
+
+    /**
+     * Adds an attachment to the exchange.
+     *
+     * @param key - Attachable key.
+     * @param o   - object value.
+     * @param <T> - Middleware key type.
+     */
+    public <T extends MiddlewareHandler> void addAttachment(final Attachable<T> key, final Object o) {
+        this.attachments.put(key, o);
+    }
+
+    /**
+     * Get attachment object for given key.
+     *
+     * @param attachable - middleware key
+     * @return - returns the object for the provided key. Can return null if it does not exist.
+     */
+    public Object getAttachment(final Attachable<?> attachable) {
+        return this.attachments.get(attachable);
+    }
+
+    public Map<Attachable<?>, Object> getAttachments() {
+        return attachments;
     }
 
     /**
@@ -323,31 +445,24 @@ public final class LightLambdaExchange {
          * Creates a new attachable key.
          *
          * @param middleware - class to create a key for.
+         * @param <T>        - given class has to implement the MiddlewareHandler interface.
          * @return - returns new attachable instance.
-         * @param <T> - given class has to implement the MiddlewareHandler interface.
          */
-        public static <T extends MiddlewareHandler> Attachable<T> createMiddlewareAttachable(final Class<T> middleware) {
+        public static <T extends MiddlewareHandler> Attachable<T> createAttachable(final Class<T> middleware) {
             return new Attachable<>(middleware);
         }
     }
 
-    public static class LambdaRequest<T> {
-        T request;
-
-        public LambdaRequest(T request) {
-            this.request = request;
-        }
+    @Override
+    public String toString() {
+        return "LightLambdaExchange{" +
+                "request=" + request +
+                ", response=" + response +
+                ", context=" + context +
+                ", attachments=" + attachments +
+                ", executor=" + executor +
+                ", state=" + state +
+                ", statusCode=" + statusCode +
+                '}';
     }
-
-    public static class LambdaResponse<T> {
-        T response;
-
-        public LambdaResponse(T response) {
-            this.response = response;
-        }
-
-
-    }
-
-
 }

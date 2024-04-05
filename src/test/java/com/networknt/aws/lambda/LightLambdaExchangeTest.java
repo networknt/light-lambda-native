@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.networknt.aws.lambda.TestExchangeCompleteListenerMiddleware.TEST_ATTACHMENT;
+
 class LightLambdaExchangeTest {
 
     @Test
@@ -100,6 +102,28 @@ class LightLambdaExchangeTest {
         Assertions.assertNotNull(response);
 
         System.out.println(response);
+    }
+
+    @Test
+    void exchangeCompleteListener() {
+        var apiGatewayProxyRequestEvent = TestUtils.createTestRequestEvent();
+        InvocationResponse invocation = InvocationResponse.builder().requestId("12345").event(apiGatewayProxyRequestEvent).build();
+        APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
+        Context lambdaContext = new LambdaContext(invocation.getRequestId());
+
+        var testExchangeCompleteListenerMiddleware = new TestExchangeCompleteListenerMiddleware();
+        var testInvocationHandler = new TestInvocationHandler();
+
+        Chain requestChain = new Chain(false);
+        requestChain.addChainable(testExchangeCompleteListenerMiddleware);
+        requestChain.addChainable(testInvocationHandler);
+        requestChain.setupGroupedChain();
+        LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, requestChain);
+        exchange.setInitialRequest(requestEvent);
+        exchange.executeChain();
+
+        var res = exchange.getFinalizedResponse();
+        Assertions.assertNotNull(exchange.getAttachment(TEST_ATTACHMENT));
     }
 
 }

@@ -98,9 +98,7 @@ public class PooledChainLinkExecutor extends ThreadPoolExecutor {
         /* submit each link in the group into the pooled executor queue */
         for (var chainLinkWorker : chainLinkWorkerGroup) {
             LOG.debug("Submitting link '{}' for execution.", linkNumber++);
-
-            if (!this.isShutdown() && !this.isTerminating() && !this.isTerminated())
-                chainLinkWorkerFutures.add(this.submit(chainLinkWorker));
+            chainLinkWorkerFutures.add(this.submit(chainLinkWorker));
         }
         return chainLinkWorkerFutures;
     }
@@ -126,9 +124,7 @@ public class PooledChainLinkExecutor extends ThreadPoolExecutor {
                 final var worker = new ChainLinkWorker(runnable, loggingContext);
                 chainLinkWorkerGroup.add(worker);
 
-            } else
-                LOG.debug("Middleware handler '{}' is disabled, no worker will be created.", chainLink.getClass().getName());
-
+            } else LOG.debug("Middleware handler '{}' is disabled, no worker will be created.", chainLink.getClass().getName());
         }
 
         return chainLinkWorkerGroup;

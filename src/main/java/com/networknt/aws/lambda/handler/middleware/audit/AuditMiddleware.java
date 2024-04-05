@@ -3,6 +3,7 @@ package com.networknt.aws.lambda.handler.middleware.audit;
 import com.networknt.audit.AuditConfig;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
+import com.networknt.aws.lambda.listener.LambdaResponseCompleteListener;
 import com.networknt.aws.lambda.proxy.LambdaProxyConfig;
 import com.networknt.config.Config;
 import com.networknt.status.Status;
@@ -23,7 +24,7 @@ import java.time.format.DateTimeFormatter;
 public class AuditMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(AuditMiddleware.class);
     private static AuditConfig CONFIG;
-    public static final LightLambdaExchange.Attachable<AuditMiddleware> AUDIT_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createMiddlewareAttachable(AuditMiddleware.class);
+    public static final LightLambdaExchange.Attachable<AuditMiddleware> AUDIT_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(AuditMiddleware.class);
     static final String INVALID_CONFIG_VALUE_CODE = "ERR10060";
     private String serviceId;
 
@@ -50,6 +51,14 @@ public class AuditMiddleware implements MiddlewareHandler {
     public Status execute(LightLambdaExchange exchange) throws InterruptedException {
         if(LOG.isDebugEnabled()) LOG.debug("AuditMiddleware.execute starts.");
         // as there is no way to write a separate audit log file in Lambda, we will skip this handler.
+
+        exchange.addResponseCompleteListener(finalExchange -> {
+            var attachments = finalExchange.getAttachments();
+            for (var attachment : attachments.entrySet()) {
+                LOG.info("key: '{}', value: '{}'", attachment.getKey(), attachment.getValue());
+            }
+        });
+
         if(LOG.isDebugEnabled()) LOG.debug("AuditMiddleware.execute ends.");
         return successMiddlewareStatus();
     }

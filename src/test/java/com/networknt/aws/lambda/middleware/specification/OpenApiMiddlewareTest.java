@@ -46,7 +46,7 @@ public class OpenApiMiddlewareTest extends MiddlewareTestBase {
         this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
 
-        requestEvent = exchange.getRequest();
+        requestEvent = exchange.getFinalizedRequest();
 
         String res = this.invokeLocalLambdaFunction(this.exchange);
         LOG.debug(res);

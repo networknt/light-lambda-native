@@ -14,7 +14,7 @@ import org.slf4j.MDC;
 
 public class TraceabilityMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(TraceabilityMiddleware.class);
-    public static final LightLambdaExchange.Attachable<TraceabilityMiddleware> TRACEABILITY_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createMiddlewareAttachable(TraceabilityMiddleware.class);
+    public static final LightLambdaExchange.Attachable<TraceabilityMiddleware> TRACEABILITY_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(TraceabilityMiddleware.class);
     private static TraceabilityConfig CONFIG;
 
     public TraceabilityMiddleware() {

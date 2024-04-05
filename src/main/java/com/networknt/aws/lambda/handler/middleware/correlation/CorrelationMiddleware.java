@@ -20,7 +20,7 @@ public class CorrelationMiddleware implements MiddlewareHandler {
 
     private static final CorrelationConfig CONFIG = CorrelationConfig.load();
     private static final Logger LOG = LoggerFactory.getLogger(CorrelationMiddleware.class);
-    private static final LightLambdaExchange.Attachable<CorrelationMiddleware> CORRELATION_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createMiddlewareAttachable(CorrelationMiddleware.class);
+    private static final LightLambdaExchange.Attachable<CorrelationMiddleware> CORRELATION_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(CorrelationMiddleware.class);
 
     public CorrelationMiddleware() {
         if (LOG.isInfoEnabled()) LOG.info("CorrelationHandler is construct.");
