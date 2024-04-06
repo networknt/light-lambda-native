@@ -25,7 +25,7 @@ public class PooledChainLinkExecutor extends ThreadPoolExecutor {
     private static final PooledChainConfig CONFIG = (PooledChainConfig) Config.getInstance().getJsonObjectConfig(CONFIG_NAME, PooledChainConfig.class);
     private final LinkedList<Status> chainResults = new LinkedList<>();
     private static final String MIDDLEWARE_THREAD_INTERRUPT = "ERR14003";
-    private static final String MIDDLEWARE_UNHANDLED_EXCEPTION = "ERR14000";
+    private static final String MIDDLEWARE_UNHANDLED_EXCEPTION = "ERR14004";
 
     final Object lock = new Object();
 
