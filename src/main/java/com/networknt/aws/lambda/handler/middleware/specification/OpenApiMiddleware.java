@@ -36,7 +36,7 @@ public class OpenApiMiddleware implements MiddlewareHandler {
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
         Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
         validateSpec(openapi, inject, "openapi.yaml");
-        OpenApiHelper.merge(openapi, inject);
+        openapi = OpenApiHelper.merge(openapi, inject);
         try {
             helper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
         } catch (JsonProcessingException e) {
