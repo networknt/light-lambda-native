@@ -52,7 +52,7 @@ public class MockLambdaFunctionInvoker implements MiddlewareHandler {
     }
 
     private String invokeFunction(final LambdaClient client, String functionName, final LightLambdaExchange exchange) {
-        String serializedEvent = JsonMapper.toJson(exchange.getFinalizedRequest());
+        String serializedEvent = JsonMapper.toJson(exchange.getFinalizedRequest(false));
         if(LOG.isDebugEnabled()) LOG.debug("Serialized request event: {}", serializedEvent);
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent();
         responseEvent.setStatusCode(200);

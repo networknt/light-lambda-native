@@ -22,8 +22,6 @@ import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.
 
 public class OpenApiMiddlewareTest {
     private static final Logger LOG = LoggerFactory.getLogger(OpenApiMiddlewareTest.class);
-    LightLambdaExchange exchange;
-
     @Test
     public void testConstructor() {
         OpenApiMiddleware openApiMiddleware = new OpenApiMiddleware();

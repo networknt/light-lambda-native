@@ -47,7 +47,7 @@ public class LambdaProxy implements RequestHandler<APIGatewayProxyRequestEvent, 
         final var exchange = new LightLambdaExchange(context, chain);
         exchange.setInitialRequest(apiGatewayProxyRequestEvent);
         exchange.executeChain();
-        APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse();
+        APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse(false);
         LOG.debug("Lambda CCC --end with response: {}", response);
         return response;
     }

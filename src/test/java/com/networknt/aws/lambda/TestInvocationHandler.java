@@ -16,7 +16,7 @@ public class TestInvocationHandler implements MiddlewareHandler {
 
     @Override
     public Status execute(LightLambdaExchange exchange) throws InterruptedException {
-        APIGatewayProxyRequestEvent finalizedRequest = exchange.getFinalizedRequest();
+        APIGatewayProxyRequestEvent finalizedRequest = exchange.getFinalizedRequest(false);
         // ... invoke a function
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent();
         responseEvent.setStatusCode(200);

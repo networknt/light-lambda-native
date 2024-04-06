@@ -67,7 +67,7 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
     }
 
     private String invokeFunction(final LambdaClient client, String functionName, final LightLambdaExchange exchange) {
-        String serializedEvent = JsonMapper.toJson(exchange.getFinalizedRequest());
+        String serializedEvent = JsonMapper.toJson(exchange.getFinalizedRequest(false));
         String response = null;
         try {
             var payload = SdkBytes.fromUtf8String(serializedEvent);

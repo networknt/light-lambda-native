@@ -51,7 +51,7 @@ public class SanitizerMiddlewareTest {
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
         this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
-        requestEvent = exchange.getFinalizedRequest();
+        requestEvent = exchange.getFinalizedRequest(false);
         Map<String, String> headerMapResult = requestEvent.getHeaders();
         String param = headerMapResult.get("param");
         // works on both linux and Windows due to EncodeWrapper
@@ -80,7 +80,7 @@ public class SanitizerMiddlewareTest {
         this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
 
-        requestEvent = exchange.getFinalizedRequest();
+        requestEvent = exchange.getFinalizedRequest(false);
         String bodyResult = requestEvent.getBody();
         Map<String, Object> map = JsonMapper.string2Map(bodyResult);
         // works on both linux and Windows due to EncodeWrapper

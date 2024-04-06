@@ -60,7 +60,7 @@ class LightLambdaExchangeTest {
         Assertions.assertTrue(exchange.isResponseInProgress());
 
         /* Response should be complete after terminating writes on the response. */
-        APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse();
+        APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse(false);
         Assertions.assertTrue(exchange.isResponseComplete());
         Assertions.assertNotNull(response);
     }
@@ -97,7 +97,7 @@ class LightLambdaExchangeTest {
         Assertions.assertTrue(exchange.isResponseInProgress());
 
         /* Response should be complete after terminating writes on the response. */
-        APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse();
+        APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse(false);
         Assertions.assertTrue(exchange.isResponseComplete());
         Assertions.assertNotNull(response);
 
@@ -122,7 +122,7 @@ class LightLambdaExchangeTest {
         exchange.setInitialRequest(requestEvent);
         exchange.executeChain();
 
-        var res = exchange.getFinalizedResponse();
+        var res = exchange.getFinalizedResponse(false);
         Assertions.assertNotNull(exchange.getAttachment(TEST_ATTACHMENT));
     }
 

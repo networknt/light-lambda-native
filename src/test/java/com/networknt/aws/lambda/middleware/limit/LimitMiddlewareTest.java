@@ -41,7 +41,7 @@ public class LimitMiddlewareTest {
             this.exchange.setInitialRequest(requestEvent);
             this.exchange.executeChain();
         }
-        APIGatewayProxyResponseEvent responseEvent = exchange.getFinalizedResponse();
+        APIGatewayProxyResponseEvent responseEvent = exchange.getFinalizedResponse(false);
         Assertions.assertNotNull(responseEvent);
         Assertions.assertEquals(429, responseEvent.getStatusCode());
         LOG.info("responseStatus: " + responseEvent.getStatusCode());
