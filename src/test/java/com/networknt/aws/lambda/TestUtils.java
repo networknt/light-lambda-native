@@ -10,7 +10,7 @@ public class TestUtils {
     private static final String TEST_EVENT = "{\n" +
             "  \"body\": \"eyJ0ZXN0IjoiYm9keSJ9\",\n" +
             "  \"resource\": \"/{proxy+}\",\n" +
-            "  \"path\": \"/petstore\",\n" +
+            "  \"path\": \"/v1/pets\",\n" +
             "  \"httpMethod\": \"POST\",\n" +
             "  \"isBase64Encoded\": true,\n" +
             "  \"queryStringParameters\": {\n" +
