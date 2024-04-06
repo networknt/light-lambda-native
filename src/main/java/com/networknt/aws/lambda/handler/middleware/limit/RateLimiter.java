@@ -1,6 +1,6 @@
 package com.networknt.aws.lambda.handler.middleware.limit;
 
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.limit.key.KeyResolver;
 import com.networknt.exception.FrameworkException;
 import com.networknt.limit.LimitConfig;

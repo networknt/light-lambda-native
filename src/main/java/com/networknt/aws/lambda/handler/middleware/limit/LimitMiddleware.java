@@ -4,7 +4,7 @@ package com.networknt.aws.lambda.handler.middleware.limit;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.aws.lambda.utility.HeaderValue;
 import com.networknt.config.Config;
@@ -13,7 +13,6 @@ import com.networknt.limit.RateLimitResponse;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +68,7 @@ public class LimitMiddleware implements MiddlewareHandler {
             int statusCode = CONFIG.getErrorCode()==0 ? 429:CONFIG.getErrorCode();
             responseEvent.setStatusCode(statusCode);
             responseEvent.setBody(status.toString());
-            exchange.setResponse(responseEvent);
+            exchange.setInitialResponse(responseEvent);
             if(LOG.isDebugEnabled()) LOG.warn("LimitHandler.handleRequest ends with an error code {}", RATE_LIMIT_EXCEEDED);
             return status;
         }

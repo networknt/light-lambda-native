@@ -2,7 +2,8 @@
 
 lambda-invoker.region: ca-central-1
 lambda-invoker.functions:
-  /v1/pets@post: arn:aws:lambda:ca-central-1:442513687360:function:eadp-test-destination
+  # /v1/pets@post: arn:aws:lambda:ca-central-1:442513687360:function:eadp-test-destination
+  /v1/pets@post: arn:aws:lambda:ca-central-1:000000000000:function:local-lambda
 
 # ----------< Lambda Proxy Config >----------
 
@@ -46,7 +47,6 @@ security.enableJwtCache: true
 # -------------------------------------------
 
 # header.yml
-header.enabled: true
 
 # handler.yml
 handler.handlers:
@@ -55,7 +55,7 @@ handler.handlers:
   - com.networknt.aws.lambda.handler.middleware.traceability.TraceabilityMiddleware@traceability
   - com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware@header
   - com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware@specification
-  - com.networknt.aws.lambda.handler.middleware.invoke.LambdaFunctionInvoker@invoke
+  - com.networknt.aws.lambda.middleware.invoke.MockLambdaFunctionInvoker@invoke
   - com.networknt.aws.lambda.handler.middleware.metrics.APMMetricsMiddleware@metrics
   #- com.networknt.aws.lambda.handler.middleware.security.JwtVerifyMiddleware@security
   - com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware@audit

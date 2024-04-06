@@ -7,7 +7,7 @@ import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.limit.LimitMiddleware;
 import com.networknt.limit.LimitConfig;
 
@@ -38,10 +38,10 @@ public class LimitMiddlewareTest {
 
         for(int i =  0; i < 12; i++) {
             this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-            this.exchange.setRequest(requestEvent);
+            this.exchange.setInitialRequest(requestEvent);
             this.exchange.executeChain();
         }
-        APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
+        APIGatewayProxyResponseEvent responseEvent = exchange.getFinalizedResponse();
         Assertions.assertNotNull(responseEvent);
         Assertions.assertEquals(429, responseEvent.getStatusCode());
         LOG.info("responseStatus: " + responseEvent.getStatusCode());

@@ -8,12 +8,10 @@ import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
-import com.networknt.aws.lambda.handler.middleware.sanitizer.SanitizerMiddleware;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware;
 import com.networknt.aws.lambda.handler.middleware.validator.ValidatorMiddleware;
 import com.networknt.config.Config;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -37,17 +35,6 @@ public class ValidatorMiddlewareTest {
             e.printStackTrace();
         }
     }
-    @Test
-    public void testStringJsonNode() {
-        String jsonString = "abc";
-        try {
-            JsonNode jsonNode = Config.getInstance().getMapper().readTree(jsonString);
-            String value = jsonNode.asText();
-            Assertions.assertNotNull(value);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     @Test
     public void testConstructor() {
@@ -63,6 +50,7 @@ public class ValidatorMiddlewareTest {
         Map<String, String> headerMap = new HashMap<>();
         headerMap.put("X-Traceability-Id", "abc");
         apiGatewayProxyRequestEvent.setHeaders(headerMap);
+
         // set request body
         apiGatewayProxyRequestEvent.setBody("{\"id\": 1, \"name\": \"dog\"}");
         InvocationResponse invocation = InvocationResponse.builder()
@@ -79,13 +67,14 @@ public class ValidatorMiddlewareTest {
         requestChain.addChainable(validatorMiddleware);
         requestChain.setupGroupedChain();
 
-        this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
-        this.exchange.executeChain();
+        var exchange = new LightLambdaExchange(lambdaContext, requestChain);
+        exchange.setInitialRequest(requestEvent);
+        exchange.executeChain();
 
-        APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
-        // no error, the response should be null.
-        Assertions.assertNull(responseEvent);
+        APIGatewayProxyRequestEvent newRequestEvent = exchange.getFinalizedRequest();
+
+        // The event produced after validation is done should be the same as the original.
+        Assertions.assertEquals(requestEvent, newRequestEvent);
     }
 
     @Test
@@ -111,15 +100,16 @@ public class ValidatorMiddlewareTest {
         requestChain.addChainable(validatorMiddleware);
         requestChain.setupGroupedChain();
 
-        this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
-        this.exchange.executeChain();
+        var exchange = new LightLambdaExchange(lambdaContext, requestChain);
+        exchange.setInitialRequest(requestEvent);
+        exchange.executeChain();
 
-        APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
-        // body validation error, the response should not be null.
-        Assertions.assertNotNull(responseEvent);
-        Assertions.assertEquals(400, responseEvent.getStatusCode());
-        LOG.info("status: " + responseEvent.getBody());
+
+
+        APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse();
+        Assertions.assertEquals(400, response.getStatusCode());
+
+        LOG.info("status: " + response.getBody());
     }
 
     @Test
@@ -145,11 +135,11 @@ public class ValidatorMiddlewareTest {
         requestChain.addChainable(validatorMiddleware);
         requestChain.setupGroupedChain();
 
-        this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
-        this.exchange.executeChain();
+        var exchange = new LightLambdaExchange(lambdaContext, requestChain);
+        exchange.setInitialRequest(requestEvent);
+        exchange.executeChain();
 
-        APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
+        APIGatewayProxyResponseEvent responseEvent = exchange.getFinalizedResponse();
         Assertions.assertNotNull(responseEvent);
         Assertions.assertEquals(400, responseEvent.getStatusCode());
         LOG.info("status: " + responseEvent.getBody());
@@ -178,13 +168,14 @@ public class ValidatorMiddlewareTest {
         requestChain.addChainable(validatorMiddleware);
         requestChain.setupGroupedChain();
 
-        this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setRequest(requestEvent);
-        this.exchange.executeChain();
+        var exchange = new LightLambdaExchange(lambdaContext, requestChain);
+        exchange.setInitialRequest(requestEvent);
+        exchange.executeChain();
 
-        APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
-        // no error, the response should be null.
-        Assertions.assertNull(responseEvent);
+        APIGatewayProxyRequestEvent newRequestEvent = exchange.getFinalizedRequest();
+
+
+        Assertions.assertEquals(requestEvent, newRequestEvent);
     }
 
 }

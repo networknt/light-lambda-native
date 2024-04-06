@@ -1,20 +1,17 @@
 package com.networknt.aws.lambda.handler.logger;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LoggerContext;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.handler.LambdaHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.logging.model.LoggerConfig;
-import com.networknt.logging.model.LoggerInfo;
 import com.networknt.status.Status;
 import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +49,7 @@ public class LoggerSetHandler implements LambdaHandler {
                         .withStatusCode(200)
                         .withHeaders(headers)
                         .withBody(JsonMapper.toJson(loggers));
-                exchange.setResponse(res);
+                exchange.setInitialResponse(res);
             }
         } else {
             return new Status(HANDLER_IS_DISABLED, "LoggerSetHandler");

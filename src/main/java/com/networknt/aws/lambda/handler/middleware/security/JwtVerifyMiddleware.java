@@ -1,13 +1,11 @@
 package com.networknt.aws.lambda.handler.middleware.security;
 
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
-import com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.config.Config;
 import com.networknt.exception.ExpiredTokenException;
-import com.networknt.header.HeaderConfig;
 import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
@@ -16,7 +14,6 @@ import com.networknt.security.SecurityConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
-import org.apache.commons.lang3.NotImplementedException;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.consumer.InvalidJwtException;
@@ -109,7 +106,7 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                         userId = claims.getStringClaimValue(Constants.UID_STRING);
 
                     /* if no auditInfo has been set previously, we populate here */
-                    auditInfo = (exchange.getRequestAttachment(AUDIT_ATTACHMENT_KEY) != null) ? (Map<String, Object>) exchange.getRequestAttachment(AUDIT_ATTACHMENT_KEY) : new HashMap<>();
+                    auditInfo = (exchange.getAttachment(AUDIT_ATTACHMENT_KEY) != null) ? (Map<String, Object>) exchange.getAttachment(AUDIT_ATTACHMENT_KEY) : new HashMap<>();
                     auditInfo.put(Constants.USER_ID_STRING, userId);
                     auditInfo.put(Constants.SUBJECT_CLAIMS, claims);
                     auditInfo.put(Constants.CLIENT_ID_STRING, clientId);
@@ -120,7 +117,7 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                     if (callerId != null)
                         auditInfo.put(Constants.CALLER_ID_STRING, callerId);
 
-                    exchange.addRequestAttachment(AUDIT_ATTACHMENT_KEY, auditInfo);
+                    exchange.addAttachment(AUDIT_ATTACHMENT_KEY, auditInfo);
 
                     if (config.isEnableVerifyScope()) {
                         if (LOG.isTraceEnabled())

@@ -1,8 +1,6 @@
 package com.networknt.aws.lambda.handler.middleware.limit.key;
 
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
-
-import java.net.InetSocketAddress;
+import com.networknt.aws.lambda.LightLambdaExchange;
 
 /**
  * When address is used as the key, we can get the IP address from the header of the request. If there

@@ -1,12 +1,14 @@
-package com.networknt.aws.lambda.middleware.chain;
+package com.networknt.aws.lambda;
 
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
 import com.networknt.status.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 public class TestAsynchronousMiddleware implements MiddlewareHandler {
 
@@ -17,20 +19,14 @@ public class TestAsynchronousMiddleware implements MiddlewareHandler {
 
     @Override
     public Status execute(final LightLambdaExchange exchange) throws InterruptedException {
-        LOG.info("I am executing asynchronously");
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        executor.scheduleWithFixedDelay(() -> {
+            LOG.info("Delayed execution");
+            executor.shutdown();
+        }, 0, 5, TimeUnit.SECONDS);
 
-        int randomSlept = ThreadLocalRandom.current().nextInt(5, 15);
-        LOG.info("I will sleep a total of {} times", randomSlept);
-
-        int slept = 0;
-        while (slept < randomSlept) {
-            int randomSleep = ThreadLocalRandom.current().nextInt(0, 1000);
-            LOG.info("I am sleeping asynchronously for {}ms... ({})", randomSleep, slept);
-            Thread.sleep(randomSleep);
-            slept++;
-        }
-
-        LOG.info("I am done executing asynchronously, doing callback");
+        //block current thread
+        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
         return this.successMiddlewareStatus();
     }
 

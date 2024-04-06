@@ -1,8 +1,7 @@
 package com.networknt.aws.lambda.handler.middleware.sanitizer;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.sanitizer.SanitizerConfig;

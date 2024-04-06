@@ -26,7 +26,7 @@ response:
     key4: value4
 # This is the section that we can define the headers per path prefix.
 pathPrefixHeader:
-  /petstore:
+  /v1/pets:
     request:
       remove:
         - headerA

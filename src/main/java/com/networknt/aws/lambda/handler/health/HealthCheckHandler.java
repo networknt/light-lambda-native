@@ -2,12 +2,11 @@ package com.networknt.aws.lambda.handler.health;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.handler.LambdaHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
 import com.networknt.health.HealthConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.ModuleRegistry;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +58,7 @@ public class HealthCheckHandler implements LambdaHandler {
             responseEvent.setBody(HEALTH_RESULT_OK);
             if(logger.isTraceEnabled()) logger.trace("HealthCheckHandler.handleRequest ends.");
         }
-        exchange.setResponse(responseEvent);
+        exchange.setInitialResponse(responseEvent);
         if(logger.isTraceEnabled()) logger.trace("HealthCheckHandler.handleRequest ends.");
         return this.successMiddlewareStatus();
     }

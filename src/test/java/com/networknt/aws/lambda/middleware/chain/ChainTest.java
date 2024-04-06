@@ -1,5 +1,7 @@
 package com.networknt.aws.lambda.middleware.chain;
 
+import com.networknt.aws.lambda.TestAsynchronousMiddleware;
+import com.networknt.aws.lambda.TestSynchronousMiddleware;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

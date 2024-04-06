@@ -1,13 +1,14 @@
 package com.networknt.aws.lambda.handler;
 
-import org.junit.Assert;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class HandlerTest {
     @Test
     public void testInitHandler() {
         Handler.init();
-        Assert.assertEquals(12, Handler.getHandlers().size());
+        Assertions.assertEquals(12, Handler.getHandlers().size());
     }
 
 }

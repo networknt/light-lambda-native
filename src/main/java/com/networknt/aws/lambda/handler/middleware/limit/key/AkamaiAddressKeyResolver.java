@@ -1,6 +1,6 @@
 package com.networknt.aws.lambda.handler.middleware.limit.key;
 
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
+import com.networknt.aws.lambda.LightLambdaExchange;
 
 import java.util.Map;
 

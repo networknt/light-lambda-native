@@ -1,7 +1,6 @@
-package com.networknt.aws.lambda.middleware.chain;
+package com.networknt.aws.lambda;
 
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.middleware.LightLambdaExchange;
 import com.networknt.status.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
