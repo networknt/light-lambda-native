@@ -23,8 +23,7 @@ import org.slf4j.LoggerFactory;
 public class LambdaProxy implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(LambdaProxy.class);
-    private static final String CONFIG_NAME = "lambda-proxy";
-    public static final LambdaProxyConfig CONFIG = (LambdaProxyConfig) Config.getInstance().getJsonObjectConfig(CONFIG_NAME, LambdaProxyConfig.class);
+    public static final LambdaProxyConfig CONFIG = (LambdaProxyConfig) Config.getInstance().getJsonObjectConfig(LambdaProxyConfig.CONFIG_NAME, LambdaProxyConfig.class);
 
     public LambdaProxy() {
         if (LOG.isInfoEnabled()) LOG.info("LambdaProxy is constructed");

@@ -23,7 +23,7 @@ public class TraceabilityMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(final LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(final LightLambdaExchange exchange) {
         if (!CONFIG.isEnabled())
             return disabledMiddlewareStatus();
 

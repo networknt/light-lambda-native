@@ -11,7 +11,6 @@ import com.networknt.aws.lambda.handler.middleware.sanitizer.SanitizerMiddleware
 import com.networknt.config.JsonMapper;
 import com.networknt.sanitizer.SanitizerConfig;
 
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -56,7 +55,7 @@ public class SanitizerMiddlewareTest {
         Map<String, String> headerMapResult = requestEvent.getHeaders();
         String param = headerMapResult.get("param");
         // works on both linux and Windows due to EncodeWrapper
-        Assert.assertTrue(param.contains("<script>alert(\\'header test\\')</script>"));
+        Assertions.assertTrue(param.contains("<script>alert(\\'header test\\')</script>"));
     }
 
     @Test
@@ -85,7 +84,7 @@ public class SanitizerMiddlewareTest {
         String bodyResult = requestEvent.getBody();
         Map<String, Object> map = JsonMapper.string2Map(bodyResult);
         // works on both linux and Windows due to EncodeWrapper
-        Assert.assertEquals("<script>alert(\\'test\\')</script>", map.get("key"));
+        Assertions.assertEquals("<script>alert(\\'test\\')</script>", map.get("key"));
     }
 
 }

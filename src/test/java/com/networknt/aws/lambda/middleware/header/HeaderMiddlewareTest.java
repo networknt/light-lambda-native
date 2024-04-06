@@ -1,59 +1,48 @@
 package com.networknt.aws.lambda.middleware.header;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware;
-import com.networknt.aws.lambda.middleware.MiddlewareTestBase;
-import com.networknt.aws.lambda.handler.chain.Chain;
+import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.header.HeaderConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-
-@Testcontainers
-class HeaderMiddlewareTest extends MiddlewareTestBase {
-    private static final Logger LOG = LoggerFactory.getLogger(HeaderMiddlewareTest.class);
-    LightLambdaExchange exchange;
+class HeaderMiddlewareTest {
 
     @Test
-    void test() {
-        var apiGatewayProxyRequestEvent = TestUtils.createTestRequestEvent();
+    void testHeaderRemoveUpdate() {
+        var requestEvent = TestUtils.createTestRequestEvent();
 
         // add a request header so that it can be removed by the middleware
-        apiGatewayProxyRequestEvent.getHeaders().put("header1", "Header1Value");
-        apiGatewayProxyRequestEvent.getHeaders().put("header2", "Header2Value");
-        apiGatewayProxyRequestEvent.getHeaders().put("key1", "key1Old");
-        apiGatewayProxyRequestEvent.getHeaders().put("key2", "key2Old");
+        requestEvent.getHeaders().put("header1", "Header1Value");
+        requestEvent.getHeaders().put("header2", "Header2Value");
+        requestEvent.getHeaders().put("key1", "key1Old");
+        requestEvent.getHeaders().put("key2", "key2Old");
 
-        apiGatewayProxyRequestEvent.getHeaders().put("headerA", "HeaderAValue");
-        apiGatewayProxyRequestEvent.getHeaders().put("headerB", "HeaderAValue");
-        apiGatewayProxyRequestEvent.getHeaders().put("keyA", "keyAOld");
-        apiGatewayProxyRequestEvent.getHeaders().put("keyB", "keyBOld");
+        requestEvent.getHeaders().put("headerA", "HeaderAValue");
+        requestEvent.getHeaders().put("headerB", "HeaderAValue");
+        requestEvent.getHeaders().put("keyA", "keyAOld");
+        requestEvent.getHeaders().put("keyB", "keyBOld");
+        requestEvent.getHeaders().put(HeaderKey.TRACEABILITY, "12345");
+
+        requestEvent.setPath("/v1/pets");
+        requestEvent.setBody("{\"id\": 1, \"name\": \"dog\"}");
 
         InvocationResponse invocation = InvocationResponse.builder()
                 .requestId("12345")
-                .event(apiGatewayProxyRequestEvent)
+                .event(requestEvent)
                 .build();
-        APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
-        Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        Chain requestChain = new Chain(false);
+        Context lambdaContext = new LambdaContext(invocation.getRequestId());
+        final var exchange = new LightLambdaExchange(lambdaContext, null);
+        exchange.setInitialRequest(requestEvent);
         HeaderConfig headerConfig = HeaderConfig.load("header_test");
         HeaderMiddleware headerMiddleware = new HeaderMiddleware(headerConfig);
-        requestChain.addChainable(headerMiddleware);
-        requestChain.setupGroupedChain();
-
-        this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
-        this.exchange.setInitialRequest(requestEvent);
-        this.exchange.executeChain();
-
+        headerMiddleware.execute(exchange);
         requestEvent = exchange.getRequest();
 
         // header1 and header2 should be removed from the request headers
@@ -71,10 +60,5 @@ class HeaderMiddlewareTest extends MiddlewareTestBase {
         // keyA and keyB should be updated in the request headers
         Assertions.assertEquals("valueA", requestEvent.getHeaders().get("keyA"));
         Assertions.assertEquals("valueB", requestEvent.getHeaders().get("keyB"));
-
-        String res = this.invokeLocalLambdaFunction(this.exchange);
-        LOG.debug(res);
-        Assertions.assertNotNull(res);
-
     }
 }

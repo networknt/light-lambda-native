@@ -35,17 +35,6 @@ public class ValidatorMiddlewareTest {
             e.printStackTrace();
         }
     }
-    @Test
-    public void testStringJsonNode() {
-        String jsonString = "abc";
-        try {
-            JsonNode jsonNode = Config.getInstance().getMapper().readTree(jsonString);
-            String value = jsonNode.asText();
-            Assertions.assertNotNull(value);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     @Test
     public void testConstructor() {

@@ -46,7 +46,7 @@ public class OpenApiMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(LightLambdaExchange exchange) {
 
         LOG.debug("OpenAPI Specification Time - Start: {}", System.currentTimeMillis());
 

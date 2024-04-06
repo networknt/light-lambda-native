@@ -1,23 +1,17 @@
 package com.networknt.aws.lambda.handler.middleware.metrics;
 
-import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.status.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MetricsMiddleware implements MiddlewareHandler {
-    private static final Logger LOG = LoggerFactory.getLogger(MetricsMiddleware.class);
+public class InfluxMetricsMiddleware extends AbstractMetricsMiddleware {
+    private static final Logger LOG = LoggerFactory.getLogger(InfluxMetricsMiddleware.class);
 
     @Override
     public Status execute(LightLambdaExchange exchange) throws InterruptedException {
-        if(LOG.isDebugEnabled()) LOG.debug("MetricsMiddleware.execute starts.");
+        if(LOG.isDebugEnabled()) LOG.debug("InfluxMetricsMiddleware.execute starts.");
         return null;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return false;
     }
 
     @Override
