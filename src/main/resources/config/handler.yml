@@ -53,10 +53,6 @@ chains:
     #- security
     - audit
     - validator
-  response:
-    - audit
-    #- validator
-    - metrics
   admin:
     #- exception
     - correlation
@@ -123,4 +119,3 @@ additionalPaths: ${handler.additionalPaths:}
 defaultHandlers:
   - request
   - invoke
-  - response

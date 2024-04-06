@@ -71,7 +71,7 @@ public class ValidatorMiddlewareTest {
         exchange.setInitialRequest(requestEvent);
         exchange.executeChain();
 
-        APIGatewayProxyRequestEvent newRequestEvent = exchange.getFinalizedRequest();
+        APIGatewayProxyRequestEvent newRequestEvent = exchange.getFinalizedRequest(false);
 
         // The event produced after validation is done should be the same as the original.
         Assertions.assertEquals(requestEvent, newRequestEvent);
@@ -106,7 +106,7 @@ public class ValidatorMiddlewareTest {
 
 
 
-        APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse();
+        APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse(false);
         Assertions.assertEquals(400, response.getStatusCode());
 
         LOG.info("status: " + response.getBody());
@@ -139,7 +139,7 @@ public class ValidatorMiddlewareTest {
         exchange.setInitialRequest(requestEvent);
         exchange.executeChain();
 
-        APIGatewayProxyResponseEvent responseEvent = exchange.getFinalizedResponse();
+        APIGatewayProxyResponseEvent responseEvent = exchange.getFinalizedResponse(false);
         Assertions.assertNotNull(responseEvent);
         Assertions.assertEquals(400, responseEvent.getStatusCode());
         LOG.info("status: " + responseEvent.getBody());
@@ -172,7 +172,7 @@ public class ValidatorMiddlewareTest {
         exchange.setInitialRequest(requestEvent);
         exchange.executeChain();
 
-        APIGatewayProxyRequestEvent newRequestEvent = exchange.getFinalizedRequest();
+        APIGatewayProxyRequestEvent newRequestEvent = exchange.getFinalizedRequest(false);
 
 
         Assertions.assertEquals(requestEvent, newRequestEvent);

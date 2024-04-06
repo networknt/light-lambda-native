@@ -172,7 +172,15 @@ public final class LightLambdaExchange {
      *
      * @return - returns the complete and final request event.
      */
-    public APIGatewayProxyRequestEvent getFinalizedRequest() {
+    public APIGatewayProxyRequestEvent getFinalizedRequest(boolean fromListener) {
+        if(!fromListener) {
+            // the call any listener should not invoke listener again to prevent deal loop.
+            for (int i = requestCompleteListeners.size() - 1; i >= 0; --i) {
+                LambdaRequestCompleteListener listener = requestCompleteListeners.get(i);
+                listener.requestCompleteEvent(this);
+                requestCompleteListeners.remove(i);
+            }
+        }
 
         if (stateHasAnyFlags(FLAG_REQUEST_DONE))
             throw LambdaExchangeStateException
@@ -182,10 +190,9 @@ public final class LightLambdaExchange {
             throw LambdaExchangeStateException
                     .missingStateException(this.state, FLAG_REQUEST_SET);
 
-        this.state |= FLAG_REQUEST_DONE;
-
-        for (var requestListener : requestCompleteListeners)
-            requestListener.requestCompleteEvent(this);
+        if(!fromListener) {
+            this.state |= FLAG_REQUEST_DONE;
+        }
 
         return request;
     }
@@ -196,8 +203,15 @@ public final class LightLambdaExchange {
      *
      * @return - returns the complete and final response event.
      */
-    public APIGatewayProxyResponseEvent getFinalizedResponse() {
-
+    public APIGatewayProxyResponseEvent getFinalizedResponse(boolean fromListener) {
+        if(!fromListener) {
+            // the call any listener should not invoke listener again to prevent deal loop.
+            for (int i = responseCompleteListeners.size() - 1; i >= 0; --i) {
+                LambdaResponseCompleteListener listener = responseCompleteListeners.get(i);
+                listener.responseCompleteEvent(this);
+                responseCompleteListeners.remove(i);
+            }
+        }
         /*
          * Check for failures first because a failed request could mean
          * that we never set the response in the first place.
@@ -220,12 +234,10 @@ public final class LightLambdaExchange {
             throw LambdaExchangeStateException
                     .missingStateException(this.state, FLAG_RESPONSE_SET);
 
-
-        this.state |= FLAG_RESPONSE_DONE;
-        for (var responseListener : responseCompleteListeners)
-            responseListener.responseCompleteEvent(this);
-
-        this.state |= FLAG_EXCHANGE_COMPLETE;
+        if(!fromListener) {
+            this.state |= FLAG_RESPONSE_DONE;
+            this.state |= FLAG_EXCHANGE_COMPLETE;
+        }
         return response;
     }
 
