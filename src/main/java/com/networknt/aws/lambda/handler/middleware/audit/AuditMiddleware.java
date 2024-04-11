@@ -65,7 +65,7 @@ public class AuditMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(LightLambdaExchange exchange) {
         if(LOG.isDebugEnabled()) LOG.debug("AuditMiddleware.execute starts.");
         // as there is no way to write a separate audit log file in Lambda, we will skip this handler.
         Map<String, Object> auditInfo = (Map<String, Object>)exchange.getAttachment(AUDIT_ATTACHMENT_KEY);

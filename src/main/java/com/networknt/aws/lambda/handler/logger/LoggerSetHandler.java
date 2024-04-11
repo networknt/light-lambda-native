@@ -28,7 +28,7 @@ public class LoggerSetHandler implements LambdaHandler {
     }
 
     @Override
-    public Status execute(LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(LightLambdaExchange exchange) {
         if (logger.isTraceEnabled()) logger.trace("LoggerSetHandler.handleRequest starts.");
         Map<String, String> headers = Map.of("Content-Type", "application/json");
         if (config.isEnabled()) {

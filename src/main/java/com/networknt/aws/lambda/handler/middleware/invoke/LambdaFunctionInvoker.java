@@ -39,7 +39,7 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(LightLambdaExchange exchange) {
         if(LOG.isTraceEnabled()) LOG.trace("LambdaFunctionInvoker.execute starts.");
         if (!exchange.hasFailedState()) {
 

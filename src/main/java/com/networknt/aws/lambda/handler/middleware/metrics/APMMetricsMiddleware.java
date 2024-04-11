@@ -46,7 +46,7 @@ public class APMMetricsMiddleware extends AbstractMetricsMiddleware {
     }
 
     @Override
-    public Status execute(LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(LightLambdaExchange exchange) {
         if (firstTime) {
             commonTags.put("api", lambdaProxyConfig.getLambdaAppId());
 //            commonTags.put("env", );
