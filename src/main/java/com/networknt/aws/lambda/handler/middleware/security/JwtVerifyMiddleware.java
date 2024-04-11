@@ -48,7 +48,7 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(LightLambdaExchange exchange) {
         if(LOG.isDebugEnabled()) LOG.debug("JwtVerifyMiddleware.executeMiddleware starts");
 
         LOG.debug("JWT Verification Time - Start: {}", System.currentTimeMillis());
