@@ -153,6 +153,21 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
+            <artifactId>apikey-config</artifactId>
+            <version>${version.light-4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>basic-config</artifactId>
+            <version>${version.light-4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>unified-config</artifactId>
+            <version>${version.light-4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
             <artifactId>correlation-config</artifactId>
             <version>${version.light-4j}</version>
         </dependency>
