@@ -9,7 +9,7 @@ public class InfluxMetricsMiddleware extends AbstractMetricsMiddleware {
     private static final Logger LOG = LoggerFactory.getLogger(InfluxMetricsMiddleware.class);
 
     @Override
-    public Status execute(LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(LightLambdaExchange exchange) {
         if(LOG.isDebugEnabled()) LOG.debug("InfluxMetricsMiddleware.execute starts.");
         return null;
     }

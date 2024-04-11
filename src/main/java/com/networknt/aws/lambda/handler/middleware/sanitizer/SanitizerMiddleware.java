@@ -40,7 +40,7 @@ public class SanitizerMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(LightLambdaExchange exchange) {
         if (LOG.isDebugEnabled()) LOG.trace("SanitizerMiddleware.execute starts.");
         String method = exchange.getRequest().getHttpMethod();
         if (CONFIG.isHeaderEnabled()) {

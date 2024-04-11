@@ -27,7 +27,7 @@ public class CorrelationMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(final LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(final LightLambdaExchange exchange) {
         LOG.debug("CorrelationHandler.handleRequest starts.");
 
         // check if the cid is in the request header

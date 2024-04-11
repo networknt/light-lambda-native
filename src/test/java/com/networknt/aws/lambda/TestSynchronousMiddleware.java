@@ -15,7 +15,7 @@ public class TestSynchronousMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(final LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(final LightLambdaExchange exchange) {
         LOG.info("I am executing Synchronously");
 
         int randomSlept = ThreadLocalRandom.current().nextInt(5, 15);
@@ -24,7 +24,11 @@ public class TestSynchronousMiddleware implements MiddlewareHandler {
         int slept = 0;
         while (slept < randomSlept) {
             LOG.info("I am working Synchronously... ({})", slept);
-            Thread.sleep(150);
+            try {
+                Thread.sleep(150);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             slept++;
         }
 

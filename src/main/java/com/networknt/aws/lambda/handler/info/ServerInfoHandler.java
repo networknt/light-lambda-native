@@ -25,7 +25,7 @@ public class ServerInfoHandler implements LambdaHandler {
     }
 
     @Override
-    public Status execute(LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(LightLambdaExchange exchange) {
         if (logger.isTraceEnabled()) logger.trace("ServerInfoHandler.handleRequest starts.");
         Map<String, String> headers = Map.of("Content-Type", "application/json");
         if (config.isEnableServerInfo()) {

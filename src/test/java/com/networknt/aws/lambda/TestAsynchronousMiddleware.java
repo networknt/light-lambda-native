@@ -18,7 +18,7 @@ public class TestAsynchronousMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(final LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(final LightLambdaExchange exchange) {
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleWithFixedDelay(() -> {
             LOG.info("Delayed execution");
@@ -26,7 +26,11 @@ public class TestAsynchronousMiddleware implements MiddlewareHandler {
         }, 0, 5, TimeUnit.SECONDS);
 
         //block current thread
+        try {
         executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return this.successMiddlewareStatus();
     }
 

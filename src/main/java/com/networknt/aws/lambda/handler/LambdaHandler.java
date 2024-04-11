@@ -8,7 +8,7 @@ public interface LambdaHandler {
     String DISABLED_LAMBDA_HANDLER_RETURN = "ERR14001";
     String SUCCESS_LAMBDA_HANDLER_RETURN = "SUC14200";
 
-    Status execute(final LightLambdaExchange exchange) throws InterruptedException;
+    Status execute(final LightLambdaExchange exchange);
 
     /**
      *

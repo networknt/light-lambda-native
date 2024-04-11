@@ -50,7 +50,7 @@ public class LimitMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(final LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(final LightLambdaExchange exchange) {
         if(LOG.isDebugEnabled()) LOG.debug("LimitMiddleware.execute starts.");
         RateLimitResponse rateLimitResponse = rateLimiter.handleRequest(exchange, CONFIG.getKey());
         if (rateLimitResponse.isAllow()) {

@@ -35,7 +35,7 @@ public class HealthCheckHandler implements LambdaHandler {
     }
 
     @Override
-    public Status execute(final LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(final LightLambdaExchange exchange) {
         if(logger.isTraceEnabled()) logger.trace("HealthCheckHandler.handleRequest starts.");
 
         String result = HEALTH_RESULT_OK;
