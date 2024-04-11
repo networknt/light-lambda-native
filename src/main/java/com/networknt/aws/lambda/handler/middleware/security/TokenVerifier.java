@@ -45,5 +45,4 @@ public class TokenVerifier {
         }
         return token;
     }
-
 }

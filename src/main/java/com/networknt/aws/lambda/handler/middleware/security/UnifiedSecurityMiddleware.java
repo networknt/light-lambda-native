@@ -16,7 +16,7 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public Status execute(LightLambdaExchange exchange) throws InterruptedException {
+    public Status execute(LightLambdaExchange exchange) {
         return null;
     }
 
