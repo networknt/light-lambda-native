@@ -6,26 +6,15 @@ import com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddlewa
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.aws.lambda.utility.MapUtil;
 import com.networknt.client.oauth.TokenInfo;
-import com.networknt.exception.ClientException;
-import com.networknt.httpstring.AttachmentConstants;
-import com.networknt.httpstring.HttpStringConstants;
 import com.networknt.monad.Result;
 import com.networknt.oas.model.Operation;
-import com.networknt.oas.model.Path;
 import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
-import com.networknt.openapi.ApiNormalisedPath;
-import com.networknt.openapi.NormalisedPath;
-import com.networknt.openapi.OpenApiHelper;
 import com.networknt.openapi.OpenApiOperation;
 import com.networknt.security.SecurityConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.StringUtils;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
