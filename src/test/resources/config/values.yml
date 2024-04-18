@@ -80,3 +80,29 @@ sanitizer.enabled: true
 # limit.yml
 limit.enabled: true
 limit.rateLimit: 10/m 10000/d
+
+# direct-registry.yml
+direct-registry.directUrls:
+  com.networknt.petstore-1.0.0: http://localhost:8082
+
+# client.yml
+client.multipleAuthServers: true
+client.tokenCcServiceIdAuthServers:
+  com.networknt.petstore-1.0.0:
+    server_url: https://localhost:7773
+    enableHttp2: true
+    uri: /oauth2/token
+    client_id: f7d42348-c647-4efb-a52d-4c5787421e74
+    client_secret: f6h1FTI8Q3-7UScPZDzfXA
+    scope:
+      - petstore.r
+      - petstore.w
+  com.networknt.market-1.0.0:
+    server_url: https://localhost:7772
+    enableHttp2: true
+    uri: /oauth2/token
+    client_id: f7d42348-c647-4efb-a52d-4c5787421e73
+    client_secret: f6h1FTI8Q3-7UScPZDzfXA
+    scope:
+      - market.r
+      - market.w

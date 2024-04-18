@@ -5,6 +5,7 @@ repos:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
     -   id: check-yaml
+        args: ["--unsafe"]
     -   id: check-added-large-files
 -   repo: https://github.com/networknt/pre-commit-hook-keyword
     rev: f17c4de14fc24420f6768c19cad06ba03af06d86
