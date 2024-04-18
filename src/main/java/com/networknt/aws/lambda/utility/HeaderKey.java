@@ -14,5 +14,7 @@ public class HeaderKey {
     public static final String PARAMETER_SECRET_TOKEN = "X-Aws-Parameters-Secrets-Token";
     public static final String AMZ_TARGET = "X-Amz-Target";
 
+    public static final String SERVICE_ID = "service_id";
+    public static final String SERVICE_URL = "service_url";
 
 }

@@ -1,11 +1,9 @@
 package com.networknt.aws.lambda.cache;
 
-import com.amazonaws.http.SdkHttpMetadata;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.model.*;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.networknt.aws.lambda.utility.LambdaEnvVariables;
 import com.networknt.cache.CacheManager;
 import org.slf4j.Logger;
@@ -13,6 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+/**
+ * This is the cache manager that can survive the cold start of the lambda function.
+ */
 public class DynamoDbCacheManager implements CacheManager {
     private static final Logger LOG = LoggerFactory.getLogger(DynamoDbCacheManager.class);
     private static final String JWK = "jwk";

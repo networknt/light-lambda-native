@@ -14,9 +14,9 @@ lambda-proxy.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
 
 # ------------< Service Config >-------------
 service.singletons:
-#  - com.networknt.cache.CacheManager:
-#      - com.networknt.aws.lambda.cache.DynamoDbCacheManager
-# -------------------------------------------
+  - com.networknt.cache.CacheManager:
+    # - com.networknt.aws.lambda.cache.DynamoDbCacheManager
+    - com.networknt.cache.CaffeineCacheManager
 
 # ---------< Cache Manager Config >----------
 cache.caches:
@@ -25,6 +25,9 @@ cache.caches:
     maxSize: 1000
   - cacheName: jwk
     expiryInMinutes: 600
+    maxSize: 10
+  - cacheName: token
+    expiryInMinutes: 11
     maxSize: 10
 # -------------------------------------------
 
