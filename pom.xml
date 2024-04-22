@@ -88,7 +88,7 @@
         <version.dynamodb>1.12.667</version.dynamodb>
         <version.lambda-iam>1.12.667</version.lambda-iam>
         <version.jose4j>0.9.6</version.jose4j>
-        <version.logback>1.4.14</version.logback>
+        <version.logback>1.5.6</version.logback>
         <version.maven-shade>3.2.4</version.maven-shade>
         <version.maven-jar>3.2.0</version.maven-jar>
         <version.maven-compiler>3.8.1</version.maven-compiler>
