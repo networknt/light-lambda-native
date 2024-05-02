@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.AUDIT_ATTACHMENT_KEY;
 
@@ -76,7 +77,6 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                     Map<String, Object> objMap = new HashMap<>();
                     objMap.put("auditInfo", auditInfo);
                     objMap.put("requestHeaders", exchange.getRequest().getHeaders());
-                    objMap.put("responseHeaders", exchange.getResponse().getHeaders());
                     objMap.put("queryParameters", exchange.getRequest().getQueryStringParameters());
                     objMap.put("pathParameters", exchange.getRequest().getPathParameters());
                     objMap.put("method", method);
@@ -165,7 +165,7 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                                     var headers = new HashMap<String, String>();
                                     headers.put(HeaderKey.CONTENT_TYPE, HeaderValue.APPLICATION_JSON);
                                     responseEvent.setHeaders(headers);
-                                    responseEvent.setStatusCode(200);
+                                    responseEvent.setStatusCode(Objects.requireNonNullElse((Integer)result.get("statusCode"), 200));
                                     responseEvent.setBody(responseBody);
                                     exchange.setInitialResponse(responseEvent);
                                     break;

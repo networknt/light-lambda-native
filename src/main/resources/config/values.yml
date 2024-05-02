@@ -43,6 +43,7 @@ pooled-chain-executor.maxChainLength: 20
 # -------------------------------------------
 
 # --------< Lambda Security Config >---------
+security.enableVerifyJwt: false
 security.ignoreJwtExpiry: true
 security.logJwtToken: true
 security.enableJwtCache: true
@@ -59,10 +60,20 @@ handler.handlers:
   - com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware@header
   - com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware@specification
   - com.networknt.aws.lambda.handler.middleware.invoke.LambdaFunctionInvoker@invoke
+  - com.networknt.aws.lambda.handler.middleware.limit.LimitMiddleware@limit
   - com.networknt.aws.lambda.handler.middleware.metrics.APMMetricsMiddleware@metrics
   #- com.networknt.aws.lambda.handler.middleware.security.JwtVerifyMiddleware@security
   - com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware@audit
   - com.networknt.aws.lambda.handler.middleware.validator.ValidatorMiddleware@validator
+  - com.networknt.aws.lambda.handler.middleware.transformer.RequestTransformerMiddleware@requestTransformer
+  - com.networknt.aws.lambda.handler.middleware.transformer.ResponseTransformerMiddleware@responseTransformer
+  - com.networknt.aws.lambda.handler.middleware.sanitizer.SanitizerMiddleware@sanitizer
+  - com.networknt.aws.lambda.handler.middleware.security.UnifiedSecurityMiddleware@security
+  - com.networknt.aws.lambda.handler.middleware.security.JwtVerifyMiddleware@jwt
+  - com.networknt.aws.lambda.handler.middleware.security.SwtVerifyMiddleware@swt
+  - com.networknt.aws.lambda.handler.middleware.security.BasicAuthMiddleware@basic
+  - com.networknt.aws.lambda.handler.middleware.security.ApiKeyMiddleware@apikey
+  - com.networknt.aws.lambda.handler.middleware.token.TokenMiddleware@token
   # Framework endpoint handlers
   - com.networknt.aws.lambda.handler.health.HealthCheckHandler@health
   - com.networknt.aws.lambda.handler.info.ServerInfoHandler@info

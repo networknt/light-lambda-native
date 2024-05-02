@@ -43,8 +43,10 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
     static final String STATUS_OPENAPI_OPERATION_MISSED = "ERR10085";
     public JwtVerifyMiddleware() {
         if(LOG.isInfoEnabled()) LOG.info("JwtVerifyMiddleware is constructed");
-        jwtVerifier = new JwtVerifier(config);
-        jwtVerifier.initJwkMap();
+        if(config.isEnableVerifyJwt()) {
+            jwtVerifier = new JwtVerifier(config);
+            jwtVerifier.initJwkMap();
+        }
     }
 
     @Override

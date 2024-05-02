@@ -47,17 +47,24 @@ additionalHandlers: ${handler.additionalHandlers:}
 chains:
   request:
     - metrics
+    - limit
     - traceability
     - correlation
+    - header
+    - requestTransformer
     - specification
-    #- security
+    - security
     - audit
+    - sanitizer
     - validator
+    - token
+  response:
+    - responseTransformer
+
   admin:
-    #- exception
     - correlation
     - specification
-    # - security
+    - security
     - validator
 
 additionalChains: ${handler.additionalChains:}
@@ -119,3 +126,4 @@ additionalPaths: ${handler.additionalPaths:}
 defaultHandlers:
   - request
   - invoke
+  - response
