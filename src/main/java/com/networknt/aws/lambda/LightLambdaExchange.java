@@ -26,9 +26,7 @@ import java.util.*;
 public final class LightLambdaExchange {
     private static final Logger LOG = LoggerFactory.getLogger(LightLambdaExchange.class);
     private APIGatewayProxyRequestEvent request;
-    private InputStream streamRequest;
     private APIGatewayProxyResponseEvent response;
-    private OutputStream streamResponse;
     private final Context context;
     private final Map<Attachable<?>, Object> attachments = Collections.synchronizedMap(new HashMap<>());
     private final PooledChainLinkExecutor executor;
@@ -160,6 +158,10 @@ public final class LightLambdaExchange {
 
 
         return request;
+    }
+
+    public APIGatewayProxyRequestEvent getReadOnlyRequest() {
+        return request.clone();
     }
 
     public int getStatusCode() {

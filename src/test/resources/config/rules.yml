@@ -1,28 +1,9 @@
-petstore-request-path:
-  ruleId: petstore-request-path
+petstore-request-transformer:
+  ruleId: petstore-request-transformer
   host: lightapi.net
   ruleType: request-transform
   visibility: public
-  description: Transform the request path based on the context header as the prefix.
-  conditions:
-    - conditionId: path-pets
-      propertyPath: requestPath
-      operatorCode: EQ
-      joinCode: AND
-      index: 1
-      conditionValues:
-        - conditionValueId: path
-          conditionValue: /pets
-  actions:
-    - actionId: path-transform
-      actionClassName: com.networknt.path.HeaderPathTransformAction
-
-petstore-response-transformer:
-  ruleId: petstore-response-transformer
-  host: lightapi.net
-  ruleType: response-transform
-  visibility: public
-  description: Transform the response body from a complicated structure to a simple one in the light-gateway or http-sidecar.
+  description: Transform the request body to add a new field.
   conditions:
     - conditionId: path-pets
       propertyPath: requestPath
@@ -34,4 +15,42 @@ petstore-response-transformer:
           conditionValue: /v1/pets
   actions:
     - actionId: body-transform
-      actionClassName: com.networknt.rule.FineGrainedAuthAction
+      actionClassName: com.networknt.aws.lambda.middleware.transformer.DummyRequestBodyUpdateAction
+
+petstore-request-validation:
+  ruleId: petstore-request-validation
+  host: lightapi.net
+  ruleType: request-transform
+  visibility: public
+  description: Transformer the validate the request and return an error message immediately.
+  conditions:
+    - conditionId: path-pets
+      propertyPath: requestPath
+      operatorCode: EQ
+      joinCode: AND
+      index: 1
+      conditionValues:
+        - conditionValueId: path
+          conditionValue: /v2/pets
+  actions:
+    - actionId: request-validation
+      actionClassName: com.networknt.aws.lambda.middleware.transformer.DummyRequestValidationAction
+
+petstore-response-transformer:
+  ruleId: petstore-response-transformer
+  host: lightapi.net
+  ruleType: response-transform
+  visibility: public
+  description: Transform the response body to add a new field.
+  conditions:
+    - conditionId: path-pets
+      propertyPath: requestPath
+      operatorCode: EQ
+      joinCode: AND
+      index: 1
+      conditionValues:
+        - conditionValueId: path
+          conditionValue: /v1/pets
+  actions:
+    - actionId: body-transform
+      actionClassName: com.networknt.aws.lambda.middleware.transformer.DummyResponseBodyUpdateAction

@@ -10,6 +10,8 @@ public class LambdaInvokerConfig {
     private String logType;
     private String lambdaAppId;
     private Map<String, String> functions;
+    private boolean metricsInjection;
+    private String metricsName;
 
     public boolean isEnabled() {
         return enabled;
@@ -57,5 +59,21 @@ public class LambdaInvokerConfig {
 
     public void setFunctions(Map<String, String> functions) {
         this.functions = functions;
+    }
+
+    public boolean isMetricsInjection() {
+        return metricsInjection;
+    }
+
+    public void setMetricsInjection(boolean metricsInjection) {
+        this.metricsInjection = metricsInjection;
+    }
+
+    public String getMetricsName() {
+        return metricsName;
+    }
+
+    public void setMetricsName(String metricsName) {
+        this.metricsName = metricsName;
     }
 }
