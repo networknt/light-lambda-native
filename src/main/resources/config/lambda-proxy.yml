@@ -1,9 +1,2 @@
-#region: ${lambda-proxy.region:}
-#endpointOverride: ${lambda-proxy.endpointOverride:}
-#logType: ${lambda-proxy.logType:}
-metricsInjection: ${lambda-proxy.metricsInjection:true}
-metricsName: ${lambda-proxy.metricsName:}
+# This is the serviceId for the backend service that is consisted of one or more lambda functions.
 lambdaAppId: ${lambda-proxy.lambdaAppId:}
-#requestChain: ${lambda-proxy.requestChain:}
-#responseChain: ${lambda-proxy.responseChain:}
-#enableDynamoDbCache: ${lambda-proxy.enableDynamoDbCache:false}
