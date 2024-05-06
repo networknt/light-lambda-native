@@ -16,8 +16,6 @@ import java.util.*;
  */
 public class DynamoDbCacheManager implements CacheManager {
     private static final Logger LOG = LoggerFactory.getLogger(DynamoDbCacheManager.class);
-    private static final String JWK = "jwk";
-    private static final String JWT = "jwt";
     private static final String HASH_ID_KEY = "Id";
     private static final int TABLE_LIST_LIMIT = 100;
 

@@ -89,6 +89,7 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
                     .build();
             long startTime = System.nanoTime();
             var res = client.invoke(request);
+            if(LOG.isTraceEnabled()) LOG.trace("LambdaFunctionInvoker.invokeFunction metricsInjection {} metricsMiddleware {}.", CONFIG.isMetricsInjection(), metricsMiddleware);
             if(CONFIG.isMetricsInjection() && metricsMiddleware != null) {
                 if(LOG.isTraceEnabled())  LOG.trace("Inject metrics for {}", CONFIG.getMetricsName());
                 metricsMiddleware.injectMetrics(exchange, startTime, CONFIG.getMetricsName(), null);
