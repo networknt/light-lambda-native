@@ -52,14 +52,13 @@ header.enabled: true
 # handler.yml
 handler.handlers:
   # Light-framework cross-cutting concerns implemented in the microservice
+  - com.networknt.aws.lambda.handler.middleware.metrics.APMMetricsMiddleware@metrics
   - com.networknt.aws.lambda.handler.middleware.correlation.CorrelationMiddleware@correlation
   - com.networknt.aws.lambda.handler.middleware.traceability.TraceabilityMiddleware@traceability
   - com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware@header
   - com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware@specification
   - com.networknt.aws.lambda.middleware.invoke.MockLambdaFunctionInvoker@invoke
   - com.networknt.aws.lambda.handler.middleware.limit.LimitMiddleware@limit
-  - com.networknt.aws.lambda.handler.middleware.metrics.APMMetricsMiddleware@metrics
-  #- com.networknt.aws.lambda.handler.middleware.security.JwtVerifyMiddleware@security
   - com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware@audit
   - com.networknt.aws.lambda.handler.middleware.validator.ValidatorMiddleware@validator
   - com.networknt.aws.lambda.handler.middleware.transformer.RequestTransformerMiddleware@requestTransformer
