@@ -6,9 +6,6 @@ lambda-invoker.functions:
 
 # ----------< Lambda Proxy Config >----------
 
-lambda-proxy.metricsInjection: false
-
-
 lambda-proxy.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
 # -------------------------------------------
 

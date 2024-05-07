@@ -6,10 +6,6 @@ lambda-invoker.functions:
   /v1/pets@post: arn:aws:lambda:ca-central-1:000000000000:function:local-lambda
 
 # ----------< Lambda Proxy Config >----------
-
-lambda-proxy.metricsInjection: false
-
-
 lambda-proxy.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
 # -------------------------------------------
 
