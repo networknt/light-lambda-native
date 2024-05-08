@@ -260,11 +260,11 @@ public class RequestValidator {
         if (null != type && StringUtils.isNotBlank(name)) {
             switch(type){
                 case QUERY:
-                    return exchange.getRequest().getQueryStringParameters().get(name);
+                    return exchange.getRequest().getQueryStringParameters() != null ? exchange.getRequest().getQueryStringParameters().get(name) : null;
                 case PATH:
-                    return exchange.getRequest().getPathParameters().get(name);
+                    return exchange.getRequest().getPathParameters() != null ? exchange.getRequest().getPathParameters().get(name) : null;
                 case HEADER:
-                    return exchange.getRequest().getHeaders().get(name);
+                    return exchange.getRequest().getHeaders() != null ? exchange.getRequest().getHeaders().get(name) : null;
             }
         }
         return null;

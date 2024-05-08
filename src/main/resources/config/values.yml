@@ -1,21 +1,21 @@
-# ----------< Lambda Invoker Config >--------
-
+# lambda-invoker.yml
 lambda-invoker.region: ca-central-1
 lambda-invoker.functions:
-  /v1/pets@post: arn:aws:lambda:ca-central-1:442513687360:function:eadp-test-destination
+  /v1/pets@get: PetsGetFunction
+  /v1/pets@post: PetsPostFunction
+  /v1/pets/{petId}@get: PetsPetIdGetFunction
+  /v1/pets/{petId}@delete: PetsPetIdDeleteFunction
 
-# ----------< Lambda Proxy Config >----------
-
+# lambda-proxy.yml
 lambda-proxy.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
-# -------------------------------------------
 
-# ------------< Service Config >-------------
+# service.yml
 service.singletons:
   - com.networknt.cache.CacheManager:
     # - com.networknt.aws.lambda.cache.DynamoDbCacheManager
     - com.networknt.cache.CaffeineCacheManager
 
-# ---------< Cache Manager Config >----------
+# cache.yml
 cache.caches:
   - cacheName: jwt
     expiryInMinutes: 11
@@ -26,25 +26,21 @@ cache.caches:
   - cacheName: token
     expiryInMinutes: 11
     maxSize: 10
-# -------------------------------------------
 
-# --------< Lambda Validator Config >--------
+# openapi-validator.yml
 openapi-validator.validateRequest: true
-# -------------------------------------------
 
-# --< Lambda Pooled Chain Executor Config >--
-pooled-chain-executor.maxPoolSize: 10
-pooled-chain-executor.corePoolSize: 10
-pooled-chain-executor.keepAliveTime: 0
-pooled-chain-executor.maxChainLength: 20
-# -------------------------------------------
-
-# --------< Lambda Security Config >---------
+# security.yml
 security.enableVerifyJwt: false
 security.ignoreJwtExpiry: true
 security.logJwtToken: true
 security.enableJwtCache: true
-# -------------------------------------------
+
+# unified-security.yml
+unified-security.enabled: false
+unified-security.pathPrefixAuths:
+  - prefix: /
+    jwt: true
 
 # header.yml
 header.enabled: true
@@ -76,12 +72,10 @@ handler.handlers:
   - com.networknt.aws.lambda.handler.logger.LoggerGetHandler@getLogger
   - com.networknt.aws.lambda.handler.logger.LoggerSetHandler@setLogger
 
-# -------------------------------------------
 # client.yml
 client.tokenKeyServerUrl: https://networknt.oktapreview.com
 client.tokenKeyUri: /oauth2/aus66u5cybTrCsbZs1d6/v1/keys
 client.tokenKeyEnableHttp2: false
-# client.tokenKeyAudience: dev.canada.referenceapi.networknt.oktapreview.com
 
 # sanitizer.yml
 sanitizer.enabled: true

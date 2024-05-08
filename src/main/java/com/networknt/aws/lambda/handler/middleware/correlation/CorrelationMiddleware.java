@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.UUID;
 
 
@@ -31,17 +32,19 @@ public class CorrelationMiddleware implements MiddlewareHandler {
         LOG.debug("CorrelationHandler.handleRequest starts.");
 
         // check if the cid is in the request header
-        var cid = exchange.getRequest().getHeaders().get(HeaderKey.CORRELATION);
-
+        String cid = null;
+        if(exchange.getRequest().getHeaders() != null) {
+            cid = exchange.getRequest().getHeaders().get(HeaderKey.CORRELATION);
+        } else {
+            exchange.getRequest().setHeaders(new HashMap<>());
+        }
         if (cid == null && CONFIG.isAutogenCorrelationID()) {
             cid = this.getUUID();
             exchange.getRequest().getHeaders().put(HeaderKey.CORRELATION, cid);
             exchange.addAttachment(CORRELATION_ATTACHMENT_KEY, cid);
-            var tid = exchange.getRequest().getHeaders().get(HeaderKey.TRACEABILITY);
-
+            String tid = exchange.getRequest().getHeaders().get(HeaderKey.TRACEABILITY);
             if (tid != null && LOG.isInfoEnabled())
-                LOG.info("Associate traceability Id " + tid + " with correlation Id " + cid);
-
+                LOG.info("Associate traceability Id {} with correlation Id {}", tid, cid);
         }
 
         if (cid != null)

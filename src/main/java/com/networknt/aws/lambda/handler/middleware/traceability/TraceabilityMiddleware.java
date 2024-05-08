@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.util.HashMap;
+
 public class TraceabilityMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(TraceabilityMiddleware.class);
     public static final LightLambdaExchange.Attachable<TraceabilityMiddleware> TRACEABILITY_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(TraceabilityMiddleware.class);
@@ -30,7 +32,10 @@ public class TraceabilityMiddleware implements MiddlewareHandler {
         if (LOG.isDebugEnabled())
             LOG.debug("TraceabilityMiddleware.executeMiddleware starts.");
 
-        var tid = exchange.getRequest().getHeaders().get(HeaderKey.TRACEABILITY);
+        String tid = null;
+        if(exchange.getRequest().getHeaders() != null) {
+            tid = exchange.getRequest().getHeaders().get(HeaderKey.TRACEABILITY);
+        }
 
         if (tid != null) {
             MDC.put(LoggerKey.TRACEABILITY, tid);
