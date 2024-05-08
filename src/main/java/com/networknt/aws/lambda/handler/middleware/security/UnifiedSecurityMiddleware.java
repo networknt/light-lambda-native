@@ -54,7 +54,8 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
             boolean found = false;
             // iterate each entry to check enabled security methods.
             for(UnifiedPathPrefixAuth pathPrefixAuth: CONFIG.getPathPrefixAuths()) {
-                if(LOG.isTraceEnabled()) LOG.trace("Check with requestPath = " + reqPath + " prefix = " + pathPrefixAuth.getPrefix());
+                if(LOG.isTraceEnabled())
+                    LOG.trace("Check with requestPath = {} prefix = {}", reqPath, pathPrefixAuth.getPrefix());
                 if(reqPath.startsWith(pathPrefixAuth.getPrefix())) {
                     found = true;
                     if(LOG.isTraceEnabled()) LOG.trace("Found with requestPath = " + reqPath + " prefix = " + pathPrefixAuth.getPrefix());
@@ -188,12 +189,12 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
             }
             if(!found) {
                 // cannot find the prefix auth entry for request path.
-                LOG.error("Cannot find prefix entry in pathPrefixAuths for " + reqPath);
+                LOG.error("Cannot find prefix entry in pathPrefixAuths for {}", reqPath);
                 return new Status(MISSING_PATH_PREFIX_AUTH, reqPath);
             }
         } else {
             // pathPrefixAuths is not defined in the values.yml
-            LOG.error("Cannot find pathPrefixAuths definition for " + reqPath);
+            LOG.error("Cannot find pathPrefixAuths definition for {}", reqPath);
             return new Status(MISSING_PATH_PREFIX_AUTH, reqPath);
         }
 
