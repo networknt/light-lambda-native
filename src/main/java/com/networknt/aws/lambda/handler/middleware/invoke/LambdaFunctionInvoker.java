@@ -40,14 +40,7 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
 
         if (!StringUtils.isEmpty(CONFIG.getEndpointOverride()))
             builder.endpointOverride(URI.create(CONFIG.getEndpointOverride()));
-        if(CONFIG.isMetricsInjection()) {
-            // get the metrics middleware instance from the chain.
-            Map<String, LambdaHandler> handlers = Handler.getHandlers();
-            metricsMiddleware = (AbstractMetricsMiddleware) handlers.get(MetricsConfig.CONFIG_NAME);
-            if(metricsMiddleware == null) {
-                LOG.error("An instance of MetricsMiddleware is not configured in the handler.yml file.");
-            }
-        }
+        if(CONFIG.isMetricsInjection()) lookupMetricsMiddleware();
         client = builder.build();
         if (LOG.isInfoEnabled()) LOG.info("LambdaFunctionInvoker is constructed");
     }
@@ -89,10 +82,12 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
                     .build();
             long startTime = System.nanoTime();
             var res = client.invoke(request);
-            if(LOG.isTraceEnabled()) LOG.trace("LambdaFunctionInvoker.invokeFunction metricsInjection {} metricsMiddleware {}.", CONFIG.isMetricsInjection(), metricsMiddleware);
-            if(CONFIG.isMetricsInjection() && metricsMiddleware != null) {
-                if(LOG.isTraceEnabled())  LOG.trace("Inject metrics for {}", CONFIG.getMetricsName());
-                metricsMiddleware.injectMetrics(exchange, startTime, CONFIG.getMetricsName(), null);
+            if(CONFIG.isMetricsInjection()) {
+                if(metricsMiddleware == null) lookupMetricsMiddleware();
+                if(metricsMiddleware != null) {
+                    if (LOG.isTraceEnabled()) LOG.trace("Inject metrics for {}", CONFIG.getMetricsName());
+                    metricsMiddleware.injectMetrics(exchange, startTime, CONFIG.getMetricsName(), null);
+                }
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("lambda call function error:{}", res.functionError());
@@ -147,5 +142,12 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
 
     }
 
-
+    private void lookupMetricsMiddleware() {
+        // get the metrics middleware instance from the chain.
+        Map<String, LambdaHandler> handlers = Handler.getHandlers();
+        metricsMiddleware = (AbstractMetricsMiddleware) handlers.get(MetricsConfig.CONFIG_NAME);
+        if(metricsMiddleware == null) {
+            LOG.error("An instance of MetricsMiddleware is not configured in the handler.yml file.");
+        }
+    }
 }
