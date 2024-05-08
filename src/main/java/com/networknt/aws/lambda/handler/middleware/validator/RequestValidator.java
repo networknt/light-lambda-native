@@ -172,7 +172,7 @@ public class RequestValidator {
                                           final OpenApiOperation openApiOperation,
                                           final Parameter queryParameter) {
 
-        String queryParameterValue = exchange.getRequest().getQueryStringParameters().get(queryParameter.getName());
+        String queryParameterValue = exchange.getRequest().getQueryStringParameters() != null ? exchange.getRequest().getQueryStringParameters().get(queryParameter.getName()) : null;
         if ((queryParameterValue == null || queryParameterValue.isEmpty())) {
             if(queryParameter.getRequired() != null && queryParameter.getRequired()) {
                 return new Status(VALIDATOR_REQUEST_PARAMETER_QUERY_MISSING, queryParameter.getName(), openApiOperation.getPathString().original());
@@ -271,9 +271,9 @@ public class RequestValidator {
     }
 
 
-    class ValidationResult {
-        private Set<Parameter> skippedParameters = new HashSet<>();;
-        private List<Status> statuses = new ArrayList<>();
+    static class ValidationResult {
+        private final Set<Parameter> skippedParameters = new HashSet<>();;
+        private final List<Status> statuses = new ArrayList<>();
 
         public void addSkipped(Parameter p) {
             skippedParameters.add(p);
@@ -293,7 +293,7 @@ public class RequestValidator {
             return statuses.isEmpty()?null:statuses.get(0);
         }
 
-        public List<Status> getAllStatueses(){
+        public List<Status> getAllStatuses(){
             return Collections.unmodifiableList(statuses);
         }
     }
