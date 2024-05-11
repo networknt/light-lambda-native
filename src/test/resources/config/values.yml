@@ -2,8 +2,10 @@
 
 lambda-invoker.region: ca-central-1
 lambda-invoker.functions:
-  # /v1/pets@post: arn:aws:lambda:ca-central-1:442513687360:function:eadp-test-destination
-  /v1/pets@post: arn:aws:lambda:ca-central-1:000000000000:function:local-lambda
+  /v1/pets@get: PetsGetFunction
+  /v1/pets@post: PetsPostFunction
+  /v1/pets/{petId}@get: PetsPetIdGetFunction
+  /v1/pets/{petId}@delete: PetsPetIdDeleteFunction
 
 # ----------< Lambda Proxy Config >----------
 lambda-proxy.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
