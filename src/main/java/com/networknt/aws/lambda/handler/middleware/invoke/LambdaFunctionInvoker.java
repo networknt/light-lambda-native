@@ -12,6 +12,7 @@ import com.networknt.config.JsonMapper;
 import com.networknt.metrics.MetricsConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.ModuleRegistry;
+import com.networknt.utility.PathTemplateMatcher;
 import com.networknt.utility.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,7 @@ import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.LambdaException;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
 
 public class LambdaFunctionInvoker implements MiddlewareHandler {
@@ -35,6 +37,8 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
 
     public static final LambdaInvokerConfig CONFIG = (LambdaInvokerConfig) Config.getInstance().getJsonObjectConfig(LambdaInvokerConfig.CONFIG_NAME, LambdaInvokerConfig.class);
 
+    static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
+
     public LambdaFunctionInvoker() {
         var builder = LambdaClient.builder().region(Region.of(CONFIG.getRegion()));
 
@@ -42,6 +46,7 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
             builder.endpointOverride(URI.create(CONFIG.getEndpointOverride()));
         if(CONFIG.isMetricsInjection()) lookupMetricsMiddleware();
         client = builder.build();
+        populateMethodToMatcherMap(CONFIG.getFunctions());
         if (LOG.isInfoEnabled()) LOG.info("LambdaFunctionInvoker is constructed");
     }
 
@@ -53,7 +58,12 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
             var path = exchange.getRequest().getPath();
             var method = exchange.getRequest().getHttpMethod().toLowerCase();
             LOG.debug("Request path: {} -- Request method: {} -- Start time: {}", path, method, System.currentTimeMillis());
-            var functionName = CONFIG.getFunctions().get(path + "@" + method);
+            PathTemplateMatcher.PathMatchResult<String> result = methodToMatcherMap.get(method).match(path);
+            if (result == null) {
+                LOG.error("No lambda function found for path: {} and method: {}", path, method);
+                return new Status(FAILED_TO_INVOKE_LAMBDA, path + "@" + method);
+            }
+            var functionName = result.getValue();
             var res = this.invokeFunction(client, functionName, exchange);
             if (res == null) {
                 LOG.error("Failed to invoke lambda function: {}", functionName);
@@ -67,6 +77,17 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
         } else {
             LOG.error("Exchange has failed state {}", exchange.getState());
             return new Status(EXCHANGE_HAS_FAILED_STATE, exchange.getState());
+        }
+    }
+
+    private void populateMethodToMatcherMap(Map<String, String> functions) {
+        for (var entry : functions.entrySet()) {
+            var endpoint = entry.getKey();
+            var path = endpoint.split("@")[0];
+            var method = endpoint.split("@")[1];
+            PathTemplateMatcher<String> matcher = methodToMatcherMap.computeIfAbsent(method, k -> new PathTemplateMatcher<>());
+            if(matcher.get(path) == null) matcher.add(path, entry.getValue());
+            methodToMatcherMap.put(method, matcher);
         }
     }
 

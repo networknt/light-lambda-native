@@ -9,9 +9,13 @@ import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.status.Status;
 import com.networknt.utility.ModuleRegistry;
+import com.networknt.utility.PathTemplateMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This is a mock class for LambdaFunctionInvoker, and it is not calling the real Lambda function.
@@ -23,8 +27,10 @@ public class MockLambdaFunctionInvoker implements MiddlewareHandler {
     public static final String EXCHANGE_HAS_FAILED_STATE = "ERR10087";
 
     public static final LambdaInvokerConfig CONFIG = (LambdaInvokerConfig) Config.getInstance().getJsonObjectConfig(LambdaInvokerConfig.CONFIG_NAME, LambdaInvokerConfig.class);
+    public static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
 
     public MockLambdaFunctionInvoker() {
+        populateMethodToMatcherMap(CONFIG.getFunctions());
         if (LOG.isInfoEnabled()) LOG.info("MockLambdaFunctionInvoker is constructed");
     }
 
@@ -48,6 +54,17 @@ public class MockLambdaFunctionInvoker implements MiddlewareHandler {
         } else {
             LOG.error("Exchange has failed state {}", exchange.getState());
             return new Status(EXCHANGE_HAS_FAILED_STATE, exchange.getState());
+        }
+    }
+
+    private void populateMethodToMatcherMap(Map<String, String> functions) {
+        for (var entry : functions.entrySet()) {
+            var endpoint = entry.getKey();
+            var path = endpoint.split("@")[0];
+            var method = endpoint.split("@")[1];
+            PathTemplateMatcher<String> matcher = methodToMatcherMap.computeIfAbsent(method, k -> new PathTemplateMatcher<>());
+            if(matcher.get(path) == null) matcher.add(path, entry.getValue());
+            methodToMatcherMap.put(method, matcher);
         }
     }
 
