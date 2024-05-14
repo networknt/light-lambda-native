@@ -4,16 +4,16 @@ lambda-app.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
 # lambda-proxy.yml
 lambda-proxy.region: ca-central-1
 lambda-proxy.functions:
-  /{store}/products@get: StoreProductsGetFunction
-  /{store}/products@post: StoreProductsPostFunction
-
-# lambda-router.yml
-lambda-router.region: ca-central-1
-lambda-router.functions:
   /v1/pets@get: PetstoreNativeLambdaProxyFunction
   /v1/pets@post: PetstoreNativeLambdaProxyFunction
   /v1/pets/{petId}@get: PetstoreNativeLambdaProxyFunction
   /v1/pets/{petId}@delete: PetstoreNativeLambdaProxyFunction
+
+# lambda-router.yml
+lambda-router.region: ca-central-1
+lambda-router.functions:
+  /{store}/products@get: StoreProductsGetFunction
+  /{store}/products@post: StoreProductsPostFunction
 
 
 # service.yml

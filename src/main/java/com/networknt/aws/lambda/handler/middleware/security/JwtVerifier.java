@@ -1,6 +1,6 @@
 package com.networknt.aws.lambda.handler.middleware.security;
 
-import com.networknt.aws.lambda.proxy.LambdaApp;
+import com.networknt.aws.lambda.app.LambdaApp;
 import com.networknt.cache.CacheManager;
 import com.networknt.client.ClientConfig;
 import com.networknt.client.oauth.OauthHelper;

@@ -352,7 +352,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.networknt.aws.lambda.proxy.LambdaApp</mainClass>
+                            <mainClass>com.networknt.aws.lambda.app.LambdaApp</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

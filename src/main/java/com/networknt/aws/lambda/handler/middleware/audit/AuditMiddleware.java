@@ -3,7 +3,7 @@ package com.networknt.aws.lambda.handler.middleware.audit;
 import com.networknt.audit.AuditConfig;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.aws.lambda.proxy.LambdaAppConfig;
+import com.networknt.aws.lambda.app.LambdaAppConfig;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;

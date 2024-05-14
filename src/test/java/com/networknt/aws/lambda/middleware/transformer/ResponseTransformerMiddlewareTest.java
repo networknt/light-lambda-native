@@ -7,7 +7,7 @@ import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.middleware.transformer.ResponseTransformerMiddleware;
-import com.networknt.aws.lambda.proxy.LambdaApp;
+import com.networknt.aws.lambda.app.LambdaApp;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

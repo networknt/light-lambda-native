@@ -8,7 +8,7 @@ import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.Handler;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.aws.lambda.proxy.LambdaApp;
+import com.networknt.aws.lambda.app.LambdaApp;
 import org.junit.jupiter.api.Test;
 
 public class ServerInfoHandlerTest {
