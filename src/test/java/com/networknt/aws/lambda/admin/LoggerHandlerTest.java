@@ -8,7 +8,7 @@ import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.Handler;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.aws.lambda.proxy.LambdaProxy;
+import com.networknt.aws.lambda.proxy.LambdaApp;
 import org.junit.jupiter.api.Test;
 
 public class LoggerHandlerTest {
@@ -17,12 +17,12 @@ public class LoggerHandlerTest {
         APIGatewayProxyRequestEvent requestEvent = TestUtils.createTestRequestEvent();
         requestEvent.setPath("/adm/logger");
         requestEvent.setHttpMethod("GET");
-        LambdaProxy lambdaProxy = new LambdaProxy();
+        LambdaApp lambdaApp = new LambdaApp();
         Chain chain = Handler.getChain("/adm/logger@get");
         Context lambdaContext = new LambdaContext("1");
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, chain);
         exchange.setInitialRequest(requestEvent);
-        APIGatewayProxyResponseEvent responseEvent = lambdaProxy.handleRequest(requestEvent, lambdaContext);
+        APIGatewayProxyResponseEvent responseEvent = lambdaApp.handleRequest(requestEvent, lambdaContext);
         System.out.println(responseEvent.toString());
 
     }
@@ -33,12 +33,12 @@ public class LoggerHandlerTest {
         requestEvent.setPath("/adm/logger");
         requestEvent.setHttpMethod("POST");
         requestEvent.setBody("[{\"name\":\"ROOT\",\"level\":\"INFO\"},{\"name\":\"com.networknt\",\"level\":\"INFO\"}]");
-        LambdaProxy lambdaProxy = new LambdaProxy();
+        LambdaApp lambdaApp = new LambdaApp();
         Chain chain = Handler.getChain("/adm/logger@post");
         Context lambdaContext = new LambdaContext("1");
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, chain);
         exchange.setInitialRequest(requestEvent);
-        APIGatewayProxyResponseEvent responseEvent = lambdaProxy.handleRequest(requestEvent, lambdaContext);
+        APIGatewayProxyResponseEvent responseEvent = lambdaApp.handleRequest(requestEvent, lambdaContext);
         System.out.println(responseEvent.toString());
     }
 }

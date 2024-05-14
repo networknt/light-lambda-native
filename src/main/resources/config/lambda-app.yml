@@ -1,0 +1,2 @@
+# This is the serviceId for the backend service that is consisted of one or more lambda functions.
+lambdaAppId: ${lambda-app.lambdaAppId:com.networknt.placeholder-1.0.0}

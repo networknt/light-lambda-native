@@ -1,13 +1,12 @@
 package com.networknt.aws.lambda.handler.middleware.metrics;
 
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.aws.lambda.proxy.LambdaProxyConfig;
+import com.networknt.aws.lambda.proxy.LambdaAppConfig;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.metrics.APMAgentReporter;
 import com.networknt.metrics.MetricsConfig;
 import com.networknt.metrics.TimeSeriesDbSender;
-import com.networknt.sanitizer.SanitizerConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.ModuleRegistry;
@@ -30,7 +29,7 @@ import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.
 
 public class APMMetricsMiddleware extends AbstractMetricsMiddleware {
     static final Logger logger = LoggerFactory.getLogger(APMMetricsMiddleware.class);
-    public static final LambdaProxyConfig lambdaProxyConfig = (LambdaProxyConfig) Config.getInstance().getJsonObjectConfig(LambdaProxyConfig.CONFIG_NAME, LambdaProxyConfig.class);
+    public static final LambdaAppConfig LAMBDA_APP_CONFIG = (LambdaAppConfig) Config.getInstance().getJsonObjectConfig(LambdaAppConfig.CONFIG_NAME, LambdaAppConfig.class);
     // this is the indicator to start the reporter and construct the common tags. It cannot be static as
     // the currentPort and currentAddress are not available during the handler initialization.
     private boolean firstTime = true;
@@ -48,7 +47,7 @@ public class APMMetricsMiddleware extends AbstractMetricsMiddleware {
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if (firstTime) {
-            commonTags.put("api", lambdaProxyConfig.getLambdaAppId());
+            commonTags.put("api", LAMBDA_APP_CONFIG.getLambdaAppId());
 //            commonTags.put("env", );
 //            commonTags.put("addr", Server.currentAddress);
 //            commonTags.put("port", "" + (ServerConfig.getInstance().isEnableHttps() ? Server.currentHttpsPort : Server.currentHttpPort));
@@ -60,7 +59,7 @@ public class APMMetricsMiddleware extends AbstractMetricsMiddleware {
 
             try {
                 TimeSeriesDbSender sender =
-                        new APMEPAgentSender(config.getServerProtocol(), config.getServerHost(), config.getServerPort(), config.getServerPath(), lambdaProxyConfig.getLambdaAppId(),  config.getProductName());
+                        new APMEPAgentSender(config.getServerProtocol(), config.getServerHost(), config.getServerPort(), config.getServerPath(), LAMBDA_APP_CONFIG.getLambdaAppId(),  config.getProductName());
                 APMAgentReporter reporter = APMAgentReporter
                         .forRegistry(registry)
                         .convertRatesTo(TimeUnit.SECONDS)

@@ -20,18 +20,18 @@ import org.slf4j.LoggerFactory;
  *
  * @author Steve Hu
  */
-public class LambdaProxy implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LambdaProxy.class);
-    public static final LambdaProxyConfig CONFIG = (LambdaProxyConfig) Config.getInstance().getJsonObjectConfig(LambdaProxyConfig.CONFIG_NAME, LambdaProxyConfig.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LambdaApp.class);
+    public static final LambdaAppConfig CONFIG = (LambdaAppConfig) Config.getInstance().getJsonObjectConfig(LambdaAppConfig.CONFIG_NAME, LambdaAppConfig.class);
 
-    public LambdaProxy() {
-        if (LOG.isInfoEnabled()) LOG.info("LambdaProxy is constructed");
+    public LambdaApp() {
+        if (LOG.isInfoEnabled()) LOG.info("LambdaApp is constructed");
         Handler.init();
         ModuleRegistry.registerModule(
-                LambdaProxyConfig.CONFIG_NAME,
-                LambdaProxy.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaProxyConfig.CONFIG_NAME),
+                LambdaAppConfig.CONFIG_NAME,
+                LambdaApp.class.getName(),
+                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaAppConfig.CONFIG_NAME),
                 null
         );
     }

@@ -1,7 +1,7 @@
 package com.networknt.aws.lambda.proxy;
 
-public class LambdaProxyConfig {
-    public static final String CONFIG_NAME = "lambda-proxy";
+public class LambdaAppConfig {
+    public static final String CONFIG_NAME = "lambda-app";
     private String lambdaAppId;
 
     public String getLambdaAppId() {

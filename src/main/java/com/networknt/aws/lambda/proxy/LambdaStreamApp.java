@@ -24,18 +24,18 @@ import java.nio.charset.StandardCharsets;
  *
  * @author Steve Hu
  */
-public class LambdaStreamProxy implements RequestStreamHandler {
-    private static final Logger LOG = LoggerFactory.getLogger(LambdaStreamProxy.class);
+public class LambdaStreamApp implements RequestStreamHandler {
+    private static final Logger LOG = LoggerFactory.getLogger(LambdaStreamApp.class);
     private static final String CONFIG_NAME = "lambda-proxy";
-    public static final LambdaProxyConfig CONFIG = (LambdaProxyConfig) Config.getInstance().getJsonObjectConfig(CONFIG_NAME, LambdaProxyConfig.class);
+    public static final LambdaAppConfig CONFIG = (LambdaAppConfig) Config.getInstance().getJsonObjectConfig(CONFIG_NAME, LambdaAppConfig.class);
 
-    public LambdaStreamProxy() {
+    public LambdaStreamApp() {
         if (LOG.isInfoEnabled()) LOG.info("LambdaStreamProxy is constructed");
         Handler.init();
         ModuleRegistry.registerModule(
-                LambdaProxyConfig.CONFIG_NAME,
-                LambdaStreamProxy.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaProxyConfig.CONFIG_NAME),
+                LambdaAppConfig.CONFIG_NAME,
+                LambdaStreamApp.class.getName(),
+                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaAppConfig.CONFIG_NAME),
                 null
         );
     }

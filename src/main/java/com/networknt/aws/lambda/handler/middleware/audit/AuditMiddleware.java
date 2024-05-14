@@ -1,11 +1,9 @@
 package com.networknt.aws.lambda.handler.middleware.audit;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.networknt.audit.AuditConfig;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.aws.lambda.listener.LambdaResponseCompleteListener;
-import com.networknt.aws.lambda.proxy.LambdaProxyConfig;
+import com.networknt.aws.lambda.proxy.LambdaAppConfig;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
@@ -51,7 +49,7 @@ public class AuditMiddleware implements MiddlewareHandler {
         if (LOG.isInfoEnabled()) LOG.info("AuditMiddleware is constructed.");
         CONFIG = AuditConfig.load();
         // get the serviceId from the proxy config
-        LambdaProxyConfig proxyConfig = (LambdaProxyConfig) Config.getInstance().getJsonObjectConfig(LambdaProxyConfig.CONFIG_NAME, LambdaProxyConfig.class);
+        LambdaAppConfig proxyConfig = (LambdaAppConfig) Config.getInstance().getJsonObjectConfig(LambdaAppConfig.CONFIG_NAME, LambdaAppConfig.class);
         serviceId = proxyConfig.getLambdaAppId();
         String timestampFormat = CONFIG.getTimestampFormat();
         if (!StringUtils.isBlank(timestampFormat)) {

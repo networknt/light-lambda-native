@@ -41,7 +41,7 @@ software.amazon.awssdk.core.exception.SdkClientException: Unable to load credent
 	at software.amazon.awssdk.core.client.handler.SdkSyncClientHandler.execute(SdkSyncClientHandler.java:45)
 	at software.amazon.awssdk.awscore.client.handler.AwsSyncClientHandler.execute(AwsSyncClientHandler.java:56)
 	at software.amazon.awssdk.services.lambda.DefaultLambdaClient.invoke(DefaultLambdaClient.java:2694)
-	at com.networknt.aws.lambda.proxy.LambdaProxy.invokeFunction(LambdaProxy.java:132)
-	at com.networknt.aws.lambda.proxy.LambdaProxy.handleRequest(LambdaProxy.java:94)
+	at com.networknt.aws.lambda.proxy.LambdaApp.invokeFunction(LambdaProxy.java:132)
+	at com.networknt.aws.lambda.proxy.LambdaApp.handleRequest(LambdaProxy.java:94)
 	at com.networknt.aws.lambda.Main.main(Main.java:157)
 ```

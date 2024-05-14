@@ -5,7 +5,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
-import com.networknt.aws.lambda.proxy.LambdaProxy;
+import com.networknt.aws.lambda.proxy.LambdaApp;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -24,8 +24,8 @@ public class AuditMiddlewareTest {
                 .build();
 
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
-        LambdaProxy lambdaProxy = new LambdaProxy();
-        APIGatewayProxyResponseEvent responseEvent = lambdaProxy.handleRequest(requestEvent, lambdaContext);
+        LambdaApp lambdaApp = new LambdaApp();
+        APIGatewayProxyResponseEvent responseEvent = lambdaApp.handleRequest(requestEvent, lambdaContext);
         Assertions.assertNotNull(responseEvent);
     }
 

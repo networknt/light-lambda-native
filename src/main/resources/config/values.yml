@@ -1,13 +1,20 @@
-# lambda-invoker.yml
-lambda-invoker.region: ca-central-1
-lambda-invoker.functions:
-  /v1/pets@get: PetsGetFunction
-  /v1/pets@post: PetsPostFunction
-  /v1/pets/{petId}@get: PetsPetIdGetFunction
-  /v1/pets/{petId}@delete: PetsPetIdDeleteFunction
+# lambda-app.yml
+lambda-app.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
 
 # lambda-proxy.yml
-lambda-proxy.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
+lambda-proxy.region: ca-central-1
+lambda-proxy.functions:
+  /{store}/products@get: StoreProductsGetFunction
+  /{store}/products@post: StoreProductsPostFunction
+
+# lambda-router.yml
+lambda-router.region: ca-central-1
+lambda-router.functions:
+  /v1/pets@get: PetstoreNativeLambdaProxyFunction
+  /v1/pets@post: PetstoreNativeLambdaProxyFunction
+  /v1/pets/{petId}@get: PetstoreNativeLambdaProxyFunction
+  /v1/pets/{petId}@delete: PetstoreNativeLambdaProxyFunction
+
 
 # service.yml
 service.singletons:
@@ -53,7 +60,8 @@ handler.handlers:
   - com.networknt.aws.lambda.handler.middleware.traceability.TraceabilityMiddleware@traceability
   - com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware@header
   - com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware@specification
-  - com.networknt.aws.lambda.handler.middleware.invoke.LambdaFunctionInvoker@invoke
+  - com.networknt.aws.lambda.handler.middleware.proxy.LambdaProxyMiddleware@proxy
+  - com.networknt.aws.lambda.handler.middleware.router.LambdaRouterMiddleware@router
   - com.networknt.aws.lambda.handler.middleware.limit.LimitMiddleware@limit
   - com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware@audit
   - com.networknt.aws.lambda.handler.middleware.validator.ValidatorMiddleware@validator

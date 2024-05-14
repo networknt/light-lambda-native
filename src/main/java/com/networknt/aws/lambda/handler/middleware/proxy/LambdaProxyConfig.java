@@ -1,14 +1,13 @@
-package com.networknt.aws.lambda.handler.middleware.invoke;
+package com.networknt.aws.lambda.handler.middleware.proxy;
 
 import java.util.Map;
 
-public class LambdaInvokerConfig {
-    public static final String CONFIG_NAME = "lambda-invoker";
+public class LambdaProxyConfig {
+    public static final String CONFIG_NAME = "lambda-proxy";
     private boolean enabled;
     private String region;
     private String endpointOverride;
     private String logType;
-    private String lambdaAppId;
     private Map<String, String> functions;
     private boolean metricsInjection;
     private String metricsName;
@@ -45,14 +44,6 @@ public class LambdaInvokerConfig {
         this.logType = logType;
     }
 
-    public String getLambdaAppId() {
-        return lambdaAppId;
-    }
-
-    public void setLambdaAppId(String lambdaAppId) {
-        this.lambdaAppId = lambdaAppId;
-    }
-
     public Map<String, String> getFunctions() {
         return functions;
     }
@@ -76,4 +67,5 @@ public class LambdaInvokerConfig {
     public void setMetricsName(String metricsName) {
         this.metricsName = metricsName;
     }
+
 }

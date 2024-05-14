@@ -1,11 +1,10 @@
-package com.networknt.aws.lambda.handler.middleware.invoke;
+package com.networknt.aws.lambda.handler.middleware.router;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.Handler;
 import com.networknt.aws.lambda.handler.LambdaHandler;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.metrics.AbstractMetricsMiddleware;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
@@ -26,20 +25,19 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LambdaFunctionInvoker implements MiddlewareHandler {
-
+public class LambdaRouterMiddleware implements MiddlewareHandler {
     private static LambdaClient client;
-    private static final Logger LOG = LoggerFactory.getLogger(LambdaFunctionInvoker.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LambdaRouterMiddleware.class);
     private static AbstractMetricsMiddleware metricsMiddleware;
 
     public static final String FAILED_TO_INVOKE_LAMBDA = "ERR10086";
     public static final String EXCHANGE_HAS_FAILED_STATE = "ERR10087";
 
-    public static final LambdaInvokerConfig CONFIG = (LambdaInvokerConfig) Config.getInstance().getJsonObjectConfig(LambdaInvokerConfig.CONFIG_NAME, LambdaInvokerConfig.class);
+    public static final LambdaRouterConfig CONFIG = (LambdaRouterConfig) Config.getInstance().getJsonObjectConfig(LambdaRouterConfig.CONFIG_NAME, LambdaRouterConfig.class);
 
     static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
 
-    public LambdaFunctionInvoker() {
+    public LambdaRouterMiddleware() {
         var builder = LambdaClient.builder().region(Region.of(CONFIG.getRegion()));
 
         if (!StringUtils.isEmpty(CONFIG.getEndpointOverride()))
@@ -47,12 +45,12 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
         if(CONFIG.isMetricsInjection()) lookupMetricsMiddleware();
         client = builder.build();
         populateMethodToMatcherMap(CONFIG.getFunctions());
-        if (LOG.isInfoEnabled()) LOG.info("LambdaFunctionInvoker is constructed");
+        if (LOG.isInfoEnabled()) LOG.info("LambdaRouterMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if(LOG.isTraceEnabled()) LOG.trace("LambdaFunctionInvoker.execute starts.");
+        if(LOG.isTraceEnabled()) LOG.trace("LambdaRouterMiddleware.execute starts.");
         if (!exchange.hasFailedState()) {
             /* invoke lambda function */
             var path = exchange.getRequest().getPath();
@@ -64,6 +62,7 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
                 return new Status(FAILED_TO_INVOKE_LAMBDA, path + "@" + method);
             }
             var functionName = result.getValue();
+            if(LOG.isTraceEnabled()) LOG.trace("Function name: {}", functionName);
             var res = this.invokeFunction(client, functionName, exchange);
             if (res == null) {
                 LOG.error("Failed to invoke lambda function: {}", functionName);
@@ -72,7 +71,7 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
             LOG.debug("Invoke Time - Finish: {}", System.currentTimeMillis());
             var responseEvent = JsonMapper.fromJson(res, APIGatewayProxyResponseEvent.class);
             exchange.setInitialResponse(responseEvent);
-            if(LOG.isTraceEnabled()) LOG.trace("LambdaFunctionInvoker.execute ends.");
+            if(LOG.isTraceEnabled()) LOG.trace("LambdaRouterMiddleware.execute ends.");
             return this.successMiddlewareStatus();
         } else {
             LOG.error("Exchange has failed state {}", exchange.getState());
@@ -81,6 +80,7 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
     }
 
     private void populateMethodToMatcherMap(Map<String, String> functions) {
+        if(functions == null) return;
         for (var entry : functions.entrySet()) {
             var endpoint = entry.getKey();
             var path = endpoint.split("@")[0];
@@ -131,9 +131,9 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
     @Override
     public void register() {
         ModuleRegistry.registerModule(
-                LambdaInvokerConfig.CONFIG_NAME,
-                LambdaFunctionInvoker.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaInvokerConfig.CONFIG_NAME),
+                LambdaRouterConfig.CONFIG_NAME,
+                LambdaRouterMiddleware.class.getName(),
+                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaRouterConfig.CONFIG_NAME),
                 null
         );
     }
@@ -171,4 +171,5 @@ public class LambdaFunctionInvoker implements MiddlewareHandler {
             LOG.error("An instance of MetricsMiddleware is not configured in the handler.yml file.");
         }
     }
+
 }

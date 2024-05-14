@@ -1,23 +1,21 @@
-# ----------< Lambda Invoker Config >--------
+# lambda-app.yml
+lambda-app.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
 
-lambda-invoker.region: ca-central-1
-lambda-invoker.functions:
+# lambda-proxy.yml
+lambda-proxy.region: ca-central-1
+lambda-proxy.functions:
   /v1/pets@get: PetsGetFunction
   /v1/pets@post: PetsPostFunction
   /v1/pets/{petId}@get: PetsPetIdGetFunction
   /v1/pets/{petId}@delete: PetsPetIdDeleteFunction
 
-# ----------< Lambda Proxy Config >----------
-lambda-proxy.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
-# -------------------------------------------
-
-# ------------< Service Config >-------------
+# service.yml
 service.singletons:
-#  - com.networknt.cache.CacheManager:
-#      - com.networknt.aws.lambda.cache.DynamoDbCacheManager
-# -------------------------------------------
+  - com.networknt.cache.CacheManager:
+      # - com.networknt.aws.lambda.cache.DynamoDbCacheManager
+      - com.networknt.cache.CaffeineCacheManager
 
-# ---------< Cache Manager Config >----------
+# cache.yml
 cache.caches:
   - cacheName: jwt
     expiryInMinutes: 11
@@ -25,20 +23,15 @@ cache.caches:
   - cacheName: jwk
     expiryInMinutes: 600
     maxSize: 10
-# -------------------------------------------
+  - cacheName: token
+    expiryInMinutes: 11
+    maxSize: 10
 
-# --------< Lambda Validator Config >--------
+# openapi-validator.yml
 openapi-validator.validateRequest: true
-# -------------------------------------------
 
-# --< Lambda Pooled Chain Executor Config >--
-pooled-chain-executor.maxPoolSize: 10
-pooled-chain-executor.corePoolSize: 10
-pooled-chain-executor.keepAliveTime: 0
-pooled-chain-executor.maxChainLength: 20
-# -------------------------------------------
 
-# --------< Lambda Security Config >---------
+# security.yml
 security.enableVerifyJwt: false
 security.ignoreJwtExpiry: true
 security.logJwtToken: true
@@ -59,7 +52,8 @@ handler.handlers:
   - com.networknt.aws.lambda.handler.middleware.traceability.TraceabilityMiddleware@traceability
   - com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware@header
   - com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware@specification
-  - com.networknt.aws.lambda.middleware.invoke.MockLambdaFunctionInvoker@invoke
+  - com.networknt.aws.lambda.middleware.proxy.MockLambdaProxyMiddleware@proxy
+  - com.networknt.aws.lambda.handler.middleware.router.LambdaRouterMiddleware@router
   - com.networknt.aws.lambda.handler.middleware.limit.LimitMiddleware@limit
   - com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware@audit
   - com.networknt.aws.lambda.handler.middleware.validator.ValidatorMiddleware@validator
