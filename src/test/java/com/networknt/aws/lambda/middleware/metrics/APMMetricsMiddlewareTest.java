@@ -5,7 +5,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
-import com.networknt.aws.lambda.proxy.LambdaApp;
+import com.networknt.aws.lambda.app.LambdaApp;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

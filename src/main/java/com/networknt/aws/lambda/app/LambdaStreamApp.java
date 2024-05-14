@@ -1,4 +1,4 @@
-package com.networknt.aws.lambda.proxy;
+package com.networknt.aws.lambda.app;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
