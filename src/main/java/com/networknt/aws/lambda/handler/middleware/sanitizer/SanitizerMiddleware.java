@@ -42,6 +42,12 @@ public class SanitizerMiddleware implements MiddlewareHandler {
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if (LOG.isDebugEnabled()) LOG.trace("SanitizerMiddleware.execute starts.");
+        if (exchange.isRequestComplete()) {
+            if (LOG.isTraceEnabled())
+                LOG.trace("SanitizerMiddleware.execute skips as the response is already set.");
+            return successMiddlewareStatus();
+        }
+
         String method = exchange.getRequest().getHttpMethod();
         if (CONFIG.isHeaderEnabled()) {
             Map<String, String> headerMap = exchange.getRequest().getHeaders();

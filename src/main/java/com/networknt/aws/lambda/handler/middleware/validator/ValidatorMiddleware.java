@@ -40,9 +40,14 @@ public class ValidatorMiddleware implements MiddlewareHandler {
 
     @Override
     public Status execute(final LightLambdaExchange exchange) {
+        if(LOG.isTraceEnabled()) LOG.trace("ValidatorMiddleware.execute starts.");
+        if (exchange.isRequestComplete()) {
+            if (LOG.isTraceEnabled())
+                LOG.trace("ValidatorMiddleware.execute skips as the response is already set.");
+            return successMiddlewareStatus();
+        }
 
-        if (!CONFIG.isEnabled())
-            return disabledMiddlewareStatus();
+        if (!CONFIG.isEnabled()) return disabledMiddlewareStatus();
 
         LOG.debug("ValidatorMiddleware.execute starts at {}.", System.currentTimeMillis());
         String reqPath = exchange.getRequest().getPath();

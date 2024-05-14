@@ -44,6 +44,12 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if (LOG.isDebugEnabled()) LOG.debug("UnifiedSecurityMiddleware.execute starts.");
+        // need to skip this handler if the response is set by the router handler.
+        if (exchange.isRequestComplete()) {
+            if (LOG.isTraceEnabled())
+                LOG.trace("UnifiedSecurityMiddleware.execute skips as the response is already set.");
+            return successMiddlewareStatus();
+        }
         String reqPath = exchange.getRequest().getPath();
         // check if the path prefix is in the anonymousPrefixes list. If yes, skip all other check and goes to next handler.
         if (CONFIG.getAnonymousPrefixes() != null && CONFIG.getAnonymousPrefixes().stream().anyMatch(reqPath::startsWith)) {

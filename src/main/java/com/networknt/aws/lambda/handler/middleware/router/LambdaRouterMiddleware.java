@@ -6,6 +6,7 @@ import com.networknt.aws.lambda.handler.Handler;
 import com.networknt.aws.lambda.handler.LambdaHandler;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.handler.middleware.metrics.AbstractMetricsMiddleware;
+import com.networknt.aws.lambda.utility.MapUtil;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.metrics.MetricsConfig;
@@ -24,6 +25,7 @@ import software.amazon.awssdk.services.lambda.model.LambdaException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class LambdaRouterMiddleware implements MiddlewareHandler {
     private static LambdaClient client;
@@ -51,31 +53,46 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if(LOG.isTraceEnabled()) LOG.trace("LambdaRouterMiddleware.execute starts.");
-        if (!exchange.hasFailedState()) {
-            /* invoke lambda function */
-            var path = exchange.getRequest().getPath();
-            var method = exchange.getRequest().getHttpMethod().toLowerCase();
-            LOG.debug("Request path: {} -- Request method: {} -- Start time: {}", path, method, System.currentTimeMillis());
-            PathTemplateMatcher.PathMatchResult<String> result = methodToMatcherMap.get(method).match(path);
-            if (result == null) {
-                LOG.error("No lambda function found for path: {} and method: {}", path, method);
-                return new Status(FAILED_TO_INVOKE_LAMBDA, path + "@" + method);
-            }
-            var functionName = result.getValue();
-            if(LOG.isTraceEnabled()) LOG.trace("Function name: {}", functionName);
-            var res = this.invokeFunction(client, functionName, exchange);
-            if (res == null) {
-                LOG.error("Failed to invoke lambda function: {}", functionName);
-                return new Status(FAILED_TO_INVOKE_LAMBDA, functionName);
-            }
-            LOG.debug("Invoke Time - Finish: {}", System.currentTimeMillis());
-            var responseEvent = JsonMapper.fromJson(res, APIGatewayProxyResponseEvent.class);
-            exchange.setInitialResponse(responseEvent);
-            if(LOG.isTraceEnabled()) LOG.trace("LambdaRouterMiddleware.execute ends.");
+        // check if the Function-Name is in the header. If it is, we will continue. Otherwise, return immediately.
+        Optional<String> functionNameOptional = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), "Function-Name");
+        if(functionNameOptional.isEmpty()) {
+            LOG.error("Function-Name is not in the header. Skip LambdaRouterMiddleware.");
             return this.successMiddlewareStatus();
         } else {
-            LOG.error("Exchange has failed state {}", exchange.getState());
-            return new Status(EXCHANGE_HAS_FAILED_STATE, exchange.getState());
+            String functionNameInHeader = functionNameOptional.get();
+            if (!exchange.hasFailedState()) {
+                /* invoke lambda function */
+                var path = exchange.getRequest().getPath();
+                var method = exchange.getRequest().getHttpMethod().toLowerCase();
+                LOG.debug("Request path: {} -- Request method: {} -- Start time: {}", path, method, System.currentTimeMillis());
+                PathTemplateMatcher.PathMatchResult<String> result = methodToMatcherMap.get(method).match(path);
+                if (result == null) {
+                    LOG.error("No lambda function found for path: {} and method: {}", path, method);
+                    return new Status(FAILED_TO_INVOKE_LAMBDA, path + "@" + method);
+                }
+                var functionName = result.getValue();
+                if(LOG.isTraceEnabled()) LOG.trace("Function name: {}, Header Function Name: {}", functionName, functionNameInHeader);
+                // need to make sure both function names are the same.
+                if(!functionName.equals(functionNameInHeader)) {
+                    LOG.error("Function-Name in the header is different from the one in the configuration. Skip LambdaRouterMiddleware.");
+                    return new Status(FAILED_TO_INVOKE_LAMBDA, functionName);
+                }
+                var res = this.invokeFunction(client, functionName, exchange);
+                if (res == null) {
+                    LOG.error("Failed to invoke lambda function: {}", functionName);
+                    return new Status(FAILED_TO_INVOKE_LAMBDA, functionName);
+                }
+                LOG.debug("Invoke Time - Finish: {}", System.currentTimeMillis());
+                var responseEvent = JsonMapper.fromJson(res, APIGatewayProxyResponseEvent.class);
+                exchange.setInitialResponse(responseEvent);
+                if(LOG.isTraceEnabled()) LOG.trace("LambdaRouterMiddleware.execute ends.");
+                // TODO Here we need to stop the chain execution and return to the caller immediately.
+                // TODO How to bypass the rest of the middleware chain and return to the caller?
+                return this.successMiddlewareStatus();
+            } else {
+                LOG.error("Exchange has failed state {}", exchange.getState());
+                return new Status(EXCHANGE_HAS_FAILED_STATE, exchange.getState());
+            }
         }
     }
 
@@ -117,6 +134,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
             }
 
             response = res.payload().asUtf8String();
+            if(LOG.isTraceEnabled()) LOG.trace("response: {}", response);
         } catch (LambdaException e) {
             LOG.error("LambdaException", e);
         }
