@@ -1,18 +1,13 @@
 package com.networknt.aws.lambda.middleware.transformer;
 
-import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.TestUtils;
-import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.aws.lambda.handler.middleware.transformer.RequestTransformerMiddleware;
 import com.networknt.aws.lambda.handler.middleware.transformer.ResponseTransformerMiddleware;
-import com.networknt.aws.lambda.proxy.LambdaProxy;
-import com.networknt.reqtrans.RequestTransformerConfig;
-import com.networknt.restrans.ResponseTransformerConfig;
+import com.networknt.aws.lambda.proxy.LambdaApp;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -53,8 +48,8 @@ public class ResponseTransformerMiddlewareTest {
         final APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         final LambdaContext lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        LambdaProxy lambdaProxy = new LambdaProxy();
-        APIGatewayProxyResponseEvent responseEvent = lambdaProxy.handleRequest(requestEvent, lambdaContext);
+        LambdaApp lambdaApp = new LambdaApp();
+        APIGatewayProxyResponseEvent responseEvent = lambdaApp.handleRequest(requestEvent, lambdaContext);
 
         System.out.println(responseEvent.toString());
         String responseBody = responseEvent.getBody();

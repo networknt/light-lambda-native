@@ -1,10 +1,9 @@
-package com.networknt.aws.lambda.middleware.invoke;
+package com.networknt.aws.lambda.middleware.proxy;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.aws.lambda.handler.middleware.invoke.LambdaFunctionInvoker;
-import com.networknt.aws.lambda.handler.middleware.invoke.LambdaInvokerConfig;
+import com.networknt.aws.lambda.handler.middleware.proxy.LambdaProxyConfig;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.status.Status;
@@ -22,14 +21,14 @@ import java.util.Map;
  * It is used in the unit test and should not be used in any live environment.
  *
  */
-public class MockLambdaFunctionInvoker implements MiddlewareHandler {
-    private static final Logger LOG = LoggerFactory.getLogger(LambdaFunctionInvoker.class);
+public class MockLambdaProxyMiddleware implements MiddlewareHandler {
+    private static final Logger LOG = LoggerFactory.getLogger(MockLambdaProxyMiddleware.class);
     public static final String EXCHANGE_HAS_FAILED_STATE = "ERR10087";
 
-    public static final LambdaInvokerConfig CONFIG = (LambdaInvokerConfig) Config.getInstance().getJsonObjectConfig(LambdaInvokerConfig.CONFIG_NAME, LambdaInvokerConfig.class);
+    public static final LambdaProxyConfig CONFIG = (LambdaProxyConfig) Config.getInstance().getJsonObjectConfig(LambdaProxyConfig.CONFIG_NAME, LambdaProxyConfig.class);
     public static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
 
-    public MockLambdaFunctionInvoker() {
+    public MockLambdaProxyMiddleware() {
         populateMethodToMatcherMap(CONFIG.getFunctions());
         if (LOG.isInfoEnabled()) LOG.info("MockLambdaFunctionInvoker is constructed");
     }
@@ -86,9 +85,9 @@ public class MockLambdaFunctionInvoker implements MiddlewareHandler {
     @Override
     public void register() {
         ModuleRegistry.registerModule(
-                LambdaInvokerConfig.CONFIG_NAME,
-                MockLambdaFunctionInvoker.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaInvokerConfig.CONFIG_NAME),
+                LambdaProxyConfig.CONFIG_NAME,
+                MockLambdaProxyMiddleware.class.getName(),
+                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaProxyConfig.CONFIG_NAME),
                 null
         );
     }

@@ -4,9 +4,9 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.aws.lambda.proxy.LambdaApp;
 
 import java.io.IOException;
-import com.networknt.aws.lambda.proxy.LambdaProxy;
 
 
 public class Main {
@@ -153,8 +153,8 @@ public class Main {
         final APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         final LambdaContext lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        LambdaProxy lambdaProxy = new LambdaProxy();
-        APIGatewayProxyResponseEvent responseEvent = lambdaProxy.handleRequest(requestEvent, lambdaContext);
+        LambdaApp lambdaApp = new LambdaApp();
+        APIGatewayProxyResponseEvent responseEvent = lambdaApp.handleRequest(requestEvent, lambdaContext);
 
         System.out.println(responseEvent.toString());
 

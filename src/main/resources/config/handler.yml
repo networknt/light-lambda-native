@@ -52,12 +52,13 @@ chains:
     - correlation
     - header
     - requestTransformer
+    - audit
+    - token
+    - router
     - specification
     - security
-    - audit
     - sanitizer
     - validator
-    - token
   response:
     - responseTransformer
 
@@ -125,5 +126,5 @@ paths:
 additionalPaths: ${handler.additionalPaths:}
 defaultHandlers:
   - request
-  - invoke
+  - proxy
   - response
