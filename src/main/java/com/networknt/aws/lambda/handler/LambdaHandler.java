@@ -40,4 +40,9 @@ public interface LambdaHandler {
     default Status successMiddlewareStatus() {
         return new Status(200, SUCCESS_LAMBDA_HANDLER_RETURN, "OK", "SUCCESS", "SUCCESS");
     }
+
+    default boolean isResponseMiddleware() {
+        return false;
+    };
+
 }

@@ -212,4 +212,13 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
                 null
         );
     }
+
+    /**
+     * All response chain middleware handler should override this method and return true.
+     * @return boolean to indicate if the middleware handler is a response middleware handler.
+     */
+    @Override
+    public boolean isResponseMiddleware() {
+        return true;
+    }
 }

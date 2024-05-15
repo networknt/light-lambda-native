@@ -49,13 +49,6 @@ public class OpenApiMiddleware implements MiddlewareHandler {
     public Status execute(LightLambdaExchange exchange) {
         if (LOG.isTraceEnabled())
             LOG.trace("OpenApiMiddleware.execute starts.");
-        // need to skip this handler if the response is set by the router handler.
-        if (exchange.isRequestComplete()) {
-            if (LOG.isTraceEnabled())
-                LOG.trace("OpenApiMiddleware.execute skips as the response is already set.");
-            return successMiddlewareStatus();
-        }
-
         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequest().getPath(), helper.basePath);
         final Optional<NormalisedPath> maybeApiPath = helper.findMatchingApiPath(requestPath);
 
