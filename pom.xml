@@ -253,7 +253,7 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
-            <artifactId>token-config</artifactId>
+            <artifactId>router-config</artifactId>
             <version>${version.light-4j}</version>
         </dependency>
         <dependency>
