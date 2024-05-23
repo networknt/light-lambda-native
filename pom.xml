@@ -258,11 +258,6 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
-            <artifactId>registry</artifactId>
-            <version>${version.light-4j}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.networknt</groupId>
             <artifactId>caffeine-cache</artifactId>
             <version>${version.light-4j}</version>
         </dependency>

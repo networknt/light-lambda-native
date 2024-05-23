@@ -9,6 +9,10 @@ lambda-proxy.functions:
   /v1/pets/{petId}@get: PetsPetIdGetFunction
   /v1/pets/{petId}@delete: PetsPetIdDeleteFunction
 
+# router.yml
+router.urlRewriteRules:
+  - /v1/pets /Stage/v1/pets
+
 # service.yml
 service.singletons:
   - com.networknt.cache.CacheManager:
