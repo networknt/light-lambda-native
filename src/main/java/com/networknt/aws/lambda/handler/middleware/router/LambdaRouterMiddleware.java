@@ -10,6 +10,7 @@ import com.networknt.aws.lambda.utility.MapUtil;
 import com.networknt.cluster.Cluster;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
+import com.networknt.handler.config.UrlRewriteRule;
 import com.networknt.http.client.HttpClientRequest;
 import com.networknt.http.client.HttpMethod;
 import com.networknt.metrics.MetricsConfig;
@@ -66,14 +67,23 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
             if (!exchange.hasFailedState()) {
                 /* invoke http service */
                 String serviceId = serviceIdOptional.get();
-                var path = exchange.getRequest().getPath();
+                var originalPath = exchange.getRequest().getPath();
+                var targetPath = originalPath;
                 var method = exchange.getRequest().getHttpMethod().toLowerCase();
-                LOG.debug("Request path: {} -- Request method: {} -- Start time: {}", path, method, System.currentTimeMillis());
+                LOG.debug("Request path: {} -- Request method: {} -- Start time: {}", originalPath, method, System.currentTimeMillis());
                 // lookup the host from the serviceId
                 String host = cluster.serviceToUrl(protocol, serviceId, null, null);
                 if (host == null) {
                     LOG.error("No host is found serviceId: {}", serviceId);
                     return new Status(FAILED_TO_INVOKE_SERVICE, serviceId);
+                }
+                // we have the path now, let's apply the url rewrite if there is any. This is useful when using the api gateway to add the stage.
+                List<UrlRewriteRule> urlRewriteRules = CONFIG.getUrlRewriteRules();
+
+                if(urlRewriteRules != null && !urlRewriteRules.isEmpty()) {
+                    // apply the url rewrite rules to the path.
+                    targetPath = createRouterRequestPath(urlRewriteRules, originalPath);
+                    if(LOG.isTraceEnabled()) LOG.trace("Rewritten original path {} to targetPath {}", originalPath, targetPath);
                 }
                 if(LOG.isTraceEnabled()) LOG.trace("Discovered host {} for ServiceId {}", host, serviceId);
                 // call the downstream service based on the request methods.
@@ -81,10 +91,10 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                 if("get".equalsIgnoreCase(method) || "delete".equalsIgnoreCase(method)) {
                     HttpClientRequest request = new HttpClientRequest();
                     try {
-                        HttpRequest.Builder builder = request.initBuilder(host + path, HttpMethod.valueOf(exchange.getRequest().getHttpMethod()));
+                        HttpRequest.Builder builder = request.initBuilder(host + targetPath, HttpMethod.valueOf(exchange.getRequest().getHttpMethod()));
                         exchange.getRequest().getHeaders().forEach(builder::header);
                         builder.timeout(Duration.ofMillis(CONFIG.getMaxRequestTime()));
-                        request.addCcToken(builder, path, null, null);
+                        // request.addCcToken(builder, originalPath, null, null);
                         HttpResponse<String> response = (HttpResponse<String>) request.send(builder, HttpResponse.BodyHandlers.ofString());
                         APIGatewayProxyResponseEvent res = new APIGatewayProxyResponseEvent()
                                 .withStatusCode(response.statusCode())
@@ -101,15 +111,15 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                         exchange.setInitialResponse(res);
                     } catch (Exception e) {
                         LOG.error("Exception:", e);
-                        return new Status(FAILED_TO_INVOKE_SERVICE, host + path);
+                        return new Status(FAILED_TO_INVOKE_SERVICE, host + targetPath);
                     }
                 } else if("post".equalsIgnoreCase(method) || "put".equalsIgnoreCase(method) || "patch".equalsIgnoreCase(method)) {
                     HttpClientRequest request = new HttpClientRequest();
                     try {
-                        HttpRequest.Builder builder = request.initBuilder(host + path, HttpMethod.valueOf(exchange.getRequest().getHttpMethod()), Optional.of(exchange.getRequest().getBody()));
+                        HttpRequest.Builder builder = request.initBuilder(host + targetPath, HttpMethod.valueOf(exchange.getRequest().getHttpMethod()), Optional.of(exchange.getRequest().getBody()));
                         exchange.getRequest().getHeaders().forEach(builder::header);
                         builder.timeout(Duration.ofMillis(CONFIG.getMaxRequestTime()));
-                        request.addCcToken(builder, path, null, null);
+                        // request.addCcToken(builder, originalPath, null, null);
                         HttpResponse<String> response = (HttpResponse<String>) request.send(builder, HttpResponse.BodyHandlers.ofString());
                         APIGatewayProxyResponseEvent res = new APIGatewayProxyResponseEvent()
                                 .withStatusCode(response.statusCode())
@@ -126,7 +136,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                         exchange.setInitialResponse(res);
                     } catch (Exception e) {
                         LOG.error("Exception:", e);
-                        return new Status(FAILED_TO_INVOKE_SERVICE, host + path);
+                        return new Status(FAILED_TO_INVOKE_SERVICE, host + targetPath);
                     }
                 } else {
                     LOG.error("Unsupported HTTP method: {}", method);
@@ -149,6 +159,40 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
             map.put(headerName, headerValue);
         }
         return map;
+    }
+
+    /**
+     * Builds a complete request path string for our router request.
+     *
+     * @param requestPath - the original request path
+     * @return - targetRequestPath the target request path string
+     */
+    public String createRouterRequestPath(List<UrlRewriteRule> urlRewriteRules, String requestPath) {
+        var uriBuilder = new StringBuilder();
+        rewriteUrl(urlRewriteRules, uriBuilder, requestPath);
+        return uriBuilder.toString();
+    }
+
+    /**
+     * Rewrites the router request url based on defined rules.
+     *
+     * @param uriBuilder   - new URI
+     * @param requestPath  - target URI
+     */
+    private void rewriteUrl(List<UrlRewriteRule> urlRewriteRules, StringBuilder uriBuilder, String requestPath) {
+        /* Rewrites the url. Uses original if there are no rules matches/no rules defined. */
+        if (urlRewriteRules != null && !urlRewriteRules.isEmpty()) {
+            var matched = false;
+            for (var rule : urlRewriteRules) {
+                var matcher = rule.getPattern().matcher(requestPath);
+                if (matcher.matches()) {
+                    matched = true;
+                    uriBuilder.append(matcher.replaceAll(rule.getReplace()));
+                    break;
+                }
+            }
+            if (!matched) uriBuilder.append(requestPath);
+        } else uriBuilder.append(requestPath);
     }
 
     @Override

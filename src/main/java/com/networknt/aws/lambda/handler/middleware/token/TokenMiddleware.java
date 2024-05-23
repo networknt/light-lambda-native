@@ -72,7 +72,7 @@ public class TokenMiddleware implements MiddlewareHandler {
             String serviceId = optionalServiceId.get();
             Result<Jwt> result = getJwtToken(serviceId);
             if(result.isFailure()) {
-                LOG.error("Cannot populate or renew jwt for client credential grant type: " + result.getError().toString());
+                LOG.error("Cannot populate or renew jwt for client credential grant type: {}", result.getError().toString());
                 if(LOG.isDebugEnabled()) LOG.debug("TokenMiddleware.execute ends with an error.");
                 return result.getError();
             } else {
@@ -84,13 +84,14 @@ public class TokenMiddleware implements MiddlewareHandler {
                 // assume that the subject token has the scope already?)
                 Optional<String> optionalToken = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), HeaderKey.AUTHORIZATION);
                 if(optionalToken.isEmpty()) {
-                    if(LOG.isTraceEnabled()) LOG.trace("Adding jwt token to Authorization header with Bearer " + cachedJwt.getJwt().substring(0, 20));
+                    if(LOG.isTraceEnabled())
+                        LOG.trace("Adding jwt token to Authorization header with Bearer {}", cachedJwt.getJwt().substring(0, 20));
                     exchange.getRequest().getHeaders().put(HeaderKey.AUTHORIZATION, "Bearer " + cachedJwt.getJwt());
                 } else {
                     String token = optionalToken.get();
                     if(LOG.isTraceEnabled()) {
-                        LOG.trace("Authorization header is used with " + (token.length() > 10 ? token.substring(0, 10) : token)); // it could be "Basic "
-                        LOG.trace("Adding jwt token to X-Scope-Token header with Bearer " + cachedJwt.getJwt().substring(0, 20));
+                        LOG.trace("Authorization header is used with {}", token.length() > 10 ? token.substring(0, 10) : token); // it could be "Basic "
+                        LOG.trace("Adding jwt token to X-Scope-Token header with Bearer {}", cachedJwt.getJwt().substring(0, 20));
                     }
                     exchange.getRequest().getHeaders().put(HeaderKey.SCOPE_TOKEN, "Bearer " + cachedJwt.getJwt());
                 }
@@ -106,7 +107,16 @@ public class TokenMiddleware implements MiddlewareHandler {
         Map<String, Object> tokenConfig = clientConfig.getTokenConfig();
         Map<String, Object> ccConfig = (Map<String, Object>)tokenConfig.get(ClientConfig.CLIENT_CREDENTIALS);
         Result<Jwt> result;
-        Jwt cachedJwt = cacheManager != null ? JsonMapper.fromJson((String) cacheManager.get(TOKEN, serviceId), Jwt.class) : null;
+        // get the jwt token from the cache.
+        Jwt cachedJwt = null;
+        if(cacheManager != null) {
+            if(LOG.isTraceEnabled()) LOG.trace("Get jwt token from cache for serviceId: {}", serviceId);
+            String cachedJwtString = (String) cacheManager.get(TOKEN, serviceId);
+            if(cachedJwtString != null && !cachedJwtString.isEmpty()) {
+                if(LOG.isTraceEnabled()) LOG.trace("Cached jwt token: {}", cachedJwtString);
+                cachedJwt = JsonMapper.fromJson(cachedJwtString, Jwt.class);
+            }
+        }
         // get a new token if cachedJwt is null or the jwt is about expired.
         if(cachedJwt == null || cachedJwt.getExpire() - Long.valueOf((Integer)tokenConfig.get(ClientConfig.TOKEN_RENEW_BEFORE_EXPIRED)) < System.currentTimeMillis()) {
             Jwt.Key key = new Jwt.Key(serviceId);
