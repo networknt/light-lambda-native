@@ -14,8 +14,6 @@ import com.networknt.handler.config.UrlRewriteRule;
 import com.networknt.http.client.HttpClientRequest;
 import com.networknt.http.client.HttpMethod;
 import com.networknt.metrics.MetricsConfig;
-import com.networknt.monad.Failure;
-import com.networknt.monad.Result;
 import com.networknt.router.RouterConfig;
 import com.networknt.service.SingletonServiceFactory;
 import com.networknt.status.Status;
@@ -59,7 +57,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
     public Status execute(LightLambdaExchange exchange) {
         if(LOG.isTraceEnabled()) LOG.trace("LambdaRouterMiddleware.execute starts.");
         // check if the Function-Name is in the header. If it is, we will continue. Otherwise, return immediately.
-        Optional<String> serviceIdOptional = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), SERVICE_ID);
+        Optional<String> serviceIdOptional = MapUtil.delValueIgnoreCase(exchange.getRequest().getHeaders(), SERVICE_ID);
         if(serviceIdOptional.isEmpty()) {
             LOG.error("service_id is not in the header. Skip LambdaRouterMiddleware.");
             return this.successMiddlewareStatus();
@@ -94,7 +92,6 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                         HttpRequest.Builder builder = request.initBuilder(host + targetPath, HttpMethod.valueOf(exchange.getRequest().getHttpMethod()));
                         exchange.getRequest().getHeaders().forEach(builder::header);
                         builder.timeout(Duration.ofMillis(CONFIG.getMaxRequestTime()));
-                        // request.addCcToken(builder, originalPath, null, null);
                         HttpResponse<String> response = (HttpResponse<String>) request.send(builder, HttpResponse.BodyHandlers.ofString());
                         APIGatewayProxyResponseEvent res = new APIGatewayProxyResponseEvent()
                                 .withStatusCode(response.statusCode())
@@ -119,7 +116,6 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                         HttpRequest.Builder builder = request.initBuilder(host + targetPath, HttpMethod.valueOf(exchange.getRequest().getHttpMethod()), Optional.of(exchange.getRequest().getBody()));
                         exchange.getRequest().getHeaders().forEach(builder::header);
                         builder.timeout(Duration.ofMillis(CONFIG.getMaxRequestTime()));
-                        // request.addCcToken(builder, originalPath, null, null);
                         HttpResponse<String> response = (HttpResponse<String>) request.send(builder, HttpResponse.BodyHandlers.ofString());
                         APIGatewayProxyResponseEvent res = new APIGatewayProxyResponseEvent()
                                 .withStatusCode(response.statusCode())
