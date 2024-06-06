@@ -69,7 +69,7 @@ public class SanitizerMiddleware implements MiddlewareHandler {
 
         if (CONFIG.isBodyEnabled() && ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method))) {
             String body = exchange.getRequest().getBody();
-            if (!body.isEmpty()) {
+            if (body != null && !body.isEmpty()) {
                 body = body.trim();
                 if (body.startsWith("{")) {
                     Map<String, Object> bodyMap = JsonMapper.string2Map(body);
