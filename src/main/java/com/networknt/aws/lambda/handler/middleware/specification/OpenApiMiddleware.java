@@ -38,7 +38,9 @@ public class OpenApiMiddleware implements MiddlewareHandler {
         validateSpec(openapi, inject, "openapi.yaml");
         openapi = OpenApiHelper.merge(openapi, inject);
         try {
-            helper = new OpenApiHelper(Config.getInstance().getMapper().writeValueAsString(openapi));
+            String openapiString = Config.getInstance().getMapper().writeValueAsString(openapi);
+            if(LOG.isTraceEnabled()) LOG.trace("OpenApiMiddleware openapiString: " + openapiString);
+            helper = new OpenApiHelper(openapiString);
         } catch (JsonProcessingException e) {
             LOG.error("merge specification failed");
             throw new RuntimeException("merge specification failed");
@@ -47,9 +49,13 @@ public class OpenApiMiddleware implements MiddlewareHandler {
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if (LOG.isTraceEnabled())
-            LOG.trace("OpenApiMiddleware.execute starts.");
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("OpenApiMiddleware.execute starts with path = {} and basePath = {}.", exchange.getRequest().getPath(), helper.basePath);
+        }
         final NormalisedPath requestPath = new ApiNormalisedPath(exchange.getRequest().getPath(), helper.basePath);
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("requestPath original {} and normalized {}", requestPath.original(), requestPath.normalised());
+        }
         final Optional<NormalisedPath> maybeApiPath = helper.findMatchingApiPath(requestPath);
 
         final NormalisedPath openApiPathString = maybeApiPath.get();
