@@ -119,11 +119,6 @@ public class PooledChainLinkExecutor extends ThreadPoolExecutor {
             LOG.debug("Creating thread for link '{}[{}]'.", chainLink.getClass().getName(), linkNumber++);
 
             if (chainLink.isEnabled()) {
-                // skip the request chain if the request is completed for all middleware that is not isResponseMiddleware().
-                if (exchange.isRequestComplete() && !chainLink.isResponseMiddleware()) {
-                    LOG.debug("Request is already completed, skipping middleware '{}'", chainLink.getClass().getName());
-                    continue;
-                }
                 final var loggingContext = new ChainLinkWorker.AuditThreadContext(MDC.getCopyOfContextMap());
                 final var runnable = new MiddlewareRunnable(chainLink, exchange, this.chainLinkCallback);
                 final var worker = new ChainLinkWorker(runnable, loggingContext);
