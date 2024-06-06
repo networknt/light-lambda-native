@@ -11,6 +11,7 @@ import com.networknt.oas.model.Operation;
 import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.openapi.OpenApiOperation;
+import com.networknt.security.JwtVerifier;
 import com.networknt.security.SecurityConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
@@ -41,11 +42,11 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
     static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
     static final String STATUS_OPENAPI_OPERATION_MISSED = "ERR10085";
+
     public JwtVerifyMiddleware() {
         if(LOG.isInfoEnabled()) LOG.info("JwtVerifyMiddleware is constructed");
         if(config.isEnableVerifyJwt()) {
             jwtVerifier = new JwtVerifier(config);
-            jwtVerifier.initJwkMap();
         }
     }
 
@@ -96,7 +97,7 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                     if (LOG.isTraceEnabled())
                         LOG.trace("parsed jwt from authorization = " + jwt.substring(0, 10));
                     try {
-                        JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, pathPrefix, reqPath, jwkServiceIds);
+                        JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, true, pathPrefix, reqPath, jwkServiceIds);
                         if (LOG.isTraceEnabled())
                             LOG.trace("claims = " + claims.toJson());
 
@@ -266,7 +267,7 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                 LOG.trace("start verifying scope token = " + scopeJwt.substring(0, 10));
 
             try {
-                JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, ignoreExpiry, pathPrefix, reqPath, jwkServiceIds);
+                JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, ignoreExpiry, true, pathPrefix, reqPath, jwkServiceIds);
                 Object scopeClaim = scopeClaims.getClaimValue(Constants.SCOPE_STRING);
 
                 if (scopeClaim instanceof String) {

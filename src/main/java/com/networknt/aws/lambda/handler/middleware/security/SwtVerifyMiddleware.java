@@ -12,6 +12,7 @@ import com.networknt.oas.model.SecurityParameter;
 import com.networknt.oas.model.SecurityRequirement;
 import com.networknt.openapi.OpenApiOperation;
 import com.networknt.security.SecurityConfig;
+import com.networknt.security.SwtVerifier;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.StringUtils;
