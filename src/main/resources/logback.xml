@@ -25,7 +25,7 @@
     <!-- audit log -->
     <appender name="audit" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%date{ISO8601} %msg%n</pattern> <!-- the layout pattern used to format log entries -->
+            <pattern>LambdaNativeAuditLog %msg%n</pattern> <!-- the layout pattern used to format log entries -->
         </encoder>
     </appender>
 
