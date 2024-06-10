@@ -83,12 +83,12 @@ public class APMMetricsMiddleware extends AbstractMetricsMiddleware {
 
         exchange.addResponseCompleteListener(finalExchange -> {
             Map<String, Object> auditInfo = (Map<String, Object>)finalExchange.getAttachment(AUDIT_ATTACHMENT_KEY);
-            if(logger.isTraceEnabled()) logger.trace("auditInfo = " + auditInfo);
+            if(logger.isTraceEnabled()) logger.trace("auditInfo = {}", auditInfo);
             if (auditInfo != null && !auditInfo.isEmpty()) {
                 Map<String, String> tags = new HashMap<>();
                 tags.put("endpoint", (String) auditInfo.get(Constants.ENDPOINT_STRING));
                 String clientId = auditInfo.get(Constants.CLIENT_ID_STRING) != null ? (String) auditInfo.get(Constants.CLIENT_ID_STRING) : "unknown";
-                if(logger.isTraceEnabled()) logger.trace("clientId = " + clientId);
+                if(logger.isTraceEnabled()) logger.trace("clientId = {}", clientId);
                 tags.put("clientId", clientId);
                 // scope client id will only be available if two token is used. For example, authorization code flow.
                 if (config.isSendScopeClientId()) {
@@ -120,7 +120,8 @@ public class APMMetricsMiddleware extends AbstractMetricsMiddleware {
                 metricName = metricName.tagged(tags);
                 long time = Clock.defaultClock().getTick() - startTime;
                 registry.getOrAdd(metricName, MetricRegistry.MetricBuilder.TIMERS).update(time, TimeUnit.NANOSECONDS);
-                if(logger.isTraceEnabled()) logger.trace("metricName = " + metricName  + " commonTags = " + JsonMapper.toJson(commonTags) + " tags = " + JsonMapper.toJson(tags));
+                if(logger.isTraceEnabled())
+                    logger.trace("metricName = {} commonTags = {} tags = {}", metricName, JsonMapper.toJson(commonTags), JsonMapper.toJson(tags));
                 incCounterForStatusCode(finalExchange.getFinalizedResponse(true).getStatusCode(), commonTags, tags);
             } else {
                 // when we reach here, it will be in light-gateway so no specification is loaded on the server and also the security verification is failed.

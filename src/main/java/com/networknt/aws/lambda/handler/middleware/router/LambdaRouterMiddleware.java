@@ -1,5 +1,6 @@
 package com.networknt.aws.lambda.handler.middleware.router;
 
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.Handler;
@@ -63,11 +64,13 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
             return this.successMiddlewareStatus();
         } else {
             if (!exchange.hasFailedState()) {
+                // get the finalized request to trigger the state change for the request complete.
+                APIGatewayProxyRequestEvent requestEvent = exchange.getFinalizedRequest(false);
                 /* invoke http service */
                 String serviceId = serviceIdOptional.get();
-                var originalPath = exchange.getRequest().getPath();
+                var originalPath = requestEvent.getPath();
                 var targetPath = originalPath;
-                var method = exchange.getRequest().getHttpMethod().toLowerCase();
+                var method = requestEvent.getHttpMethod().toLowerCase();
                 LOG.debug("Request path: {} -- Request method: {} -- Start time: {}", originalPath, method, System.currentTimeMillis());
                 // lookup the host from the serviceId
                 String host = cluster.serviceToUrl(protocol, serviceId, null, null);
@@ -89,8 +92,8 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                 if("get".equalsIgnoreCase(method) || "delete".equalsIgnoreCase(method)) {
                     HttpClientRequest request = new HttpClientRequest();
                     try {
-                        HttpRequest.Builder builder = request.initBuilder(host + targetPath, HttpMethod.valueOf(exchange.getRequest().getHttpMethod()));
-                        exchange.getRequest().getHeaders().forEach(builder::header);
+                        HttpRequest.Builder builder = request.initBuilder(host + targetPath, HttpMethod.valueOf(requestEvent.getHttpMethod()));
+                        requestEvent.getHeaders().forEach(builder::header);
                         builder.timeout(Duration.ofMillis(CONFIG.getMaxRequestTime()));
                         HttpResponse<String> response = (HttpResponse<String>) request.send(builder, HttpResponse.BodyHandlers.ofString());
                         APIGatewayProxyResponseEvent res = new APIGatewayProxyResponseEvent()
@@ -113,8 +116,8 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                 } else if("post".equalsIgnoreCase(method) || "put".equalsIgnoreCase(method) || "patch".equalsIgnoreCase(method)) {
                     HttpClientRequest request = new HttpClientRequest();
                     try {
-                        HttpRequest.Builder builder = request.initBuilder(host + targetPath, HttpMethod.valueOf(exchange.getRequest().getHttpMethod()), Optional.of(exchange.getRequest().getBody()));
-                        exchange.getRequest().getHeaders().forEach(builder::header);
+                        HttpRequest.Builder builder = request.initBuilder(host + targetPath, HttpMethod.valueOf(requestEvent.getHttpMethod()), Optional.of(requestEvent.getBody()));
+                        requestEvent.getHeaders().forEach(builder::header);
                         builder.timeout(Duration.ofMillis(CONFIG.getMaxRequestTime()));
                         HttpResponse<String> response = (HttpResponse<String>) request.send(builder, HttpResponse.BodyHandlers.ofString());
                         APIGatewayProxyResponseEvent res = new APIGatewayProxyResponseEvent()
