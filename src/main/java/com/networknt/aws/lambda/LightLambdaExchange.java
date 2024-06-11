@@ -216,9 +216,9 @@ public final class LightLambdaExchange {
         }
         /*
          * Check for failures first because a failed request could mean
-         * that we never set the response in the first place.
+         * that we never set the response in the first place. If response is not null, don't bother.
          */
-        if (stateHasAnyFlags(FLAG_REQUEST_HAS_FAILURE | FLAG_RESPONSE_HAS_FAILURE)) {
+        if (stateHasAnyFlags(FLAG_REQUEST_HAS_FAILURE | FLAG_RESPONSE_HAS_FAILURE) && response == null) {
             LOG.error("Exchange has an error, returning middleware status.");
             this.state |= FLAG_RESPONSE_DONE;
             return ExceptionUtil.convert(this.executor.getChainResults());

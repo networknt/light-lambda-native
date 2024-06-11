@@ -1,12 +1,9 @@
 package com.networknt.aws.lambda.handler.middleware;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.aws.lambda.utility.HeaderValue;
 import com.networknt.status.Status;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -16,12 +13,6 @@ import java.util.List;
  *
  */
 public class ExceptionUtil {
-
-    private static final String DATA_KEY = "data";
-    private static final String NOTIFICATIONS_KEY = "notifications";
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     /**
      * Convert the middleware results to APIGatewayProxyResponseEvent
      *
