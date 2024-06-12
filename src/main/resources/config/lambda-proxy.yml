@@ -8,6 +8,10 @@ functions: ${lambda-proxy.functions:}
 region: ${lambda-proxy.region:ca-central-1}
 # endpoint override for the lambda functions
 endpointOverride: ${lambda-proxy.endpointOverride:}
+# Api call timeout in milliseconds. This sets the amount of time for the entire execution, including all retry attempts.
+apiCallTimeout: ${lambda-proxy.apiCallTimeout:30000}
+# Api call attempt timeout in milliseconds. This sets the amount of time for each individual attempt.
+apiCallAttemptTimeout: ${lambda-proxy.apiCallAttemptTimeout:30000}
 # log type for the lambda function invocation
 logType: ${lambda-proxy.logType:Tail}
 # When LambdaFunctionInvoker is used to invoke the downstream Lambda Function, it can collect the metrics info

@@ -7,6 +7,9 @@ public class LambdaProxyConfig {
     private boolean enabled;
     private String region;
     private String endpointOverride;
+    private int apiCallAttemptTimeout;
+    private int apiCallTimeout;
+    private int maxRetryAttempts;
     private String logType;
     private Map<String, String> functions;
     private boolean metricsInjection;
@@ -34,6 +37,22 @@ public class LambdaProxyConfig {
 
     public void setEndpointOverride(String endpointOverride) {
         this.endpointOverride = endpointOverride;
+    }
+
+    public int getApiCallAttemptTimeout() {
+        return apiCallAttemptTimeout;
+    }
+
+    public void setApiCallAttemptTimeout(int apiCallAttemptTimeout) {
+        this.apiCallAttemptTimeout = apiCallAttemptTimeout;
+    }
+
+    public int getApiCallTimeout() {
+        return apiCallTimeout;
+    }
+
+    public void setApiCallTimeout(int apiCallTimeout) {
+        this.apiCallTimeout = apiCallTimeout;
     }
 
     public String getLogType() {
