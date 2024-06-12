@@ -71,6 +71,17 @@ public class MockLambdaProxyMiddleware implements MiddlewareHandler {
         String serializedEvent = JsonMapper.toJson(exchange.getFinalizedRequest(false));
         if(LOG.isDebugEnabled()) LOG.debug("Serialized request event: {}", serializedEvent);
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent();
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json");
+        headers.put("Key3", "oldValue3");
+        headers.put("key4", "oldValue4");
+        headers.put("KeyC", "oldValueC");
+        headers.put("keyD", "oldValueD");
+        headers.put("header3", "value3");
+        headers.put("Header4", "value4");
+        headers.put("headerC", "valueC");
+        headers.put("HeaderD", "valueD");
+        responseEvent.setHeaders(headers);
         responseEvent.setStatusCode(200);
         responseEvent.setBody("{\"id\":1,\"name\":\"doggy\"}");
         if(LOG.isDebugEnabled()) LOG.debug("Serialized response event: {}", JsonMapper.toJson(responseEvent));

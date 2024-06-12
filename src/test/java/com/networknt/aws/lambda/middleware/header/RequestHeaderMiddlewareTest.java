@@ -1,20 +1,22 @@
 package com.networknt.aws.lambda.middleware.header;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware;
+import com.networknt.aws.lambda.app.LambdaApp;
+import com.networknt.aws.lambda.handler.middleware.header.RequestHeaderMiddleware;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.header.HeaderConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class HeaderMiddlewareTest {
+class RequestHeaderMiddlewareTest {
 
     @Test
-    void testHeaderRemoveUpdate() {
+    void testRequestHeaderRemoveUpdate() {
         var requestEvent = TestUtils.createTestRequestEvent();
 
         // add a request header so that it can be removed by the middleware
@@ -41,8 +43,8 @@ class HeaderMiddlewareTest {
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
         HeaderConfig headerConfig = HeaderConfig.load("header_test");
-        HeaderMiddleware headerMiddleware = new HeaderMiddleware(headerConfig);
-        headerMiddleware.execute(exchange);
+        RequestHeaderMiddleware requestHeaderMiddleware = new RequestHeaderMiddleware(headerConfig);
+        requestHeaderMiddleware.execute(exchange);
         requestEvent = exchange.getRequest();
 
         // header1 and header2 should be removed from the request headers
@@ -61,4 +63,6 @@ class HeaderMiddlewareTest {
         Assertions.assertEquals("valueA", requestEvent.getHeaders().get("keyA"));
         Assertions.assertEquals("valueB", requestEvent.getHeaders().get("keyB"));
     }
+
+
 }
