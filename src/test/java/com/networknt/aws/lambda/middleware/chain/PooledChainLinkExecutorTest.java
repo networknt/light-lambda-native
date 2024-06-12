@@ -2,7 +2,7 @@ package com.networknt.aws.lambda.middleware.chain;
 
 import com.networknt.aws.lambda.*;
 import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware;
+import com.networknt.aws.lambda.handler.middleware.header.RequestHeaderMiddleware;
 import com.networknt.header.HeaderConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ class PooledChainLinkExecutorTest {
 
         /* create a disabled header middleware */
         var disabledHeaderConfig = HeaderConfig.load("header_disabled_test");
-        var headerDisabledHandler = new HeaderMiddleware(disabledHeaderConfig);
+        var headerDisabledHandler = new RequestHeaderMiddleware(disabledHeaderConfig);
 
         var testSynchronousMiddleware = new TestSynchronousMiddleware();
 

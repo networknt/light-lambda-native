@@ -50,7 +50,7 @@ chains:
     - limit
     - traceability
     - correlation
-    - header
+    - requestHeader
     - requestTransformer
     - audit
     - token
@@ -60,6 +60,7 @@ chains:
     - sanitizer
     - validator
   response:
+    - responseHeader
     - responseTransformer
 
   admin:

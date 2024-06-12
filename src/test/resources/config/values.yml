@@ -48,13 +48,30 @@ unified-security.enabled: false
 # header.yml
 header.enabled: true
 
+header.response.remove:
+  - Header3
+  - header4
+header.response.update:
+  key3: value3
+  key4: value4
+header.pathPrefixHeader:
+  /v1/pets:
+    response:
+      remove:
+        - HeaderC
+        - headerD
+      update:
+        keyC: valueC
+        keyD: valueD
+
 # handler.yml
 handler.handlers:
   # Light-framework cross-cutting concerns implemented in the microservice
   - com.networknt.aws.lambda.handler.middleware.metrics.APMMetricsMiddleware@metrics
   - com.networknt.aws.lambda.handler.middleware.correlation.CorrelationMiddleware@correlation
   - com.networknt.aws.lambda.handler.middleware.traceability.TraceabilityMiddleware@traceability
-  - com.networknt.aws.lambda.handler.middleware.header.HeaderMiddleware@header
+  - com.networknt.aws.lambda.handler.middleware.header.RequestHeaderMiddleware@requestHeader
+  - com.networknt.aws.lambda.handler.middleware.header.ResponseHeaderMiddleware@responseHeader
   - com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware@specification
   - com.networknt.aws.lambda.middleware.proxy.MockLambdaProxyMiddleware@proxy
   - com.networknt.aws.lambda.handler.middleware.router.LambdaRouterMiddleware@router
