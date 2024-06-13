@@ -62,7 +62,7 @@ header.pathPrefixHeader:
         - headerD
       update:
         keyC: valueC
-        keyD: valueD
+        KeyD: valueD
 
 # handler.yml
 handler.handlers:

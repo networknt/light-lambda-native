@@ -40,5 +40,9 @@ public class ResponseHeaderMiddlewareTest {
         // headerC and headerD should be removed by the /v1/pets rule.
         Assertions.assertTrue(MapUtil.getValueIgnoreCase(responseEvent.getHeaders(), "headerC").isEmpty());
         Assertions.assertTrue(MapUtil.getValueIgnoreCase(responseEvent.getHeaders(), "headerD").isEmpty());
+
+        // keyC and KeyD should be added by the /v1/pets rule.
+        Assertions.assertEquals("valueC", responseEvent.getHeaders().get("keyC"));  // lower case
+        Assertions.assertEquals("valueD", responseEvent.getHeaders().get("KeyD"));  // upper case
     }
 }

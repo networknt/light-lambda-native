@@ -75,8 +75,6 @@ public class MockLambdaProxyMiddleware implements MiddlewareHandler {
         headers.put("Content-Type", "application/json");
         headers.put("Key3", "oldValue3");
         headers.put("key4", "oldValue4");
-        headers.put("KeyC", "oldValueC");
-        headers.put("keyD", "oldValueD");
         headers.put("header3", "value3");
         headers.put("Header4", "value4");
         headers.put("headerC", "valueC");
