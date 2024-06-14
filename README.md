@@ -72,3 +72,6 @@ software.amazon.awssdk.services.lambda.model.ResourceNotFoundException: Function
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
 	at java.base/java.lang.Thread.run(Thread.java:829)
 ```
+
+### [AuditMiddleware](doc/audit.md)
+### [LambdaProxyMiddleware](doc/proxy.md)
