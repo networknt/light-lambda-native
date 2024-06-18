@@ -33,6 +33,26 @@ public class DynamoDbCacheManager implements CacheManager {
         Table table = this.dynamoDB.getTable(cacheName);
         tables.put(cacheName, table);
     }
+    @Override
+    public Map<Object, Object> getCache(String cacheName) {
+        // cacheName is serviceId + ":" + jwt or jwk
+        String applicationId = cacheName.split(":")[0];
+        String tableName = cacheName.split(":")[1];
+        Item entry;
+        try {
+            Table table = tables.get(tableName);
+            entry = table.getItem(HASH_ID_KEY, applicationId);
+            if (entry == null)
+                return null;
+        } catch (NullPointerException e) {
+            return null;
+        }
+        return convertMap(entry.asMap());
+    }
+
+    public static Map<Object, Object> convertMap(Map<String, Object> originalMap) {
+        return new HashMap<>(originalMap);
+    }
 
     @Override
     public void put(String cacheName, String key, Object value) {
