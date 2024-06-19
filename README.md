@@ -73,5 +73,15 @@ software.amazon.awssdk.services.lambda.model.ResourceNotFoundException: Function
 	at java.base/java.lang.Thread.run(Thread.java:829)
 ```
 
+## Lambda Native Proxy
+
+### [About](doc/about.md)
+### [Benefit](doc/benefit.md)
+### [Limitation](doc/limitation.md)
+### [Architecture](doc/architecture.md)
+### [Design](doc/design.md)
+
+## Middleware Handlers
+
 ### [AuditMiddleware](doc/audit.md)
 ### [LambdaProxyMiddleware](doc/proxy.md)
