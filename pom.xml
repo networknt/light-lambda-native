@@ -17,7 +17,7 @@
 
     <issueManagement>
         <system>github</system>
-        <url>https://github.com/networknt/light-aws-lambda/issues</url>
+        <url>https://github.com/networknt/light-lambda-native/issues</url>
     </issueManagement>
 
     <licenses>
@@ -29,9 +29,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:git://github.com:networknt/light-aws-lambda.git</connection>
-        <developerConnection>scm:git://github.com:networknt/light-aws-lambda.git</developerConnection>
-        <url>https://github.com:networknt/light-aws-lambda.git</url>
+        <connection>scm:git://github.com:networknt/light-lambda-native.git</connection>
+        <developerConnection>scm:git://github.com:networknt/light-lambda-native.git</developerConnection>
+        <url>https://github.com:networknt/light-lambda-native.git</url>
     </scm>
 
     <distributionManagement>
