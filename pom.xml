@@ -6,6 +6,7 @@
     <packaging>jar</packaging>
     <name>lambda-native</name>
     <description>A middleware Lambda function that handles all the cross-cutting concerns for the downstream Lambda function.</description>
+    <url>https://github.com/networknt/light-lambda-native</url>
 
     <developers>
         <developer>
@@ -360,6 +361,17 @@
                             <mainClass>com.networknt.aws.lambda.Runtime</mainClass>
                         </manifest>
                     </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.8</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
             <plugin>
