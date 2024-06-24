@@ -30,6 +30,7 @@ public interface LambdaHandler {
 
     /**
      * Indicate if this middleware handler is asynchronous or not.
+     * @return boolean true if asynchronous
      */
     boolean isAsynchronous();
 

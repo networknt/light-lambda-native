@@ -163,6 +163,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
     /**
      * Builds a complete request path string for our router request.
      *
+     * @param urlRewriteRules - the list of url rewrite rules
      * @param requestPath - the original request path
      * @return - targetRequestPath the target request path string
      */

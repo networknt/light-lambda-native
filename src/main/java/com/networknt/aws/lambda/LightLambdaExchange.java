@@ -172,6 +172,7 @@ public final class LightLambdaExchange {
      * Terminates the request portion of the exchange and invokes the exchangeRequestCompleteListeners.
      * You cannot finalize a request that has already been finalized.
      *
+     * @param fromListener - if the call is from a listener, do not invoke listeners again.
      * @return - returns the complete and final request event.
      */
     public APIGatewayProxyRequestEvent getFinalizedRequest(boolean fromListener) {
@@ -203,6 +204,7 @@ public final class LightLambdaExchange {
      * Terminates the response portion of the exchange and invokes the exchangeResponseCompleteListeners.
      * You cannot finalize a response that has already been finalized.
      *
+     * @param fromListener - if the call is from a listener, do not invoke listeners again.
      * @return - returns the complete and final response event.
      */
     public APIGatewayProxyResponseEvent getFinalizedResponse(boolean fromListener) {

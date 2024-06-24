@@ -187,6 +187,8 @@ public class DynamoDbCacheManager implements CacheManager {
 
     /**
      * DEBUG FUNCTION - will be changed or deprecated in the future.
+     * @param tableName - name of the table
+     * @throws InterruptedException - exception
      */
     public void deleteTable(String tableName) throws InterruptedException {
 
@@ -203,6 +205,7 @@ public class DynamoDbCacheManager implements CacheManager {
     /**
      * Checks to see if the table exists.
      *
+     * @param tableName - name of the table
      * @return - returns true if the table exists
      */
     public boolean doesTableExist(String tableName) {

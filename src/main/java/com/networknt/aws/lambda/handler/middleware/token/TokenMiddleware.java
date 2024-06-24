@@ -47,7 +47,7 @@ public class TokenMiddleware implements MiddlewareHandler {
 
     /**
      * This constructor should only be used for testing. Hence, it is marked as deprecated.
-     * @param cfg
+     * @param cfg config
      */
     @Deprecated
     public TokenMiddleware(TokenConfig cfg) {
