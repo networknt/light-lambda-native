@@ -4,7 +4,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.utility.HeaderKey;
-import com.networknt.aws.lambda.utility.MapUtil;
+import com.networknt.utility.MapUtil;
 import com.networknt.basicauth.BasicAuthConfig;
 import com.networknt.basicauth.UserAuth;
 import com.networknt.config.Config;

@@ -7,7 +7,7 @@ import com.networknt.aws.lambda.handler.Handler;
 import com.networknt.aws.lambda.handler.LambdaHandler;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.handler.middleware.metrics.AbstractMetricsMiddleware;
-import com.networknt.aws.lambda.utility.MapUtil;
+import com.networknt.utility.MapUtil;
 import com.networknt.cluster.Cluster;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;

@@ -3,7 +3,7 @@ package com.networknt.aws.lambda.handler.middleware.token;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.utility.HeaderKey;
-import com.networknt.aws.lambda.utility.MapUtil;
+import com.networknt.utility.MapUtil;
 import com.networknt.cache.CacheManager;
 import com.networknt.client.ClientConfig;
 import com.networknt.client.oauth.Jwt;

@@ -1,3 +1,3 @@
 #!/bin/sh
 set -euo pipefail
-./LambdaProxy
+./lambda-native -Dlight-4j-config-dir=/opt -Dlogback.configurationFile=/opt/logback.xml
