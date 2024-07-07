@@ -4,7 +4,7 @@ import com.networknt.apikey.ApiKey;
 import com.networknt.apikey.ApiKeyConfig;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.utility.MapUtil;
+import com.networknt.utility.MapUtil;
 import com.networknt.config.Config;
 import com.networknt.status.Status;
 import com.networknt.utility.HashUtil;

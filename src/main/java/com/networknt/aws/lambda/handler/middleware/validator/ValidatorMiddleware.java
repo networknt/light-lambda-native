@@ -5,6 +5,8 @@ import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.aws.lambda.utility.HeaderValue;
+import com.networknt.aws.lambda.validator.RequestValidator;
+import com.networknt.aws.lambda.validator.SchemaValidator;
 import com.networknt.config.Config;
 import com.networknt.openapi.ApiNormalisedPath;
 import com.networknt.openapi.NormalisedPath;
@@ -35,7 +37,7 @@ public class ValidatorMiddleware implements MiddlewareHandler {
         if (LOG.isInfoEnabled()) LOG.info("ValidatorMiddleware is constructed");
         CONFIG = ValidatorConfig.load();
         final SchemaValidator schemaValidator = new SchemaValidator(OpenApiMiddleware.helper.openApi3);
-        this.requestValidator = new RequestValidator(schemaValidator);
+        this.requestValidator = new RequestValidator(schemaValidator, CONFIG);
     }
 
     @Override
@@ -59,7 +61,7 @@ public class ValidatorMiddleware implements MiddlewareHandler {
             if (LOG.isDebugEnabled()) LOG.debug("ValidatorMiddleware.execute ends with an error.");
             return new Status(STATUS_MISSING_OPENAPI_OPERATION);
         }
-        Status status = requestValidator.validateRequest(requestPath, exchange, openApiOperation);
+        Status status = requestValidator.validateRequest(requestPath, exchange.getRequest(), openApiOperation);
         if(status != null) {
             if (LOG.isDebugEnabled()) LOG.debug("ValidatorHandler.handleRequest ends with an error.");
             return status;

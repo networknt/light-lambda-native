@@ -4,7 +4,7 @@ import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware;
 import com.networknt.aws.lambda.utility.HeaderKey;
-import com.networknt.aws.lambda.utility.MapUtil;
+import com.networknt.utility.MapUtil;
 import com.networknt.client.oauth.TokenInfo;
 import com.networknt.monad.Result;
 import com.networknt.oas.model.Operation;

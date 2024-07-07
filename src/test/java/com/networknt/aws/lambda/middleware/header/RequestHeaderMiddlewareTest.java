@@ -1,12 +1,10 @@
 package com.networknt.aws.lambda.middleware.header;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.aws.lambda.app.LambdaApp;
 import com.networknt.aws.lambda.handler.middleware.header.RequestHeaderMiddleware;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.header.HeaderConfig;

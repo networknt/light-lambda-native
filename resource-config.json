@@ -1,10 +1,11 @@
 {
   "resources": {
     "includes": [
-      {"pattern": "app.yml"},
-      {"pattern": "jwk.json"},
-      {"pattern": "primary.crt"},
-      {"pattern": "secondary.crt"}
+      {"pattern": "logback.xml"},
+      {"pattern": "config.yml"},
+      {"pattern": "lambda-app.yml"},
+      {"pattern": "handler.yml"},
+      {"pattern": "pooled-chain-executor.yml"}
     ],
     "excludes": [
     ]
