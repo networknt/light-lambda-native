@@ -106,9 +106,9 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                     String issuer = tokenInfo.getIss();
                     auditInfo.put(Constants.ISSUER_CLAIMS, issuer);
                     Map<String, String> headers = exchange.getRequest().getHeaders();
-                    String callerId = headers.get(Constants.CALLER_ID_STRING);
-                    if (callerId != null)
-                        auditInfo.put(Constants.CALLER_ID_STRING, callerId);
+                    Optional<String> optionalCallerId = MapUtil.getValueIgnoreCase(headers, Constants.CALLER_ID_STRING);
+                    if (optionalCallerId.isPresent())
+                        auditInfo.put(Constants.CALLER_ID_STRING, optionalCallerId.get());
                     exchange.addAttachment(AUDIT_ATTACHMENT_KEY, auditInfo);
 
                     if (CONFIG != null && CONFIG.isEnableVerifyScope()) {

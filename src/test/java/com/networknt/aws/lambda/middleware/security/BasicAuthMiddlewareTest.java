@@ -13,6 +13,7 @@ import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.basicauth.BasicAuthConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
+import com.networknt.utility.MapUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -96,7 +97,7 @@ public class BasicAuthMiddlewareTest {
         var requestEvent = TestUtils.createTestRequestEvent();
         requestEvent.setPath("/v2/pet");
         // add the X-Traceability-Id to the header
-        requestEvent.getHeaders().remove(HeaderKey.AUTHORIZATION);
+        MapUtil.delValueIgnoreCase(requestEvent.getHeaders(), HeaderKey.AUTHORIZATION);
         InvocationResponse invocation = InvocationResponse.builder()
                 .requestId("12345")
                 .event(requestEvent)

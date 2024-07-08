@@ -120,10 +120,9 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                         auditInfo.put(Constants.CLIENT_ID_STRING, clientId);
                         auditInfo.put(Constants.ISSUER_CLAIMS, issuer);
                         Map<String, String> headers = exchange.getRequest().getHeaders();
-                        String callerId = headers.get(Constants.CALLER_ID_STRING);
-
-                        if (callerId != null)
-                            auditInfo.put(Constants.CALLER_ID_STRING, callerId);
+                        Optional<String> optionalCallerId = MapUtil.getValueIgnoreCase(headers, Constants.CALLER_ID_STRING);
+                        if (optionalCallerId.isPresent())
+                            auditInfo.put(Constants.CALLER_ID_STRING, optionalCallerId.get());
 
                         exchange.addAttachment(AUDIT_ATTACHMENT_KEY, auditInfo);
 

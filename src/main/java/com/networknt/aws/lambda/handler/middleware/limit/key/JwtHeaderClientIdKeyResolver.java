@@ -3,8 +3,10 @@ package com.networknt.aws.lambda.handler.middleware.limit.key;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware;
 import com.networknt.utility.Constants;
+import com.networknt.utility.MapUtil;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * This is a customized KeyResolver for one of our customers on the external gateway in the DMZ.
@@ -27,8 +29,8 @@ public class JwtHeaderClientIdKeyResolver implements KeyResolver {
         if(key == null) {
             // try to get the key from the header
             Map<String, String> headerMap = exchange.getRequest().getHeaders();
-            String value = headerMap.get("Client-Id");
-            if(value != null) key = value;
+            Optional<String> optionalValue = MapUtil.getValueIgnoreCase(headerMap, "Client-Id");
+            if(optionalValue.isPresent()) key = optionalValue.get();
         }
         return key;
     }

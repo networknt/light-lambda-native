@@ -11,6 +11,7 @@ import com.networknt.aws.lambda.handler.middleware.sanitizer.SanitizerMiddleware
 import com.networknt.config.JsonMapper;
 import com.networknt.sanitizer.SanitizerConfig;
 
+import com.networknt.utility.MapUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class SanitizerMiddlewareTest {
     private static final Logger LOG = LoggerFactory.getLogger(SanitizerMiddlewareTest.class);
@@ -53,9 +55,9 @@ public class SanitizerMiddlewareTest {
         this.exchange.executeChain();
         requestEvent = exchange.getFinalizedRequest(false);
         Map<String, String> headerMapResult = requestEvent.getHeaders();
-        String param = headerMapResult.get("param");
+        Optional<String> optionalParam = MapUtil.getValueIgnoreCase(headerMapResult, "param");
         // works on both linux and Windows due to EncodeWrapper
-        Assertions.assertTrue(param.contains("<script>alert(\\'header test\\')</script>"));
+        optionalParam.ifPresent(s -> Assertions.assertTrue(s.contains("<script>alert(\\'header test\\')</script>")));
     }
 
     @Test

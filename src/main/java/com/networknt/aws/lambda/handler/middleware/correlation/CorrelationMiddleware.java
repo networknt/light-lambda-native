@@ -6,6 +6,7 @@ import com.networknt.aws.lambda.utility.LoggerKey;
 import com.networknt.config.Config;
 import com.networknt.correlation.CorrelationConfig;
 import com.networknt.status.Status;
+import com.networknt.utility.MapUtil;
 import com.networknt.utility.ModuleRegistry;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import org.slf4j.MDC;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.UUID;
 
 
@@ -34,7 +36,8 @@ public class CorrelationMiddleware implements MiddlewareHandler {
         // check if the cid is in the request header
         String cid = null;
         if(exchange.getRequest().getHeaders() != null) {
-            cid = exchange.getRequest().getHeaders().get(HeaderKey.CORRELATION);
+            Optional<String> optionalCid = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), HeaderKey.CORRELATION);
+            cid = optionalCid.orElse(null);
         } else {
             exchange.getRequest().setHeaders(new HashMap<>());
         }
@@ -42,7 +45,8 @@ public class CorrelationMiddleware implements MiddlewareHandler {
             cid = this.getUUID();
             exchange.getRequest().getHeaders().put(HeaderKey.CORRELATION, cid);
             exchange.addAttachment(CORRELATION_ATTACHMENT_KEY, cid);
-            String tid = exchange.getRequest().getHeaders().get(HeaderKey.TRACEABILITY);
+            Optional<String> optionalTid = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), HeaderKey.TRACEABILITY);
+            String tid = optionalTid.orElse(null);
             if (tid != null && LOG.isInfoEnabled())
                 LOG.info("Associate traceability Id {} with correlation Id {}", tid, cid);
         }

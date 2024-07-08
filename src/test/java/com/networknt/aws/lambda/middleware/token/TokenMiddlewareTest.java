@@ -8,6 +8,7 @@ import com.networknt.aws.lambda.TestUtils;
 import com.networknt.aws.lambda.handler.middleware.token.TokenMiddleware;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.router.middleware.TokenConfig;
+import com.networknt.utility.MapUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,7 @@ public class TokenMiddlewareTest {
         // add a request header so that it can be removed by the middleware
         // requestEvent.getHeaders().put("service_id", "com.networknt.petstore-1.0.0");
         requestEvent.getHeaders().put(HeaderKey.TRACEABILITY, "12345");
-        requestEvent.getHeaders().remove(HeaderKey.AUTHORIZATION);
+        MapUtil.delValueIgnoreCase(requestEvent.getHeaders(), HeaderKey.AUTHORIZATION);
 
         requestEvent.setPath("/v1/pets");
         requestEvent.setBody("{\"id\": 1, \"name\": \"dog\"}");
