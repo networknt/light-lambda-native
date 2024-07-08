@@ -11,6 +11,7 @@ import com.networknt.rule.*;
 import com.networknt.status.Status;
 import com.networknt.utility.ConfigUtils;
 import com.networknt.utility.Constants;
+import com.networknt.utility.MapUtil;
 import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,7 +141,7 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                                         if(removeList != null) {
                                             removeList.forEach(s -> {
                                                 if(LOG.isTraceEnabled()) LOG.trace("removing request header: " + s);
-                                                exchange.getRequest().getHeaders().remove(s);
+                                                MapUtil.delValueIgnoreCase(exchange.getRequest().getHeaders(), s);
                                             });
                                         }
                                         Map<String, Object> updateMap = (Map)requestHeaders.get("update");

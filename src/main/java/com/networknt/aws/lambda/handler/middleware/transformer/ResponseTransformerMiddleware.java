@@ -8,6 +8,7 @@ import com.networknt.rule.RuleConstants;
 import com.networknt.status.Status;
 import com.networknt.utility.ConfigUtils;
 import com.networknt.utility.Constants;
+import com.networknt.utility.MapUtil;
 import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,7 +155,7 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
                                 // manipulate the response headers.
                                 List<String> removeList = (List) responseHeaders.get(REMOVE);
                                 if (removeList != null) {
-                                    removeList.forEach(s -> exchange.getResponse().getHeaders().remove(s));
+                                    removeList.forEach(s -> MapUtil.delValueIgnoreCase(exchange.getResponse().getHeaders(), s));
                                 }
                                 Map<String, Object> updateMap = (Map) responseHeaders.get(UPDATE);
                                 if (updateMap != null) {

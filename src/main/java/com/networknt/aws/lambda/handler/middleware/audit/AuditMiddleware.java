@@ -9,6 +9,7 @@ import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.mask.Mask;
 import com.networknt.status.Status;
+import com.networknt.utility.MapUtil;
 import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.StringUtils;
 import org.slf4j.Logger;
@@ -159,9 +160,13 @@ public class AuditMiddleware implements MiddlewareHandler {
 
     private void auditHeader(LightLambdaExchange exchange, Map<String, Object> auditMap) {
         for (String name : CONFIG.getHeaderList()) {
-            String value = exchange.getRequest().getHeaders().get(name);
-            if(LOG.isTraceEnabled()) LOG.trace("header name = " + name + " header value = " + value);
-            auditMap.put(name, CONFIG.isMask() ? Mask.maskRegex(value, "requestHeader", name) : value);
+            Optional<String> optionalValue = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), name);
+            if(optionalValue.isEmpty()) {
+                if(LOG.isTraceEnabled()) LOG.trace("header name = {} header value is null", name);
+                continue;
+            }
+            if(LOG.isTraceEnabled()) LOG.trace("header name = {} header value = {}", name, optionalValue.get());
+            auditMap.put(name, CONFIG.isMask() ? Mask.maskRegex(optionalValue.get(), "requestHeader", name) : optionalValue.get());
         }
     }
 
@@ -170,8 +175,9 @@ public class AuditMiddleware implements MiddlewareHandler {
         String requestBodyString = exchange.getRequest().getBody();
         // Mask requestBody json string if mask enabled
         if (requestBodyString != null && !requestBodyString.isEmpty()) {
-            String contentType = exchange.getRequest().getHeaders().get(HeaderKey.CONTENT_TYPE);
-            if(contentType != null) {
+            Optional<String> optionalContentType = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), HeaderKey.CONTENT_TYPE);
+            if(optionalContentType.isPresent()) {
+                String contentType = optionalContentType.get();
                 if(contentType.startsWith("application/json")) {
                     if(CONFIG.isMask()) requestBodyString = Mask.maskJson(requestBodyString, REQUEST_BODY_KEY);
                 } else if(contentType.startsWith("text") || contentType.startsWith("application/xml")) {
@@ -192,8 +198,9 @@ public class AuditMiddleware implements MiddlewareHandler {
         String responseBodyString = exchange.getResponse().getBody();
         // mask the response body json string if mask is enabled.
         if(responseBodyString != null && !responseBodyString.isEmpty()) {
-            String contentType = exchange.getResponse().getHeaders().get(HeaderKey.CONTENT_TYPE);
-            if(contentType != null) {
+            Optional<String> optionalContentType = MapUtil.getValueIgnoreCase(exchange.getResponse().getHeaders(), HeaderKey.CONTENT_TYPE);
+            if(optionalContentType.isPresent()) {
+                String contentType = optionalContentType.orElse(null);
                 if(contentType.startsWith("application/json")) {
                     if(CONFIG.isMask()) responseBodyString =Mask.maskJson(responseBodyString, RESPONSE_BODY_KEY);
                 } else if(contentType.startsWith("text") || contentType.startsWith("application/xml")) {

@@ -7,12 +7,14 @@ import com.networknt.aws.lambda.utility.LoggerKey;
 import com.networknt.config.Config;
 import com.networknt.status.Status;
 import com.networknt.traceability.TraceabilityConfig;
+import com.networknt.utility.MapUtil;
 import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.util.HashMap;
+import java.util.Optional;
 
 public class TraceabilityMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(TraceabilityMiddleware.class);
@@ -34,7 +36,8 @@ public class TraceabilityMiddleware implements MiddlewareHandler {
 
         String tid = null;
         if(exchange.getRequest().getHeaders() != null) {
-            tid = exchange.getRequest().getHeaders().get(HeaderKey.TRACEABILITY);
+            Optional<String> tidOptional = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), HeaderKey.TRACEABILITY);
+            tid = tidOptional.orElse(null);
         }
 
         if (tid != null) {

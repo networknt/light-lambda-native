@@ -1,8 +1,10 @@
 package com.networknt.aws.lambda.handler.middleware.limit.key;
 
 import com.networknt.aws.lambda.LightLambdaExchange;
+import com.networknt.utility.MapUtil;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * When native-lambda is used for external clients and all external requests go through the
@@ -16,8 +18,8 @@ public class AkamaiAddressKeyResolver implements KeyResolver {
     public String resolve(LightLambdaExchange exchange) {
         String key = "127.0.0.1";
         Map<String, String> headerMap = exchange.getResponse().getHeaders();
-        String value = headerMap.get("True-Client-IP");
-        if(value != null) key = value;
+        Optional<String> valueString = MapUtil.getValueIgnoreCase(headerMap, "True-Client-IP");
+        if(valueString.isPresent()) key = valueString.get();
         return key;
     }
 }

@@ -114,6 +114,16 @@
         </dependency>
         <dependency>
             <groupId>com.networknt</groupId>
+            <artifactId>cluster</artifactId>
+            <version>${version.light-4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>monad-result</artifactId>
+            <version>${version.light-4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
             <artifactId>env-config</artifactId>
             <version>${version.light-4j}</version>
         </dependency>

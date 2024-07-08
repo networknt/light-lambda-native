@@ -49,18 +49,21 @@ public class SanitizerMiddleware implements MiddlewareHandler {
                 for (Map.Entry<String, String> entry: headerMap.entrySet()) {
                     // if ignore list exists, it will take the precedence.
                     if(CONFIG.getHeaderAttributesToIgnore() != null && CONFIG.getHeaderAttributesToIgnore().stream().anyMatch(entry.getKey()::equalsIgnoreCase)) {
-                        if(LOG.isTraceEnabled()) LOG.trace("Ignore header " + entry.getKey() + " as it is in the ignore list.");
+                        if(LOG.isTraceEnabled())
+                            LOG.trace("Ignore header {} as it is in the ignore list.", entry.getKey());
                         continue;
                     }
 
                     if(CONFIG.getHeaderAttributesToEncode() != null) {
                         if(CONFIG.getHeaderAttributesToEncode().stream().anyMatch(entry.getKey()::equalsIgnoreCase)) {
-                            if(LOG.isTraceEnabled()) LOG.trace("Encode header " + entry.getKey() + " as it is not in the ignore list and it is in the encode list.");
+                            if(LOG.isTraceEnabled())
+                                LOG.trace("Encode header {} as it is not in the ignore list and it is in the encode list.", entry.getKey());
                             entry.setValue(headerEncoder.applyEncoding(entry.getValue()));
                         }
                     } else {
                         // no attributes to encode, encode everything except the ignore list.
-                        if(LOG.isTraceEnabled()) LOG.trace("Encode header " + entry.getKey() + " as it is not in the ignore list and the encode list is null.");
+                        if(LOG.isTraceEnabled())
+                            LOG.trace("Encode header {} as it is not in the ignore list and the encode list is null.", entry.getKey());
                         entry.setValue(headerEncoder.applyEncoding(entry.getValue()));
                     }
                 }
