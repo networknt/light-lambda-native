@@ -102,6 +102,12 @@ paths:
       - admin
       - setLogger
 
+  - path: '/adm/cache/{name}'
+    method: 'get'
+    exec:
+      - admin
+      - cache
+
 #  - path: '/adm/modules'
 #    method: 'get'
 #    exec:

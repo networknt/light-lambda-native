@@ -1,17 +1,21 @@
 package com.networknt.aws.lambda.handler;
 
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.config.Config;
 import com.networknt.handler.config.EndpointSource;
 import com.networknt.handler.config.HandlerConfig;
 import com.networknt.handler.config.PathChain;
 import com.networknt.utility.ModuleRegistry;
+import com.networknt.utility.PathTemplateMatcher;
 import com.networknt.utility.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+
+import static io.undertow.util.PathTemplateMatch.ATTACHMENT_KEY;
 
 public class Handler {
 
@@ -22,9 +26,8 @@ public class Handler {
     // handlers defined in the handlers section. each handler keyed by a name.
     static final Map<String, LambdaHandler> handlers = new HashMap<>();
     // chain name to list of handlers mapping
-    static final Map<String, List<LambdaHandler>> handlerListById = new HashMap<>();
-    // endpoint to the Chain mapping
-    static final Map<String, Chain> endpointChain = new HashMap<>();
+    static final Map<String, Chain> handlerListById = new HashMap<>();
+    static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
     static Chain defaultChain;
 
     public static void init() {
@@ -60,14 +63,13 @@ public class Handler {
             // add the chains to the handler list by id list.
             for (var chainName : config.getChains().keySet()) {
                 var chain = config.getChains().get(chainName);
-                var handlerChain = new ArrayList<LambdaHandler>();
-
+                Chain handlerChain = new Chain(false);
                 for (var chainItemName : chain) {
                     var chainItem = handlers.get(chainItemName);
-
-                    if (chainItem == null)
-                        throw new RuntimeException("Chain " + chainName + " uses Unknown handler: " + chainItemName);
-                    handlerChain.add(chainItem);
+                    if (chainItem == null) {
+                        throw new RuntimeException("Unknown handler in chain: " + chainItemName);
+                    }
+                    handlerChain.addChainable(chainItem);
                 }
                 handlerListById.put(chainName, handlerChain);
             }
@@ -135,10 +137,23 @@ public class Handler {
      */
     private static void addPathChain(PathChain pathChain) {
         var method = pathChain.getMethod();
+        // Use a random integer as the id for a given path.
+        int randInt = new Random().nextInt();
+
+        while (handlerListById.containsKey(Integer.toString(randInt)))
+            randInt = new Random().nextInt();
 
         // Flatten out the execution list from a mix of middleware chains and handlers.
         var handlers = getHandlersFromExecList(pathChain.getExec());
-        endpointChain.put(pathChain.getPath() + "@" + pathChain.getMethod(), handlers);
+
+        PathTemplateMatcher<String> pathTemplateMatcher = methodToMatcherMap.containsKey(method)
+                ? methodToMatcherMap.get(method)
+                : new PathTemplateMatcher<>();
+        if (pathTemplateMatcher.get(pathChain.getPath()) == null)
+            pathTemplateMatcher.add(pathChain.getPath(), Integer.toString(randInt));
+
+        methodToMatcherMap.put(method, pathTemplateMatcher);
+        handlerListById.put(Integer.toString(randInt), handlers);
     }
 
     /**
@@ -154,9 +169,9 @@ public class Handler {
         if (execs != null) {
 
             for (var exec : execs) {
-                var handlerList = handlerListById.get(exec);
+                var handlerChain = handlerListById.get(exec);
 
-                if (handlerList == null) {
+                if (handlerChain == null) {
                     // not a chain, try to resolve it as a handler
                     LambdaHandler handler = handlers.get(exec);
                     if (handler != null) {
@@ -165,7 +180,7 @@ public class Handler {
                         throw new RuntimeException("Unknown handler or chain: " + exec);
                     }
                 } else {
-                    for (LambdaHandler handler : handlerList) {
+                    for (LambdaHandler handler : handlerChain.getChain()) {
                         if (handler.isEnabled())
                             handlersFromExecList.addChainable(handler);
                     }
@@ -195,7 +210,7 @@ public class Handler {
      * constructor fields. To note: It could either implement HttpHandler, or
      * HandlerProvider.
      *
-     * @param handler
+     * @param handler handler string
      */
     private static void initStringDefinedHandler(String handler) {
 
@@ -264,9 +279,29 @@ public class Handler {
         return handlers;
     }
 
-    public static Chain getChain(String endpoint) {
-        return endpointChain.get(endpoint);
+    public static Chain getChain(APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent) {
+        var requestPath = apiGatewayProxyRequestEvent.getPath();
+        var requestMethod = apiGatewayProxyRequestEvent.getHttpMethod();
+        // Get the matcher corresponding to the current request type.
+        var pathTemplateMatcher = methodToMatcherMap.get(requestMethod.toLowerCase());
+        if (pathTemplateMatcher != null) {
+            // Match the current request path to the configured paths.
+            var result = pathTemplateMatcher.match(requestPath);
+            if (result != null) {
+                // inject the path and query parameters into the request.
+                for (var entry : result.getParameters().entrySet()) {
+                    // the values shouldn't be added to query param. but this is left as it was to keep backward compatability
+                    apiGatewayProxyRequestEvent.getQueryStringParameters().put(entry.getKey(), entry.getValue());
+                    // put values in path param map
+                    apiGatewayProxyRequestEvent.getPathParameters().put(entry.getKey(), entry.getValue());
+                }
+                var id = result.getValue();
+                return handlerListById.get(id);
+            }
+        }
+        return null;
     }
+
     public static Chain getDefaultChain() {
         return defaultChain;
     }

@@ -18,7 +18,7 @@ public class LoggerHandlerTest {
         requestEvent.setPath("/adm/logger");
         requestEvent.setHttpMethod("GET");
         LambdaApp lambdaApp = new LambdaApp();
-        Chain chain = Handler.getChain("/adm/logger@get");
+        Chain chain = Handler.getChain(requestEvent);
         Context lambdaContext = new LambdaContext("1");
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, chain);
         exchange.setInitialRequest(requestEvent);
@@ -34,7 +34,7 @@ public class LoggerHandlerTest {
         requestEvent.setHttpMethod("POST");
         requestEvent.setBody("[{\"name\":\"ROOT\",\"level\":\"INFO\"},{\"name\":\"com.networknt\",\"level\":\"INFO\"}]");
         LambdaApp lambdaApp = new LambdaApp();
-        Chain chain = Handler.getChain("/adm/logger@post");
+        Chain chain = Handler.getChain(requestEvent);
         Context lambdaContext = new LambdaContext("1");
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, chain);
         exchange.setInitialRequest(requestEvent);

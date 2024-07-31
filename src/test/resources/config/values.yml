@@ -100,6 +100,7 @@ handler.handlers:
   - com.networknt.aws.lambda.handler.info.ServerInfoHandler@info
   - com.networknt.aws.lambda.handler.logger.LoggerGetHandler@getLogger
   - com.networknt.aws.lambda.handler.logger.LoggerSetHandler@setLogger
+  - com.networknt.aws.lambda.handler.cache.CacheExplorerHandler@cache
 
 # -------------------------------------------
 # client.yml
