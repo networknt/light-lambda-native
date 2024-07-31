@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 /**
  * This is the entry point for the stream lambda function that is responsible for cross-cutting concerns for the business Lambda
@@ -50,7 +51,7 @@ public class LambdaStreamApp implements RequestStreamHandler {
             var requestPath = apiGatewayProxyRequestEvent.getPath();
             var requestMethod = apiGatewayProxyRequestEvent.getHttpMethod();
             LOG.debug("Request path: {} -- Request method: {}", requestPath, requestMethod);
-            Chain chain = Handler.getChain(requestPath + "@" + requestMethod);
+            Chain chain = Handler.getChain(apiGatewayProxyRequestEvent);
             if(chain == null) chain = Handler.getDefaultChain();
             final var exchange = new LightLambdaExchange(context, chain);
             exchange.setInitialRequest(apiGatewayProxyRequestEvent);

@@ -9,8 +9,12 @@ import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.config.Config;
 import com.networknt.utility.ModuleRegistry;
+import com.networknt.utility.PathTemplateMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -24,6 +28,7 @@ public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, AP
 
     private static final Logger LOG = LoggerFactory.getLogger(LambdaApp.class);
     public static final LambdaAppConfig CONFIG = (LambdaAppConfig) Config.getInstance().getJsonObjectConfig(LambdaAppConfig.CONFIG_NAME, LambdaAppConfig.class);
+    static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
 
     public LambdaApp() {
         if (LOG.isInfoEnabled()) LOG.info("LambdaApp is constructed");
@@ -42,7 +47,7 @@ public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, AP
         var requestPath = apiGatewayProxyRequestEvent.getPath();
         var requestMethod = apiGatewayProxyRequestEvent.getHttpMethod();
         LOG.debug("Request path: {} -- Request method: {}", requestPath, requestMethod);
-        Chain chain = Handler.getChain(requestPath + "@" + requestMethod.toLowerCase());
+        Chain chain = Handler.getChain(apiGatewayProxyRequestEvent);
         if(chain == null) chain = Handler.getDefaultChain();
         final var exchange = new LightLambdaExchange(context, chain);
         exchange.setInitialRequest(apiGatewayProxyRequestEvent);
@@ -51,5 +56,4 @@ public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, AP
         LOG.debug("Lambda CCC --end with response: {}", response);
         return response;
     }
-
 }

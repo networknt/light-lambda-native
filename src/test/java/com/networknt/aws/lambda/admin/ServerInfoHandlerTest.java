@@ -18,7 +18,7 @@ public class ServerInfoHandlerTest {
         requestEvent.setPath("/adm/server/info");
         requestEvent.setHttpMethod("GET");
         LambdaApp lambdaApp = new LambdaApp();
-        Chain chain = Handler.getChain("/adm/server/info@get");
+        Chain chain = Handler.getChain(requestEvent);
         Context lambdaContext = new LambdaContext("1");
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, chain);
         exchange.setInitialRequest(requestEvent);
