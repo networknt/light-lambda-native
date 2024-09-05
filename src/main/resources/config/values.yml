@@ -62,7 +62,7 @@ header.enabled: true
 # handler.yml
 handler.handlers:
   # Light-framework cross-cutting concerns implemented in the microservice
-  - com.networknt.aws.lambda.handler.middleware.metrics.APMMetricsMiddleware@metrics
+  - com.networknt.aws.lambda.handler.middleware.metrics.CloudWatchMetricsMiddleware@metrics
   - com.networknt.aws.lambda.handler.middleware.correlation.CorrelationMiddleware@correlation
   - com.networknt.aws.lambda.handler.middleware.traceability.TraceabilityMiddleware@traceability
   - com.networknt.aws.lambda.handler.middleware.header.RequestHeaderMiddleware@requestHeader
@@ -87,6 +87,7 @@ handler.handlers:
   - com.networknt.aws.lambda.handler.info.ServerInfoHandler@info
   - com.networknt.aws.lambda.handler.logger.LoggerGetHandler@getLogger
   - com.networknt.aws.lambda.handler.logger.LoggerSetHandler@setLogger
+  - com.networknt.aws.lambda.handler.cache.CacheExplorerHandler@cache
 
 # client.yml
 client.tokenKeyServerUrl: https://networknt.oktapreview.com
