@@ -116,14 +116,14 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
                     .logType(CONFIG.getLogType())
                     .payload(payload)
                     .build();
-            long startTime = System.nanoTime();
+            long startTime = System.currentTimeMillis();
             CompletableFuture<String> futureResponse = client.invoke(request)
                     .thenApply(res -> {
                         if(CONFIG.isMetricsInjection()) {
                             if(metricsMiddleware == null) lookupMetricsMiddleware();
                             if(metricsMiddleware != null) {
                                 if (LOG.isTraceEnabled()) LOG.trace("Inject metrics for {}", CONFIG.getMetricsName());
-                                metricsMiddleware.injectMetrics(exchange, startTime, CONFIG.getMetricsName(), null);
+                                metricsMiddleware.injectMetrics(exchange, startTime, CONFIG.getMetricsName());
                             }
                         }
                         if (LOG.isTraceEnabled()) LOG.trace("LambdaProxyMiddleware.invokeFunction response: {}", res);
