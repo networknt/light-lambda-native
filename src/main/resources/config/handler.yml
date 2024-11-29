@@ -50,6 +50,7 @@ chains:
     - limit
     - traceability
     - correlation
+    - requestCors
     - requestHeader
     - requestTransformer
     - audit
@@ -61,6 +62,7 @@ chains:
     - validator
   response:
     - responseHeader
+    - responseCors
     - responseTransformer
 
   admin:

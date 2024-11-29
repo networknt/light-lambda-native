@@ -1,0 +1,14 @@
+# cors.yml
+enabled: true
+
+allowedOrigins:
+  - https://abc.com
+  - https://www.xyz.com
+  - https://def.com
+
+allowedMethods:
+  - GET
+  - PUT
+  - POST
+  - DELETE
+  - PATCH

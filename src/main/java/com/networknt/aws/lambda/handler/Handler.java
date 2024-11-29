@@ -15,8 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
-import static io.undertow.util.PathTemplateMatch.ATTACHMENT_KEY;
-
 public class Handler {
 
 

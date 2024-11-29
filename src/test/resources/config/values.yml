@@ -80,6 +80,8 @@ handler.handlers:
   - com.networknt.aws.lambda.handler.middleware.traceability.TraceabilityMiddleware@traceability
   - com.networknt.aws.lambda.handler.middleware.header.RequestHeaderMiddleware@requestHeader
   - com.networknt.aws.lambda.handler.middleware.header.ResponseHeaderMiddleware@responseHeader
+  - com.networknt.aws.lambda.handler.middleware.cors.RequestCorsMiddleware@requestCors
+  - com.networknt.aws.lambda.handler.middleware.cors.ResponseCorsMiddleware@responseCors
   - com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware@specification
   - com.networknt.aws.lambda.middleware.proxy.MockLambdaProxyMiddleware@proxy
   - com.networknt.aws.lambda.handler.middleware.router.LambdaRouterMiddleware@router
@@ -149,3 +151,19 @@ rule-loader.endpointRules: {"/v1/pets@post":{"request-transform":[{"ruleId":"pet
 # response-transformer.yml
 response-transformer.appliedPathPrefixes:
   - /v1/pets
+
+# cors.yml
+# cors.yml
+cors.enabled: true
+
+cors.allowedOrigins:
+  - https://abc.com
+  - https://www.xyz.com
+  - https://def.com
+
+cors.allowedMethods:
+  - GET
+  - PUT
+  - POST
+  - DELETE
+  - PATCH

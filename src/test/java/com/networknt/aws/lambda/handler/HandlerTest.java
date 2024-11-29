@@ -8,6 +8,6 @@ public class HandlerTest {
     @Test
     public void testInitHandler() {
         Handler.init();
-        Assertions.assertEquals(25, Handler.getHandlers().size());
+        Assertions.assertEquals(27, Handler.getHandlers().size());
     }
 }
