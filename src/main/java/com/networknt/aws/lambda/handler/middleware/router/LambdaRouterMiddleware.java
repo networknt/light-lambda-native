@@ -88,7 +88,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                 }
                 if(LOG.isTraceEnabled()) LOG.trace("Discovered host {} for ServiceId {}", host, serviceId);
                 // call the downstream service based on the request methods.
-                long startTime = System.nanoTime();
+                long startTime = System.currentTimeMillis();
                 if("get".equalsIgnoreCase(method) || "delete".equalsIgnoreCase(method)) {
                     HttpClientRequest request = new HttpClientRequest();
                     try {
@@ -104,7 +104,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                             if(metricsMiddleware == null) lookupMetricsMiddleware();
                             if(metricsMiddleware != null) {
                                 if (LOG.isTraceEnabled()) LOG.trace("Inject metrics for {}", CONFIG.getMetricsName());
-                                metricsMiddleware.injectMetrics(exchange, startTime, CONFIG.getMetricsName(), null);
+                                metricsMiddleware.injectMetrics(exchange, startTime, CONFIG.getMetricsName());
                             }
                         }
                         if(LOG.isTraceEnabled()) LOG.trace("Response: {}", JsonMapper.toJson(res));
@@ -128,7 +128,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                             if(metricsMiddleware == null) lookupMetricsMiddleware();
                             if(metricsMiddleware != null) {
                                 if (LOG.isTraceEnabled()) LOG.trace("Inject metrics for {}", CONFIG.getMetricsName());
-                                metricsMiddleware.injectMetrics(exchange, startTime, CONFIG.getMetricsName(), null);
+                                metricsMiddleware.injectMetrics(exchange, startTime, CONFIG.getMetricsName());
                             }
                         }
                         if(LOG.isTraceEnabled()) LOG.trace("Response: {}", JsonMapper.toJson(res));

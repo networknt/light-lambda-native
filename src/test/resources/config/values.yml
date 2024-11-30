@@ -75,7 +75,7 @@ header.pathPrefixHeader:
 # handler.yml
 handler.handlers:
   # Light-framework cross-cutting concerns implemented in the microservice
-  - com.networknt.aws.lambda.handler.middleware.metrics.APMMetricsMiddleware@metrics
+  - com.networknt.aws.lambda.handler.middleware.metrics.CloudWatchMetricsMiddleware@metrics
   - com.networknt.aws.lambda.handler.middleware.correlation.CorrelationMiddleware@correlation
   - com.networknt.aws.lambda.handler.middleware.traceability.TraceabilityMiddleware@traceability
   - com.networknt.aws.lambda.handler.middleware.header.RequestHeaderMiddleware@requestHeader
