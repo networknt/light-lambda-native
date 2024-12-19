@@ -61,6 +61,9 @@ public class OpenApiMiddleware implements MiddlewareHandler {
         final NormalisedPath openApiPathString = maybeApiPath.get();
         final Path path = helper.openApi3.getPath(openApiPathString.original());
 
+        /* populate the event with the path parameter values. */
+        exchange.getRequest().setPathParameters(this.getPathParamsMap(requestPath, openApiPathString));
+
         final String httpMethod = exchange.getRequest().getHttpMethod().toLowerCase();
         final Operation operation = path.getOperation(httpMethod);
 
@@ -83,6 +86,41 @@ public class OpenApiMiddleware implements MiddlewareHandler {
         LOG.debug("OpenAPI Specification Time - Finish: {}", System.currentTimeMillis());
 
         return successMiddlewareStatus();
+    }
+
+    /**
+     * Grabs the path parameters from the original path based on the provided specification path.
+     *
+     * @param original - The original path containing potential parameter values.
+     * @param specPath - The specification path that contains potential parameter keys.
+     * @return - returns a map containing the path parameter names and values.
+     */
+    private Map<String, String> getPathParamsMap(final NormalisedPath original, final NormalisedPath specPath) {
+
+        if (!specPath.original().contains("{")) {
+            LOG.debug("Provided path does not contain any path parameters.");
+            return new HashMap<>();
+
+        } else if (original.parts().size() != specPath.parts().size()) {
+            LOG.warn("Number of path parts in original does not match the specification.");
+            return new HashMap<>();
+        }
+
+        final var params = new HashMap<String, String>();
+        final var originalParts = original.parts();
+        final var specParts = specPath.parts();
+
+        for (int x = 0; x < original.parts().size(); x++) {
+            final var specPart = specParts.get(x);
+
+            if (specPart.startsWith("{") && specPart.endsWith("}")) {
+                final var paramKey = specPart.substring(1, specPart.length() - 1);
+                final var pathParamValue = originalParts.get(x);
+                LOG.trace("Specification path part {} with a key of {} and a value of {}", x, paramKey, pathParamValue);
+                params.put(paramKey, pathParamValue);
+            }
+        }
+        return params;
     }
 
     /**
