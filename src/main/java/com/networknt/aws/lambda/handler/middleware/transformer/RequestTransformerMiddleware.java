@@ -25,7 +25,7 @@ import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.
 
 public class RequestTransformerMiddleware extends AbstractTransformerMiddleware {
     private static final Logger LOG = LoggerFactory.getLogger(RequestTransformerMiddleware.class);
-    static final String REQUEST_TRANSFORM = "request-transform";
+    static final String REQUEST_TRANSFORM = "req-tra";
 
     private static RequestTransformerConfig CONFIG;
     public RequestTransformerMiddleware() {
@@ -71,7 +71,7 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                 if(LOG.isDebugEnabled()) LOG.debug("endpointRules: " + endpointRules.get(REQUEST_TRANSFORM).size());
             }
             if(endpointRules != null) {
-                List<Map<String, Object>> requestTransformRules = endpointRules.get(REQUEST_TRANSFORM);
+                List<String> requestTransformRules = endpointRules.get(REQUEST_TRANSFORM);
                 if(requestTransformRules != null) {
                     boolean finalResult = true;
                     // call the rule engine to transform the request metadata or body. The input contains all the request elements
@@ -92,12 +92,10 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                         }
                     }
                     Map<String, Object> result = null;
-                    String ruleId = null;
                     // iterate the rules and execute them in sequence. Break only if one rule is successful.
                     if(LOG.isDebugEnabled()) LOG.debug("requestTransformRules list count: " + requestTransformRules.size());
-                    for(Map<String, Object> ruleMap: requestTransformRules) {
-                        ruleId = (String)ruleMap.get(Constants.RULE_ID);
-                        if(LOG.isDebugEnabled()) LOG.debug("ruleID found: " + ruleId);
+                    for(String ruleId: requestTransformRules) {
+                        if(LOG.isDebugEnabled()) LOG.debug("ruleId found: {}", ruleId);
                         try {
                             result = ruleEngine.executeRule(ruleId, objMap);
                             boolean res = (Boolean) result.get(RuleConstants.RESULT);

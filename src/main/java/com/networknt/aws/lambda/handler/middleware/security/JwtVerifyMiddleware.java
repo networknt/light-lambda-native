@@ -103,15 +103,15 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
 
                         String clientId = claims.getStringClaimValue(Constants.CLIENT_ID_STRING);
                         String userId = claims.getStringClaimValue(Constants.USER_ID_STRING);
-                        String issuer = claims.getStringClaimValue(Constants.ISS_STRING);
+                        String issuer = claims.getStringClaimValue(Constants.ISS);
                         // try to get the cid as some OAuth tokens name it as cid like Okta.
                         if (clientId == null)
-                            clientId = claims.getStringClaimValue(Constants.CID_STRING);
+                            clientId = claims.getStringClaimValue(Constants.CID);
 
 
                         // try to get the uid as some OAuth tokens name it as uid like Okta.
                         if (userId == null)
-                            userId = claims.getStringClaimValue(Constants.UID_STRING);
+                            userId = claims.getStringClaimValue(Constants.UID);
 
                         /* if no auditInfo has been set previously, we populate here */
                         auditInfo = (exchange.getAttachment(AUDIT_ATTACHMENT_KEY) != null) ? (Map<String, Object>) exchange.getAttachment(AUDIT_ATTACHMENT_KEY) : new HashMap<>();

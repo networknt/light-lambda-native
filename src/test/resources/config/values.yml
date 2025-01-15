@@ -146,7 +146,7 @@ client.tokenCcServiceIdAuthServers:
 
 # rule-loader.yml
 rule-loader.ruleSource: config-folder
-rule-loader.endpointRules: {"/v1/pets@post":{"request-transform":[{"ruleId":"petstore-request-transformer"}],"response-transform":[{"ruleId":"petstore-response-transformer"}]},"/v2/pets@post":{"request-transform":[{"ruleId":"petstore-request-validation"}]}}
+rule-loader.endpointRules: {"/v1/pets@post":{"req-tra":["petstore-request-transformer"],"res-tra":["petstore-response-transformer"]},"/v2/pets@post":{"req-tra":["petstore-request-validation"]}}
 
 # response-transformer.yml
 response-transformer.appliedPathPrefixes:

@@ -1,14 +1,13 @@
 petstore-request-transformer:
   ruleId: petstore-request-transformer
-  host: lightapi.net
-  ruleType: request-transform
-  visibility: public
-  description: Transform the request body to add a new field.
+  hostId: N2CMw0HGQXeLvC1wBfln2A
+  ruleType: req-tra
+  common: Y
+  ruleName: Transform the request body to add a new field.
   conditions:
     - conditionId: path-pets
       propertyPath: requestPath
-      operatorCode: EQ
-      joinCode: AND
+      operatorCode: equals
       index: 1
       conditionValues:
         - conditionValueId: path
@@ -19,15 +18,14 @@ petstore-request-transformer:
 
 petstore-request-validation:
   ruleId: petstore-request-validation
-  host: lightapi.net
-  ruleType: request-transform
-  visibility: public
-  description: Transformer the validate the request and return an error message immediately.
+  hostId: N2CMw0HGQXeLvC1wBfln2A
+  ruleType: req-tra
+  common: Y
+  ruleName: Transformer the validate the request and return an error message immediately.
   conditions:
     - conditionId: path-pets
       propertyPath: requestPath
-      operatorCode: EQ
-      joinCode: AND
+      operatorCode: equals
       index: 1
       conditionValues:
         - conditionValueId: path
@@ -38,15 +36,14 @@ petstore-request-validation:
 
 petstore-response-transformer:
   ruleId: petstore-response-transformer
-  host: lightapi.net
-  ruleType: response-transform
-  visibility: public
-  description: Transform the response body to add a new field.
+  hostId: N2CMw0HGQXeLvC1wBfln2A
+  ruleType: res-tra
+  common: Y
+  ruleName: Transform the response body to add a new field.
   conditions:
     - conditionId: path-pets
       propertyPath: requestPath
-      operatorCode: EQ
-      joinCode: AND
+      operatorCode: equals
       index: 1
       conditionValues:
         - conditionValueId: path

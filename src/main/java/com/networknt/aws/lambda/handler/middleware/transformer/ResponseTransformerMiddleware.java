@@ -22,7 +22,7 @@ import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.
 public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware {
     private static ResponseTransformerConfig CONFIG;
     private static final Logger LOG = LoggerFactory.getLogger(ResponseTransformerMiddleware.class);
-    private static final String RESPONSE_TRANSFORM = "response-transform";
+    private static final String RESPONSE_TRANSFORM = "res-tra";
     private static final String RESPONSE_HEADERS = "responseHeaders";
     private static final String REQUEST_HEADERS = "requestHeaders";
     private static final String RESPONSE_BODY = "responseBody";
@@ -123,12 +123,10 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
             }
 
             boolean finalResult = true;
-            List<Map<String, Object>> responseTransformRules = endpointRules.get(RESPONSE_TRANSFORM);
+            List<String> responseTransformRules = endpointRules.get(RESPONSE_TRANSFORM);
             Map<String, Object> result = null;
-            String ruleId = null;
             // iterate the rules and execute them in sequence. Break only if one rule is successful.
-            for(Map<String, Object> ruleMap: responseTransformRules) {
-                ruleId = (String)ruleMap.get(Constants.RULE_ID);
+            for(String ruleId: responseTransformRules) {
                 try {
                     result = ruleEngine.executeRule(ruleId, objMap);
                     boolean res = (Boolean) result.get(RuleConstants.RESULT);

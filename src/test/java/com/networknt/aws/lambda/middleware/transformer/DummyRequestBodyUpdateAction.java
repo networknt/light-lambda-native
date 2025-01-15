@@ -5,6 +5,7 @@ import com.networknt.config.JsonMapper;
 import com.networknt.rule.IAction;
 import com.networknt.rule.RuleActionValue;
 import com.networknt.rule.RuleConstants;
+import com.networknt.rule.exception.RuleEngineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,7 @@ public class DummyRequestBodyUpdateAction implements IAction {
     private static final Logger logger = LoggerFactory.getLogger(DummyRequestBodyUpdateAction.class);
 
     @Override
-    public void performAction(Map<String, Object> objMap, Map<String, Object> resultMap, Collection<RuleActionValue> actionValues) {
+    public void performAction(String ruleId, String actionId, Map<String, Object> objMap, Map<String, Object> resultMap, Collection<RuleActionValue> actionValues) throws RuleEngineException {
         resultMap.put(RuleConstants.RESULT, true);
         String requestBody = (String)objMap.get("requestBody");
         if(logger.isTraceEnabled()) logger.debug("original request body = " + requestBody);
