@@ -1,9 +1,9 @@
 package com.networknt.aws.lambda.cache;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.document.*;
-import com.amazonaws.services.dynamodbv2.model.*;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.*;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.regions.Region;
 import com.networknt.aws.lambda.utility.LambdaEnvVariables;
 import com.networknt.cache.CacheManager;
 import org.slf4j.Logger;
@@ -19,9 +19,8 @@ public class DynamoDbCacheManager implements CacheManager {
     private static final String HASH_ID_KEY = "Id";
     private static final int TABLE_LIST_LIMIT = 100;
 
-    private static final Map<String, Table> tables = new HashMap<>();
-    private final AmazonDynamoDB dynamoClient;
-    private final DynamoDB dynamoDB;
+    private static final Map<String, String> tables = new HashMap<>();
+    private final DynamoDbClient dynamoClient;
     boolean tableInitiated;
 
     @Override
@@ -30,98 +29,83 @@ public class DynamoDbCacheManager implements CacheManager {
             LOG.debug("Table does not exist so we need to create it....");
             createCacheTable(cacheName);
         }
-        Table table = this.dynamoDB.getTable(cacheName);
-        tables.put(cacheName, table);
+        tables.put(cacheName, cacheName);
     }
+
     @Override
     public Map<Object, Object> getCache(String cacheName) {
-        // cacheName is serviceId + ":" + jwt or jwk
         String applicationId = cacheName.split(":")[0];
         String tableName = cacheName.split(":")[1];
-        Item entry;
+        Map<String, AttributeValue> entry;
         try {
-            Table table = tables.get(tableName);
-            entry = table.getItem(HASH_ID_KEY, applicationId);
+            entry = dynamoClient.getItem(GetItemRequest.builder()
+                    .tableName(tableName)
+                    .key(Collections.singletonMap(HASH_ID_KEY, AttributeValue.builder().s(applicationId).build()))
+                    .build()).item();
             if (entry == null)
                 return null;
         } catch (NullPointerException e) {
             return null;
         }
-        return convertMap(entry.asMap());
+        return convertMap(entry);
     }
 
-    public static Map<Object, Object> convertMap(Map<String, Object> originalMap) {
-        return new HashMap<>(originalMap);
+    public static Map<Object, Object> convertMap(Map<String, AttributeValue> originalMap) {
+        Map<Object, Object> convertedMap = new HashMap<>();
+        originalMap.forEach((k, v) -> convertedMap.put(k, v.s()));
+        return convertedMap;
     }
 
     @Override
     public void put(String cacheName, String key, Object value) {
-
-        // cacheName is serviceId + ":" + jwt or jwk
         String applicationId = cacheName.split(":")[0];
         String tableName = cacheName.split(":")[1];
 
         LOG.debug("Updating table entry of applicationId: {}, table name: {}, attribute key: {} and value: {}", applicationId, tableName, key, value);
 
-        Table table = tables.get(tableName);
+        Map<String, AttributeValue> itemKey = new HashMap<>();
+        itemKey.put(HASH_ID_KEY, AttributeValue.builder().s(applicationId).build());
 
-        var item = table.getItem(HASH_ID_KEY, applicationId);
+        Map<String, AttributeValueUpdate> attributeUpdates = new HashMap<>();
+        attributeUpdates.put(key, AttributeValueUpdate.builder()
+                .action(AttributeAction.PUT)
+                .value(AttributeValue.builder().s((String) value).build())
+                .build());
 
-        if (item != null && item.getString(key) != null) {
-            LOG.debug("Update spec....");
-
-            // TODO - Update string value
-
-        } else {
-            /* primary key for item */
-            var itemKey = new HashMap<String, AttributeValue>();
-            itemKey.put(HASH_ID_KEY, new AttributeValue().withS(applicationId));
-
-            /* attribute we are adding to item */
-            var attributeUpdates = new HashMap<String, AttributeValueUpdate>();
-            var update = new AttributeValueUpdate().withAction(AttributeAction.PUT).withValue(new AttributeValue().withS((String)value));
-            attributeUpdates.put(key, update);
-
-            /* send update request */
-            var updateItemRequest = new UpdateItemRequest().withTableName(tableName).withKey(itemKey).withAttributeUpdates(attributeUpdates);
-            var res = this.dynamoClient.updateItem(updateItemRequest);
-            LOG.debug("RESULT: {}", res.toString());
-        }
-
+        dynamoClient.updateItem(UpdateItemRequest.builder()
+                .tableName(tableName)
+                .key(itemKey)
+                .attributeUpdates(attributeUpdates)
+                .build());
     }
 
     @Override
     public Object get(String cacheName, String key) {
-        // cacheName is serviceId + ":" + jwt or jwk
         String applicationId = cacheName.split(":")[0];
         String tableName = cacheName.split(":")[1];
 
-        /* see if the table contains our application id. */
-        /* If not found, return null because we don't have a cache yet! */
-        Item entry;
+        Map<String, AttributeValue> entry;
         try {
-            Table table = tables.get(tableName);
-            entry = table.getItem(HASH_ID_KEY, applicationId);
+            entry = dynamoClient.getItem(GetItemRequest.builder()
+                    .tableName(tableName)
+                    .key(Collections.singletonMap(HASH_ID_KEY, AttributeValue.builder().s(applicationId).build()))
+                    .build()).item();
             if (entry == null)
                 return null;
         } catch (NullPointerException e) {
             return null;
         }
-        return entry.getString(key);
+        return entry.get(key).s();
     }
 
     @Override
     public void delete(String cacheName, String key) {
-        // cacheName is serviceId + ":" + jwt or jwk
-        String applicationId = cacheName.split(":")[0];
-        String tableName = cacheName.split(":")[1];
-
+        // Implement delete logic if needed
     }
 
     @Override
     public void removeCache(String cacheName) {
-        Table table = tables.get(cacheName);
-        if(table != null) {
+        if(tables.containsKey(cacheName)) {
             tables.remove(cacheName);
             try {
                 deleteTable(cacheName);
@@ -136,82 +120,55 @@ public class DynamoDbCacheManager implements CacheManager {
         return 0;
     }
 
-
     public DynamoDbCacheManager() {
-        if(logger.isInfoEnabled())
-            logger.info("DynamoDbCacheManager is constructed.");
+        if(LOG.isInfoEnabled())
+            LOG.info("DynamoDbCacheManager is constructed.");
 
         this.tableInitiated = false;
-        this.dynamoClient = AmazonDynamoDBClientBuilder
-                .standard()
-                .withRegion(System.getenv(LambdaEnvVariables.AWS_REGION))
+        this.dynamoClient = DynamoDbClient.builder()
+                .region(Region.of(System.getenv(LambdaEnvVariables.AWS_REGION)))
                 .build();
-
-        this.dynamoDB = new DynamoDB(dynamoClient);
     }
 
-
-    /**
-     * Creates dynamo db table. We check if the table exists before creating one.
-     */
     private void createCacheTable(String tableName) {
         LOG.debug("Attempting to create new cache table '{}'", tableName);
-        var attributeDefinitions = new ArrayList<AttributeDefinition>();
-        attributeDefinitions.add(new AttributeDefinition()
-                .withAttributeName(HASH_ID_KEY)
-                .withAttributeType("S")
-        );
+        CreateTableRequest createTableRequest = CreateTableRequest.builder()
+                .tableName(tableName)
+                .keySchema(KeySchemaElement.builder()
+                        .attributeName(HASH_ID_KEY)
+                        .keyType(KeyType.HASH)
+                        .build())
+                .attributeDefinitions(AttributeDefinition.builder()
+                        .attributeName(HASH_ID_KEY)
+                        .attributeType(ScalarAttributeType.S)
+                        .build())
+                .provisionedThroughput(ProvisionedThroughput.builder()
+                        .readCapacityUnits(0L)
+                        .writeCapacityUnits(0L)
+                        .build())
+                .build();
 
-        var keySchema = new ArrayList<KeySchemaElement>();
-        keySchema.add(new KeySchemaElement()
-                .withAttributeName(HASH_ID_KEY)
-                .withKeyType(KeyType.HASH)
-        );
-
-        var createTableRequest = new CreateTableRequest()
-                .withTableName(tableName)
-                .withKeySchema(keySchema)
-                .withAttributeDefinitions(attributeDefinitions)
-                .withProvisionedThroughput(new ProvisionedThroughput(0L,0L));
-
-        Table table = this.dynamoDB.createTable(createTableRequest);
+        dynamoClient.createTable(createTableRequest);
         try {
             LOG.debug("Waiting for table status to be active...");
-            table.waitForActive();
-        } catch (InterruptedException e) {
-           // nothing
+            dynamoClient.waiter().waitUntilTableExists(r -> r.tableName(tableName));
+        } catch (Exception e) {
+            // Handle exception
         }
-
-        //
     }
 
-    /**
-     * DEBUG FUNCTION - will be changed or deprecated in the future.
-     * @param tableName - name of the table
-     * @throws InterruptedException - exception
-     */
     public void deleteTable(String tableName) throws InterruptedException {
-
-        if (!this.doesTableExist(tableName)) {
+        if (!doesTableExist(tableName)) {
             LOG.debug("Table does not exist so we do not need to delete it....");
             return;
         }
 
-        var table = dynamoDB.getTable(tableName);
-        table.delete();
-        table.waitForDelete();
+        dynamoClient.deleteTable(DeleteTableRequest.builder().tableName(tableName).build());
+        dynamoClient.waiter().waitUntilTableNotExists(r -> r.tableName(tableName));
     }
 
-    /**
-     * Checks to see if the table exists.
-     *
-     * @param tableName - name of the table
-     * @return - returns true if the table exists
-     */
     public boolean doesTableExist(String tableName) {
-        var tables = this.dynamoClient.listTables(TABLE_LIST_LIMIT);
-        return tables.getTableNames().contains(tableName);
+        ListTablesResponse tables = dynamoClient.listTables(ListTablesRequest.builder().limit(TABLE_LIST_LIMIT).build());
+        return tables.tableNames().contains(tableName);
     }
-
-
 }
