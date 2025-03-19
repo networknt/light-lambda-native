@@ -87,7 +87,6 @@
         <version.lambda-events>3.15.0</version.lambda-events>
         <version.lambda-awssdk>2.31.2</version.lambda-awssdk>
         <version.dynamodb>2.31.2</version.dynamodb>
-        <version.lambda-iam>1.12.745</version.lambda-iam>
         <version.jose4j>0.9.6</version.jose4j>
         <version.logback>1.5.16</version.logback>
         <version.maven-shade>3.2.4</version.maven-shade>
