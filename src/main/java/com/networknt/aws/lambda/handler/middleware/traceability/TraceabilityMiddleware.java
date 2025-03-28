@@ -35,7 +35,7 @@ public class TraceabilityMiddleware implements MiddlewareHandler {
             LOG.debug("TraceabilityMiddleware.executeMiddleware starts.");
 
         String tid = null;
-        if(exchange.getRequest().getHeaders() != null) {
+        if(exchange.getRequest() != null && exchange.getRequest().getHeaders() != null) {
             Optional<String> tidOptional = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), HeaderKey.TRACEABILITY);
             tid = tidOptional.orElse(null);
         }
