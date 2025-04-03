@@ -42,7 +42,7 @@ public class AuditMiddleware implements MiddlewareHandler {
     static final String SERVICE_ID_KEY = "serviceId";
     static final String INVALID_CONFIG_VALUE_CODE = "ERR10060";
 
-    private String serviceId;
+    private final String serviceId;
 
     private DateTimeFormatter DATE_TIME_FORMATTER;
 
