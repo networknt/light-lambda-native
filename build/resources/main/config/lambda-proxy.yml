@@ -1,0 +1,25 @@
+# The configuration for the lambda proxy
+
+# indicates whether the lambda proxy is enabled or not
+enabled: ${lambda-proxy.enabled:true}
+# ingress functions mapping from the path and method
+functions: ${lambda-proxy.functions:}
+# region where the lambda functions are deployed
+region: ${lambda-proxy.region:ca-central-1}
+# endpoint override for the lambda functions
+endpointOverride: ${lambda-proxy.endpointOverride:}
+# Api call timeout in milliseconds. This sets the amount of time for the entire execution, including all retry attempts.
+apiCallTimeout: ${lambda-proxy.apiCallTimeout:60000}
+# Api call attempt timeout in milliseconds. This sets the amount of time for each individual attempt.
+apiCallAttemptTimeout: ${lambda-proxy.apiCallAttemptTimeout:20000}
+# log type for the lambda function invocation
+logType: ${lambda-proxy.logType:Tail}
+# When LambdaFunctionInvoker is used to invoke the downstream Lambda Function, it can collect the metrics info
+# for the total response time of the downstream function. With this value injected, users can quickly determine
+# how much time the downstream API spends, including the network latency. By default, it is true, and metrics will
+# be collected and injected into the metrics middleware configured in the chain.
+metricsInjection: ${lambda-proxy.metricsInjection:true}
+# When the metrics info is injected into the metrics middleware, we need to pass a metric name to it so that the
+# metrics info can be categorized in a tree structure under the name. By default, it is lambda-proxy, and users
+# can change it.
+metricsName: ${lambda-proxy.metricsName:lambda-proxy}

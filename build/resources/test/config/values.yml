@@ -1,0 +1,169 @@
+# lambda-app.yml
+lambda-app.lambdaAppId: lambda-petstore-0.0.1-SNAPSHOT
+
+# lambda-proxy.yml
+lambda-proxy.region: ca-central-1
+lambda-proxy.functions:
+  /v1/pets@get: PetsGetFunction
+  /v1/pets@post: PetsPostFunction
+  /v1/pets/{petId}@get: PetsPetIdGetFunction
+  /v1/pets/{petId}@delete: PetsPetIdDeleteFunction
+
+# router.yml
+router.urlRewriteRules:
+  - /v1/pets /Stage/v1/pets
+
+# service.yml
+service.singletons:
+  - com.networknt.registry.URL:
+    - com.networknt.registry.URLImpl
+  - com.networknt.registry.Registry:
+    - com.networknt.registry.support.DirectRegistry
+  - com.networknt.balance.LoadBalance:
+    - com.networknt.balance.RoundRobinLoadBalance
+  - com.networknt.cluster.Cluster:
+    - com.networknt.cluster.LightCluster
+  - com.networknt.cache.CacheManager:
+    # - com.networknt.aws.lambda.cache.DynamoDbCacheManager
+    - com.networknt.cache.CaffeineCacheManager
+
+# cache.yml
+cache.caches:
+  - cacheName: jwt
+    expiryInMinutes: 11
+    maxSize: 1000
+  - cacheName: jwk
+    expiryInMinutes: 600
+    maxSize: 10
+  - cacheName: token
+    expiryInMinutes: 11
+    maxSize: 10
+
+# openapi-validator.yml
+openapi-validator.validateRequest: true
+
+
+# security.yml
+security.enableVerifyJwt: false
+security.ignoreJwtExpiry: true
+security.logJwtToken: true
+security.enableJwtCache: true
+# -------------------------------------------
+
+# unified-security.yml
+unified-security.enabled: false
+
+# header.yml
+header.enabled: true
+
+header.response.remove:
+  - Header3
+  - header4
+header.response.update:
+  key3: value3
+  key4: value4
+header.pathPrefixHeader:
+  /v1/pets:
+    response:
+      remove:
+        - HeaderC
+        - headerD
+      update:
+        keyC: valueC
+        KeyD: valueD
+
+# handler.yml
+handler.handlers:
+  # Light-framework cross-cutting concerns implemented in the microservice
+  - com.networknt.aws.lambda.handler.middleware.metrics.APMMetricsMiddleware@metrics
+  - com.networknt.aws.lambda.handler.middleware.correlation.CorrelationMiddleware@correlation
+  - com.networknt.aws.lambda.handler.middleware.traceability.TraceabilityMiddleware@traceability
+  - com.networknt.aws.lambda.handler.middleware.header.RequestHeaderMiddleware@requestHeader
+  - com.networknt.aws.lambda.handler.middleware.header.ResponseHeaderMiddleware@responseHeader
+  - com.networknt.aws.lambda.handler.middleware.cors.RequestCorsMiddleware@requestCors
+  - com.networknt.aws.lambda.handler.middleware.cors.ResponseCorsMiddleware@responseCors
+  - com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware@specification
+  - com.networknt.aws.lambda.middleware.proxy.MockLambdaProxyMiddleware@proxy
+  - com.networknt.aws.lambda.handler.middleware.router.LambdaRouterMiddleware@router
+  - com.networknt.aws.lambda.handler.middleware.limit.LimitMiddleware@limit
+  - com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware@audit
+  - com.networknt.aws.lambda.handler.middleware.validator.ValidatorMiddleware@validator
+  - com.networknt.aws.lambda.handler.middleware.transformer.RequestTransformerMiddleware@requestTransformer
+  - com.networknt.aws.lambda.handler.middleware.transformer.ResponseTransformerMiddleware@responseTransformer
+  - com.networknt.aws.lambda.handler.middleware.sanitizer.SanitizerMiddleware@sanitizer
+  - com.networknt.aws.lambda.handler.middleware.security.UnifiedSecurityMiddleware@security
+  - com.networknt.aws.lambda.handler.middleware.security.JwtVerifyMiddleware@jwt
+  - com.networknt.aws.lambda.handler.middleware.security.SwtVerifyMiddleware@swt
+  - com.networknt.aws.lambda.handler.middleware.security.BasicAuthMiddleware@basic
+  - com.networknt.aws.lambda.handler.middleware.security.ApiKeyMiddleware@apikey
+  - com.networknt.aws.lambda.handler.middleware.token.TokenMiddleware@token
+  # Framework endpoint handlers
+  - com.networknt.aws.lambda.handler.health.HealthCheckHandler@health
+  - com.networknt.aws.lambda.handler.info.ServerInfoHandler@info
+  - com.networknt.aws.lambda.handler.logger.LoggerGetHandler@getLogger
+  - com.networknt.aws.lambda.handler.logger.LoggerSetHandler@setLogger
+  - com.networknt.aws.lambda.handler.cache.CacheExplorerHandler@cache
+
+# -------------------------------------------
+# client.yml
+client.tokenKeyServerUrl: https://networknt.oktapreview.com
+client.tokenKeyUri: /oauth2/aus66u5cybTrCsbZs1d6/v1/keys
+client.tokenKeyEnableHttp2: false
+# client.tokenKeyAudience: dev.canada.referenceapi.networknt.oktapreview.com
+
+# sanitizer.yml
+sanitizer.enabled: true
+
+# limit.yml
+limit.enabled: true
+limit.rateLimit: 10/m 10000/d
+
+# direct-registry.yml
+direct-registry.directUrls:
+  com.networknt.petstore-1.0.0: http://localhost:8082
+
+# client.yml
+client.multipleAuthServers: true
+client.tokenCcServiceIdAuthServers:
+  com.networknt.petstore-1.0.0:
+    server_url: https://localhost:7773
+    enableHttp2: true
+    uri: /oauth2/token
+    client_id: f7d42348-c647-4efb-a52d-4c5787421e74
+    client_secret: f6h1FTI8Q3-7UScPZDzfXA
+    scope:
+      - petstore.r
+      - petstore.w
+  com.networknt.market-1.0.0:
+    server_url: https://localhost:7772
+    enableHttp2: true
+    uri: /oauth2/token
+    client_id: f7d42348-c647-4efb-a52d-4c5787421e73
+    client_secret: f6h1FTI8Q3-7UScPZDzfXA
+    scope:
+      - market.r
+      - market.w
+
+# rule-loader.yml
+rule-loader.ruleSource: config-folder
+rule-loader.endpointRules: {"/v1/pets@post":{"req-tra":["petstore-request-transformer"],"res-tra":["petstore-response-transformer"]},"/v2/pets@post":{"req-tra":["petstore-request-validation"]}}
+
+# response-transformer.yml
+response-transformer.appliedPathPrefixes:
+  - /v1/pets
+
+# cors.yml
+# cors.yml
+cors.enabled: true
+
+cors.allowedOrigins:
+  - https://abc.com
+  - https://www.xyz.com
+  - https://def.com
+
+cors.allowedMethods:
+  - GET
+  - PUT
+  - POST
+  - DELETE
+  - PATCH

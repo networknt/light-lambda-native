@@ -1,0 +1,526 @@
+---
+openapi: 3.0.0
+info:
+  title: Petstore API
+  description: The purpose of this API is to demonstrate http-sidecar integration with a Petstore rest API. <br> API to retrieve and update pets in petstore application. For information on the implementation of this API please see https://github.com/networknt/light-example-4j/tree/release/rest/petstore-maven-single.
+  contact:
+    name: API Platform Team
+    url: https://github.com/networknt/light-example-4j/tree/release/rest/petstore-maven-single
+    email: support@networknt.com
+  version: 1.0.0
+  x-api-id: "0102"
+externalDocs:
+  description: GitHub repository link for API
+  url: https://github.com/networknt/light-example-4j/tree/release/rest/petstore-maven-single
+#--------------- Release Notes section ----------------------------
+# v1.0.0
+# - 2021-06-14 - J751 - Added PUT and DELETE endpoints and added schema validations
+#--------------- Release Notes section --------------------------
+servers:
+- url: https://petstore.networknt.com/v1
+  description: SwaggerHub API Auto Mocking
+tags:
+- name: pet
+  description: Everything about your Pets
+  externalDocs:
+    url: https://github.com/networknt/light-example-4j/tree/release/rest/petstore-maven-single
+paths:
+  /pets/{petId}:
+    get:
+      tags:
+      - pet
+      summary: Find pet by ID
+      description: Returns a single pet
+      operationId: getPetById
+      parameters:
+      - name: X-Traceability-Id
+        in: header
+        description: Common header parameters for centralized logging
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/x-traceability-id'
+      - name: petId
+        in: path
+        description: Pet ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/petId'
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPetResponse'
+        "400":
+          description: The request is syntactically in-correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "401":
+          description: Unauthorized. Authorization header is missing or does not contain a valid Bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "403":
+          description: Forbidden. Bearer token does not have sufficient rights to perform this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "404":
+          description: Pets not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "422":
+          description: The request is syntactically correct but not semantically correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+      security:
+      - api-scope:
+        - pets.read
+    put:
+      tags:
+      - pet
+      summary: Update a pet
+      description: Updates a pet record and returns data notification
+      operationId: updatePet
+      parameters:
+      - name: X-Traceability-Id
+        in: header
+        description: Common header parameters for centeralized logging
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/x-traceability-id'
+      - name: petId
+        in: path
+        description: Pet ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/petId'
+      requestBody:
+        description: Existing pet to be updated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePetRequest'
+        required: true
+      responses:
+        "200":
+          description: Successfully updated resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "400":
+          description: The request is syntactically in-correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "401":
+          description: Unauthorized. Authorization header is missing or does not contain a valid Bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "403":
+          description: Forbidden. Bearer token does not have sufficient rights to perform this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "404":
+          description: The endpoint to update Pets was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "422":
+          description: The request is syntactically correct but not semantically correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+      security:
+      - api-scope:
+        - pets.uad
+    delete:
+      tags:
+      - pet
+      summary: Delete a pet
+      description: Deletes a pet record and returns data notification
+      operationId: deletePet
+      parameters:
+      - name: X-Traceability-Id
+        in: header
+        description: Common header parameters for centralized logging
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/x-traceability-id'
+      - name: petId
+        in: path
+        description: Pet ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/petId'
+      responses:
+        "200":
+          description: Successfully deleted resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletePetResponse'
+        "400":
+          description: The request is syntactically in-correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "401":
+          description: Unauthorized. Authorization header is missing or does not contain a valid Bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "403":
+          description: Forbidden. Bearer token does not have sufficient rights to perform this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "404":
+          description: The endpoint to create Pets was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "422":
+          description: The request is syntactically correct but not semantically correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+      security:
+      - api-scope:
+        - pets.uad
+  /pets:
+    post:
+      tags:
+      - pet
+      summary: Create a pet
+      description: Creates and returns newly created pet with name and ID
+      operationId: createPet
+      parameters:
+      - name: X-Traceability-Id
+        in: header
+        description: Common header parameters for centralized logging
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/x-traceability-id'
+      requestBody:
+        description: New pet to be created
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePetRequest'
+        required: true
+      responses:
+        "201":
+          description: Successfully created resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "400":
+          description: The request is syntactically in-correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "401":
+          description: Unauthorized. Authorization header is missing or does not contain a valid Bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "403":
+          description: Forbidden. Bearer token does not have sufficient rights to perform this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "404":
+          description: The endpoint to create Pets was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "422":
+          description: The request is syntactically correct but not semantically correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+      security:
+      - api-scope:
+        - pets.uad
+    get:
+      tags:
+      - pet
+      summary: Get all pets
+      description: Returns a list of all the pets
+      operationId: getAllPets
+      parameters:
+      - name: X-Traceability-Id
+        in: header
+        description: Common header parameters for centeralized logging
+        required: true
+        style: simple
+        explode: false
+        schema:
+          $ref: '#/components/schemas/x-traceability-id'
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAllPetsResponse'
+        "400":
+          description: The request is syntactically in-correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "401":
+          description: Unauthorized. Authorization header is missing or does not contain a valid Bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "403":
+          description: Forbidden. Bearer token does not have sufficient rights to perform this operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "404":
+          description: The endpoint to create Pets was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "422":
+          description: The request is syntactically correct but not semantically correct
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptyDataResponse'
+      security:
+      - api-scope:
+        - pets.read
+components:
+  schemas:
+    CreatePetRequest:
+      required:
+      - name
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          maxLength: 15
+          minLength: 3
+          type: string
+          description: Name of the pet to be created
+          nullable: false
+          example: Tucker
+      additionalProperties: false
+    Pet:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique ID of the pet
+        name:
+          type: string
+          description: Name of the created pet
+    petId:
+      maxLength: 8
+      minLength: 1
+      type: integer
+      description: Pet ID
+      format: int64
+      nullable: false
+      example: 12345678
+    x-traceability-id:
+      type: string
+      description: TraceabilityID which is generated as UUID
+      example: 123e4567-e89b-12d3-a456-426655440000
+    EmptyDataResponse:
+      type: object
+      properties:
+        data:
+          type: string
+        notifications:
+          $ref: '#/components/schemas/Notifications'
+      description: An Error response to an API call
+    GetPetResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Pet'
+        notifications:
+          $ref: '#/components/schemas/Notifications'
+      description: Get Pet response
+    GetAllPetsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pet'
+        notifications:
+          $ref: '#/components/schemas/Notifications'
+      description: Get Pet response
+    DeletePetResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Pet'
+        notifications:
+          $ref: '#/components/schemas/Notifications'
+      description: Delete Pet response
+    Notifications:
+      type: array
+      items:
+        $ref: '#/components/schemas/Notification'
+    Notification:
+      type: object
+      properties:
+        code:
+          $ref: '#/components/schemas/errorCode'
+        message:
+          type: string
+          description: Description of the error or information notification. Where the response  is 2xx, it's a notification with informational details about this response
+          example: Error code 0001 message is being reported
+        timestamp:
+          $ref: '#/components/schemas/timestamp'
+        metadata:
+          type: object
+          additionalProperties: true
+      description: Part of the response to an API call containing information on the status and metadata associated with the response
+    errorCode:
+      type: string
+      description: 'Notification code composed as follows: Char [1] indicates severity (E,W,I); Char [2-4] indicates HTTP STATUS (422); Char [5-7] indicates API ID (001); Char [8-11] indicates Error code;'
+      example: E4220010001
+    timestamp:
+      type: string
+      description: Timestamp of the notification
+      example: 2020-09-25T17:55:04.288+0000
+    UpdatePetRequest:
+      required:
+      - ownerEmail
+      - ownerSsn
+      - petAge
+      - petToys
+      type: object
+      properties:
+        petAge:
+          $ref: '#/components/schemas/petAge'
+        petToys:
+          $ref: '#/components/schemas/petToys'
+        ownerEmail:
+          $ref: '#/components/schemas/ownerEmail'
+        ownerSsn:
+          $ref: '#/components/schemas/ownerSsn'
+      additionalProperties: false
+    petAge:
+      maximum: 20
+      minimum: 1
+      type: integer
+      description: Current age of the pet
+      nullable: false
+      example: 5
+    petToys:
+      type: array
+      description: Toys of the pet
+      example:
+      - Soft Toys
+      - Blanket
+      items:
+        type: string
+    ownerEmail:
+      maxLength: 15
+      minLength: 2
+      pattern: ^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$
+      type: string
+      description: Owner email
+      format: email
+      example: john.deer12@gmail.com
+    ownerSsn:
+      pattern: ^\d{3}-\d{2}-\d{4}$
+      type: string
+      description: SSN of pet owner
+      example: 123-45-6789
+  securitySchemes:
+    api-scope:
+      type: oauth2
+      description: This API uses OAuth 2 with the client credential grant flow
+      flows:
+        clientCredentials:
+          tokenUrl: https://oauth.lightapi.net/oauth2/41bwp2BafABp7h1d6/token
+          scopes:
+            pets.read: scope for read operations
+            pets.uad: scope for update add and delete operations

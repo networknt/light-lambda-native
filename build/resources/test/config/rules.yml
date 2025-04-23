@@ -1,0 +1,53 @@
+petstore-request-transformer:
+  ruleId: petstore-request-transformer
+  hostId: N2CMw0HGQXeLvC1wBfln2A
+  ruleType: req-tra
+  common: Y
+  ruleName: Transform the request body to add a new field.
+  conditions:
+    - conditionId: path-pets
+      propertyPath: requestPath
+      operatorCode: equals
+      index: 1
+      conditionValues:
+        - conditionValueId: path
+          conditionValue: /v1/pets
+  actions:
+    - actionId: body-transform
+      actionClassName: com.networknt.aws.lambda.middleware.transformer.DummyRequestBodyUpdateAction
+
+petstore-request-validation:
+  ruleId: petstore-request-validation
+  hostId: N2CMw0HGQXeLvC1wBfln2A
+  ruleType: req-tra
+  common: Y
+  ruleName: Transformer the validate the request and return an error message immediately.
+  conditions:
+    - conditionId: path-pets
+      propertyPath: requestPath
+      operatorCode: equals
+      index: 1
+      conditionValues:
+        - conditionValueId: path
+          conditionValue: /v2/pets
+  actions:
+    - actionId: request-validation
+      actionClassName: com.networknt.aws.lambda.middleware.transformer.DummyRequestValidationAction
+
+petstore-response-transformer:
+  ruleId: petstore-response-transformer
+  hostId: N2CMw0HGQXeLvC1wBfln2A
+  ruleType: res-tra
+  common: Y
+  ruleName: Transform the response body to add a new field.
+  conditions:
+    - conditionId: path-pets
+      propertyPath: requestPath
+      operatorCode: equals
+      index: 1
+      conditionValues:
+        - conditionValueId: path
+          conditionValue: /v1/pets
+  actions:
+    - actionId: body-transform
+      actionClassName: com.networknt.aws.lambda.middleware.transformer.DummyResponseBodyUpdateAction

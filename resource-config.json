@@ -1,11 +1,12 @@
 {
   "resources": {
     "includes": [
-      {"pattern": "logback.xml"},
-      {"pattern": "config.yml"},
-      {"pattern": "lambda-app.yml"},
-      {"pattern": "handler.yml"},
-      {"pattern": "pooled-chain-executor.yml"}
+      {"pattern": ".*/logback\\.xml"},
+      {"pattern": ".*/lambda-app\\.yml"},
+      {"pattern": ".*/lambda-proxy\\.yml"},
+      {"pattern": ".*/handler\\.yml"},
+      {"pattern": ".*/pooled-chain-executor\\.yml"},
+      {"pattern": ".*/client\\.truststore"}
     ],
     "excludes": [
     ]

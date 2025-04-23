@@ -1,0 +1,139 @@
+# Handler middleware chain configuration
+#----------------------------------------
+enabled: true
+
+# Configuration for the LightHttpHandler. The handler is the base class  for all middleware, server and health handlers
+# set the Status Object in the AUDIT_INFO, for auditing purposes
+# default, if not set:false
+auditOnError: ${handler.auditOnError:false}
+
+# set the StackTrace in the AUDIT_INFO, for auditing purposes
+# default, if not set:false
+auditStackTrace: ${handler.auditStackTrace:false}
+
+# Base Path of the API endpoints
+basePath: ${handler.basePath:/}
+
+#------------------------------------------------------------------------------
+# Support individual handler chains for each separate endpoint. It allows framework
+# handlers like health check, server info to bypass majority of the middleware handlers
+# and allows mixing multiple frameworks like OpenAPI and GraphQL in the same instance.
+#
+# handlers  --  list of handlers to be used across chains in this microservice
+#               including the routing handlers for ALL endpoints
+#           --  format: fully qualified handler class name@optional:given name
+# chains    --  allows forming of [1..N] chains, which could be wholly or
+#               used to form handler chains for each endpoint
+#               ex.: default chain below, reused partially across multiple endpoints
+# paths     --  list all the paths to be used for routing within the microservice
+#           ----  path: the URI for the endpoint (ex.: path: '/v1/pets')
+#           ----  method: the operation in use (ex.: 'post')
+#           ----  exec: handlers to be executed -- this element forms the list and
+#                       the order of execution for the handlers
+#
+# IMPORTANT NOTES:
+# - to avoid executing a handler, it has to be removed/commented out in the chain
+#   or change the enabled:boolean to false for a middleware handler configuration.
+# - all handlers, routing handler included, are to be listed in the execution chain
+# - for consistency, give a name to each handler; it is easier to refer to a name
+#   vs a fully qualified class name and is more elegant
+# - you can list in chains the fully qualified handler class names, and avoid using the
+#   handlers element altogether
+#------------------------------------------------------------------------------
+handlers: ${handler.handlers:}
+
+additionalHandlers: ${handler.additionalHandlers:}
+
+chains:
+  request:
+    - metrics
+    - limit
+    - traceability
+    - correlation
+    - requestCors
+    - requestHeader
+    - requestTransformer
+    - audit
+    - token
+    - router
+    - specification
+    - security
+    - sanitizer
+    - validator
+  response:
+    - responseHeader
+    - responseCors
+    - responseTransformer
+
+  admin:
+    - correlation
+    - specification
+    - security
+    - validator
+
+additionalChains: ${handler.additionalChains:}
+
+paths:
+  - path: '/health'
+    method: 'get'
+    exec:
+      - health
+
+  # the health check endpoint called from control plane with security and it will invoke backend optionally.
+  - path: '/adm/health'
+    method: 'get'
+    exec:
+      - admin
+      - health
+
+  - path: '/adm/server/info'
+    method: 'get'
+    exec:
+      - admin
+      - info
+
+  - path: '/adm/logger'
+    method: 'get'
+    exec:
+      - admin
+      - getLogger
+
+  - path: '/adm/logger'
+    method: 'post'
+    exec:
+      - admin
+      - setLogger
+
+  - path: '/adm/cache/{name}'
+    method: 'get'
+    exec:
+      - admin
+      - cache
+
+#  - path: '/adm/modules'
+#    method: 'get'
+#    exec:
+#      - modules
+#  - path: '/adm/modules'
+#    method: 'post'
+#    exec:
+#      - admin
+#      - configReload
+#  - path: '/spec.yaml'
+#    method: 'get'
+#    exec:
+#      - spec
+#  - path: '/specui.html'
+#    method: 'get'
+#    exec:
+#      - swaggerui
+#  - path: '/favicon.ico'
+#    method: 'get'
+#    exec:
+#      - favicon
+
+additionalPaths: ${handler.additionalPaths:}
+defaultHandlers:
+  - request
+  - proxy
+  - response

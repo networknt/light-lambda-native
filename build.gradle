@@ -1,7 +1,24 @@
 
 plugins {
-    id 'java'
-    id "com.github.johnrengelman.shadow" version "5.2.0"
+    id "java"
+    id "com.github.johnrengelman.shadow" version "${shadowPluginVersion}"
+}
+
+group = "com.networknt"
+ext.artifactId = "lambda-native"
+version = "2.2.2-SNAPSHOT"
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.networknt.aws.lambda.Runtime'
+    }
+}
+
+shadowJar {
+    archiveBaseName.set("${artifactId}")
+    archiveVersion.set("${version.toString()}")
+    archiveClassifier.set(null)
+    destinationDirectory = file("${buildDir}/libs")
 }
 
 repositories {
@@ -10,40 +27,140 @@ repositories {
     maven {
         url 'https://oss.sonatype.org/content/repositories/snapshots/'
     }
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/releases'
+    }
 }
 
 dependencies {
-    implementation "com.networknt:custom-runtime:$light4jVersion"
-    implementation "org.slf4j:slf4j-api:$slf4jVersion"
-    implementation "ch.qos.logback:logback-classic:$logbackVersion"
-    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    implementation "com.amazonaws:aws-lambda-java-core:$lambdaCoreVersion"
-    implementation "com.amazonaws:aws-lambda-java-events:$lambdaEventsVersion"
-    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
-    testImplementation "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+
+    // l4j libs
+    implementation "com.networknt:custom-runtime:${light4jVersion}"
+    implementation "com.networknt:config:${light4jVersion}"
+    implementation "com.networknt:status:${light4jVersion}"
+    implementation "com.networknt:cluster:${light4jVersion}"
+    implementation "com.networknt:monad-result:${light4jVersion}"
+    implementation "com.networknt:env-config:${light4jVersion}"
+    implementation "com.networknt:lambda-utility:${light4jVersion}"
+    implementation "com.networknt:slf4j-logback:${light4jVersion}"
+    implementation "com.networknt:schema-validator:${light4jVersion}"
+    implementation "com.networknt:utility:${light4jVersion}"
+    implementation "com.networknt:client-config:${light4jVersion}"
+    implementation "com.networknt:cache-manager:${light4jVersion}"
+    implementation "com.networknt:mask:${light4jVersion}"
+    implementation "com.networknt:registry:${light4jVersion}"
+    implementation "com.networknt:metrics-config:${light4jVersion}"
+    implementation "com.networknt:security-config:${light4jVersion}"
+    implementation "com.networknt:apikey-config:${light4jVersion}"
+    implementation "com.networknt:basic-config:${light4jVersion}"
+    implementation "com.networknt:unified-config:${light4jVersion}"
+    implementation "com.networknt:correlation-config:${light4jVersion}"
+    implementation "com.networknt:traceability-config:${light4jVersion}"
+    implementation "com.networknt:audit-config:${light4jVersion}"
+    implementation "com.networknt:exception-config:${light4jVersion}"
+    implementation "com.networknt:limit-config:${light4jVersion}"
+    implementation "com.networknt:header-config:${light4jVersion}"
+    implementation "com.networknt:validator-config:${light4jVersion}"
+    implementation "com.networknt:health-config:${light4jVersion}"
+    implementation "com.networknt:info-config:${light4jVersion}"
+    implementation "com.networknt:handler-config:${light4jVersion}"
+    implementation "com.networknt:openapi-config:${light4jVersion}"
+    implementation "com.networknt:logger-config:${light4jVersion}"
+    implementation "com.networknt:sanitizer-config:${light4jVersion}"
+    implementation "com.networknt:reqtrans-config:${light4jVersion}"
+    implementation "com.networknt:restrans-config:${light4jVersion}"
+    implementation "com.networknt:ruleloader-config:${light4jVersion}"
+    implementation "com.networknt:router-config:${light4jVersion}"
+    implementation "com.networknt:cors-config:${light4jVersion}"
+    implementation "com.networknt:caffeine-cache:${light4jVersion}"
+    implementation "com.networknt:http-client:${light4jClientVersion}"
+    implementation "com.networknt:json-schema-validator:${light4jSchemaValidatorVersion}"
+
+    // AWS libs
+    implementation "software.amazon.awssdk:dynamodb:${awsSdkVersion}"
+    implementation "software.amazon.awssdk:lambda:${awsSdkVersion}"
+    implementation "software.amazon.awssdk:netty-nio-client:${awsSdkVersion}"
+    implementation "com.amazonaws:aws-lambda-java-core:${lambdaCoreVersion}"
+    implementation "com.amazonaws:aws-lambda-java-events:${lambdaEventsVersion}"
+
+    // Jackson libs
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jacksonVersion}"
+
+    implementation "org.bitbucket.b_c:jose4j:${jose4jVersion}"
+    implementation "org.owasp.encoder:encoder:${owaspEncoderVersion}"
+
+    // Test libs
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
 }
 
-test {
-    useJUnitPlatform()
-}
-
-jar {
-  manifest {
-    attributes 'Main-Class': 'com.networknt.aws.lambda.Runtime'
-  }
-}
+//--initialize-at-build-time=ch.qos.logback.core.util.StatusPrinter,ch.qos.logback.core.util.StatusPrinter2,org.slf4j.helpers.Reporter,ch.qos.logback.core.util.Loader,ch.qos.logback.core.CoreConstants,ch.qos.logback.core.pattern.parser.Parser,ch.qos.logback.core.status.StatusBase,ch.qos.logback.classic.Logger,ch.qos.logback.classic.Level,org.slf4j.LoggerFactory,ch.qos.logback.core.status.InfoStatus,org.slf4j.MarkerFactory,ch.qos.logback.classic.PatternLayout \
 
 task buildGraalvmImage {
- inputs.files("${project.projectDir}/src/main", configurations.compileClasspath)
- outputs.upToDateWhen {file("${buildDir}/graalvm/server").exists()}
- outputs.file file("${buildDir}/graalvm/server")
+    inputs.files("${project.projectDir}/src/main", configurations.compileClasspath)
+    outputs.upToDateWhen {file("${buildDir}/graalvm/server").exists()}
+    outputs.file file("${buildDir}/graalvm/server")
 
- doLast {
-    exec {
-      commandLine "bash", "-c", "chmod +x build_graalvm.sh; chmod +x bootstrap; ./build_graalvm.sh"
+    doLast {
+        def stdout = new ByteArrayOutputStream()
+        def stderr = new ByteArrayOutputStream()
+        def result = exec {
+
+            ignoreExitValue true
+            commandLine "bash", "-c", "native-image \
+        --enable-url-protocols=http,https \
+        --no-fallback \
+        --initialize-at-run-time=io.netty.handler.ssl.BouncyCastleAlpnSslUtils,io.netty.handler.ssl.JdkSslServerContext  \
+        --initialize-at-build-time=ch.qos.logback.core.util.StatusPrinter,ch.qos.logback.core.util.StatusPrinter2,org.slf4j.helpers.Reporter,ch.qos.logback.core.util.Loader,ch.qos.logback.core.CoreConstants,ch.qos.logback.core.pattern.parser.Parser,ch.qos.logback.core.status.StatusBase,ch.qos.logback.classic.Logger,ch.qos.logback.classic.Level,org.slf4j.LoggerFactory,ch.qos.logback.core.status.InfoStatus,org.slf4j.MarkerFactory,ch.qos.logback.classic.PatternLayout \
+        --allow-incomplete-classpath \
+        --enable-all-security-services \
+        -H:ReflectionConfigurationFiles=${project.projectDir}/reflect.json \
+        -H:ResourceConfigurationFiles=${project.projectDir}/resource-config.json \
+        -H:+ReportExceptionStackTraces \
+        -jar ${buildDir}/libs/${artifactId}-${version.toString()}.jar \
+        -o ${buildDir}/graalvm/server"
+
+
+            standardOutput = stdout
+            errorOutput = stderr
+            println "Command: " + commandLine.toString()
+        }
+
+        println "Output:\n$stdout"
+
+        if (result.getExitValue() != 0) {
+            throw new GradleException("native compilation failed with \n$stderr ")
+        }
     }
-  }
+}
+
+task packageNativeImage(type: Zip) {
+    dependsOn buildGraalvmImage
+    from("${buildDir}/graalvm/") {
+        include "server"
+    }
+    from("${project.projectDir}/") {
+        include "bootstrap"
+    }
+    destinationDirectory = file("${buildDir}/distributions")
+    archiveBaseName.set("${artifactId}")
+    archiveVersion.set("${version.toString()}")
+    archiveExtension.set("zip")
+}
+
+task versionFile() {
+    doLast{
+        new File("${buildDir}", "version.txt").text = "${version.toString()}"
+    }
+}
+
+task artifactFile() {
+    doLast{
+        new File("${buildDir}", "artifact.txt").text = "${buildDir}/distributions/${artifactId}-${version.toString()}.zip"
+    }
 }
 
 buildGraalvmImage.dependsOn shadowJar, test
-build.dependsOn buildGraalvmImage
+build.dependsOn buildGraalvmImage, packageNativeImage
