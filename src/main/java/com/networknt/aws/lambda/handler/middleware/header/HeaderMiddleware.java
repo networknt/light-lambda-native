@@ -74,10 +74,10 @@ public abstract class HeaderMiddleware implements MiddlewareHandler {
         headers.entrySet().removeIf(entry -> lowercaseSet.contains(entry.getKey().toLowerCase()));
     }
 
-    public void updateHeaders(Map<String, Object> updateMap, Map<String, String> headers) {
+    public void updateHeaders(Map<String, String> updateMap, Map<String, String> headers) {
         // convert update map key to lowercase
         Map<String, Object> lowercaseUpdateMap = new HashMap<>();
-        for (Map.Entry<String, Object> entry : updateMap.entrySet()) {
+        for (Map.Entry<String, String> entry : updateMap.entrySet()) {
             lowercaseUpdateMap.put(entry.getKey().toLowerCase(), entry.getValue());
         }
         // Iterate over the original header map and update values where keys match case-insensitively
@@ -93,7 +93,7 @@ public abstract class HeaderMiddleware implements MiddlewareHandler {
             lowercaseHeaders.put(entry.getKey().toLowerCase(), entry.getValue());
         }
         // Iterate over the update map and add new entries to the header map
-        for (Map.Entry<String, Object> entry : updateMap.entrySet()) {
+        for (Map.Entry<String, String> entry : updateMap.entrySet()) {
             String lowercaseKey = entry.getKey().toLowerCase();
             if (!lowercaseHeaders.containsKey(lowercaseKey)) {
                 headers.put(entry.getKey(), (String)entry.getValue());
