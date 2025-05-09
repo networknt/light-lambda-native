@@ -4,6 +4,8 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.header.HeaderConfig;
+import com.networknt.header.HeaderPathPrefixConfig;
+import com.networknt.header.HeaderRequestConfig;
 import com.networknt.status.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,28 +49,28 @@ public class RequestHeaderMiddleware extends HeaderMiddleware implements Middlew
                     if(LOG.isTraceEnabled()) LOG.trace("Request header removeList found.");
                     removeHeaders(removeList, requestHeaders);
                 }
-                Map<String, Object> updateMap = CONFIG.getRequestUpdateMap();
+                Map<String, String> updateMap = CONFIG.getRequestUpdateMap();
                 if(updateMap != null) {
                     if(LOG.isTraceEnabled()) LOG.trace("Request header updateMap found.");
                     updateHeaders(updateMap, requestHeaders);
                 }
 
                 // handle per path prefix header if configured
-                Map<String, Object> pathPrefixHeader = CONFIG.getPathPrefixHeader();
+                Map<String, HeaderPathPrefixConfig> pathPrefixHeader = CONFIG.getPathPrefixHeader();
                 if(pathPrefixHeader != null) {
                     String path = exchange.getRequest().getPath();
-                    for (Map.Entry<String, Object> entry : pathPrefixHeader.entrySet()) {
+                    for (Map.Entry<String, HeaderPathPrefixConfig> entry : pathPrefixHeader.entrySet()) {
                         if(path.startsWith(entry.getKey())) {
-                            if(LOG.isTraceEnabled()) LOG.trace("Found path " + path + " with prefix " + entry.getKey());
-                            Map<String, Object> valueMap = (Map<String, Object>)entry.getValue();
-                            Map<String, Object> requestHeaderMap = (Map<String, Object>)valueMap.get(HeaderConfig.REQUEST);
-                            if(requestHeaderMap != null) {
-                                List<String> requestHeaderRemoveList = (List<String>)requestHeaderMap.get(HeaderConfig.REMOVE);
+                            if(LOG.isTraceEnabled()) LOG.trace("Found path {} with prefix {}", path, entry.getKey());
+                            HeaderPathPrefixConfig headerPathPrefixConfig = entry.getValue();
+                            HeaderRequestConfig headerRequestConfig = headerPathPrefixConfig.getRequest();
+                            if(headerRequestConfig != null) {
+                                List<String> requestHeaderRemoveList = headerRequestConfig.getRemove();
                                 if(requestHeaderRemoveList != null) {
                                     if(LOG.isTraceEnabled()) LOG.trace("Request header path prefix removeList found.");
                                     removeHeaders(requestHeaderRemoveList, requestHeaders);
                                 }
-                                Map<String, Object> requestHeaderUpdateMap = (Map<String, Object>)requestHeaderMap.get(HeaderConfig.UPDATE);
+                                Map<String, String> requestHeaderUpdateMap = headerRequestConfig.getUpdate();
                                 if(requestHeaderUpdateMap != null) {
                                     if(LOG.isTraceEnabled()) LOG.trace("Request header path prefix updateMap found.");
                                     updateHeaders(requestHeaderUpdateMap, requestHeaders);
