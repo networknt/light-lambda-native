@@ -12,7 +12,7 @@ class ChainTest {
     @Test
     void testSynchronous() {
         var testSynchronousMiddleware = new TestSynchronousMiddleware();
-        var chain = new Chain(false);
+        var chain = new Chain();
         chain.addChainable(testSynchronousMiddleware);
         chain.addChainable(testSynchronousMiddleware);
         chain.addChainable(testSynchronousMiddleware);
@@ -21,18 +21,17 @@ class ChainTest {
         chain.addChainable(testSynchronousMiddleware);
         chain.addChainable(testSynchronousMiddleware);
         chain.addChainable(testSynchronousMiddleware);
-
-        chain.setupGroupedChain();
+        chain.setFinalized(true);
 
         Assertions.assertTrue(chain.isFinalized());
-        Assertions.assertEquals(8, chain.getGroupedChain().size());
+        Assertions.assertEquals(8, chain.getChainSize());
 
     }
 
     @Test
     void testAsynchronous() {
         var testAsynchronousMiddleware = new TestAsynchronousMiddleware();
-        var chain = new Chain(false);
+        var chain = new Chain();
         chain.addChainable(testAsynchronousMiddleware);
         chain.addChainable(testAsynchronousMiddleware);
         chain.addChainable(testAsynchronousMiddleware);
@@ -41,28 +40,24 @@ class ChainTest {
         chain.addChainable(testAsynchronousMiddleware);
         chain.addChainable(testAsynchronousMiddleware);
         chain.addChainable(testAsynchronousMiddleware);
-
-        chain.setupGroupedChain();
-
+        chain.setFinalized(true);
         Assertions.assertTrue(chain.isFinalized());
-        Assertions.assertEquals(1, chain.getGroupedChain().size());
+        Assertions.assertEquals(8, chain.getChainSize());
     }
 
     @Test
     void testMixed() {
         var testSynchronousMiddleware = new TestSynchronousMiddleware();
         var testAsynchronousMiddleware = new TestAsynchronousMiddleware();
-        var chain = new Chain(false);
+        var chain = new Chain();
         chain.addChainable(testAsynchronousMiddleware);
         chain.addChainable(testAsynchronousMiddleware);
         chain.addChainable(testAsynchronousMiddleware);
         chain.addChainable(testSynchronousMiddleware);
         chain.addChainable(testSynchronousMiddleware);
-
-        chain.setupGroupedChain();
-
+        chain.setFinalized(true);
         Assertions.assertTrue(chain.isFinalized());
-        Assertions.assertEquals(3, chain.getGroupedChain().size());
+        Assertions.assertEquals(5, chain.getChainSize());
     }
 
 }
