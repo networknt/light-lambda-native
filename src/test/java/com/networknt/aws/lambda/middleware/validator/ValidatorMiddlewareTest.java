@@ -60,13 +60,12 @@ public class ValidatorMiddlewareTest {
         APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         OpenApiMiddleware openApiMiddleware = new OpenApiMiddleware();
         requestChain.addChainable(openApiMiddleware);
         ValidatorMiddleware validatorMiddleware = new ValidatorMiddleware();
         requestChain.addChainable(validatorMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         var exchange = new LightLambdaExchange(lambdaContext, requestChain);
         exchange.setInitialRequest(requestEvent);
         exchange.executeChain();
@@ -93,13 +92,12 @@ public class ValidatorMiddlewareTest {
         APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         OpenApiMiddleware openApiMiddleware = new OpenApiMiddleware();
         requestChain.addChainable(openApiMiddleware);
         ValidatorMiddleware validatorMiddleware = new ValidatorMiddleware();
         requestChain.addChainable(validatorMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         var exchange = new LightLambdaExchange(lambdaContext, requestChain);
         exchange.setInitialRequest(requestEvent);
         exchange.executeChain();
@@ -128,13 +126,12 @@ public class ValidatorMiddlewareTest {
         APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         OpenApiMiddleware openApiMiddleware = new OpenApiMiddleware();
         requestChain.addChainable(openApiMiddleware);
         ValidatorMiddleware validatorMiddleware = new ValidatorMiddleware();
         requestChain.addChainable(validatorMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         var exchange = new LightLambdaExchange(lambdaContext, requestChain);
         exchange.setInitialRequest(requestEvent);
         exchange.executeChain();
@@ -161,13 +158,12 @@ public class ValidatorMiddlewareTest {
         APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         OpenApiMiddleware openApiMiddleware = new OpenApiMiddleware();
         requestChain.addChainable(openApiMiddleware);
         ValidatorMiddleware validatorMiddleware = new ValidatorMiddleware();
         requestChain.addChainable(validatorMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         var exchange = new LightLambdaExchange(lambdaContext, requestChain);
         exchange.setInitialRequest(requestEvent);
         exchange.executeChain();

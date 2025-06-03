@@ -7,7 +7,7 @@ import com.networknt.header.HeaderConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class PooledChainLinkExecutorTest {
+class ChainExecutorTest {
 
     @Test
     void handlerEnableCheckTest() {
@@ -38,13 +38,12 @@ class PooledChainLinkExecutorTest {
 
         var testSynchronousMiddleware = new TestSynchronousMiddleware();
 
-        var chain = new Chain(false);
+        var chain = new Chain();
         chain.addChainable(testSynchronousMiddleware);
         chain.addChainable(headerDisabledHandler);
         chain.addChainable(testSynchronousMiddleware);
         chain.addChainable(testSynchronousMiddleware);
         chain.addChainable(testSynchronousMiddleware);
-        chain.setupGroupedChain();
 
         /* create a new exchange with the disabled header chain + fake context (LightLambdaExchange uses PooledChainLinkExecutor to execute request/response chains) */
         var exchange = new LightLambdaExchange(lambdaContext, chain);

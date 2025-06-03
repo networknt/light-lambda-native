@@ -61,7 +61,7 @@ public class Handler {
             // add the chains to the handler list by id list.
             for (var chainName : config.getChains().keySet()) {
                 var chain = config.getChains().get(chainName);
-                Chain handlerChain = new Chain(false);
+                Chain handlerChain = new Chain();
                 for (var chainItemName : chain) {
                     var chainItem = handlers.get(chainItemName);
                     if (chainItem == null) {
@@ -69,6 +69,7 @@ public class Handler {
                     }
                     handlerChain.addChainable(chainItem);
                 }
+                handlerChain.setFinalized(true);
                 handlerListById.put(chainName, handlerChain);
             }
         }
@@ -162,7 +163,7 @@ public class Handler {
      * @return A list containing references to the instantiated handlers
      */
     private static Chain getHandlersFromExecList(List<String> execs) {
-        var handlersFromExecList = new Chain(false);
+        var handlersFromExecList = new Chain();
 
         if (execs != null) {
 
@@ -185,7 +186,7 @@ public class Handler {
                 }
             }
         }
-        handlersFromExecList.setupGroupedChain();
+        handlersFromExecList.setFinalized(true);
         return handlersFromExecList;
     }
 

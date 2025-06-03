@@ -44,12 +44,11 @@ public class SanitizerMiddlewareTest {
         APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         SanitizerConfig sanitizerConfig = SanitizerConfig.load("sanitizer_test");
         SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware(sanitizerConfig);
         requestChain.addChainable(sanitizerMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
         this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
@@ -72,12 +71,11 @@ public class SanitizerMiddlewareTest {
         APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         SanitizerConfig sanitizerConfig = SanitizerConfig.load("sanitizer_test");
         SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware(sanitizerConfig);
         requestChain.addChainable(sanitizerMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
         this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();

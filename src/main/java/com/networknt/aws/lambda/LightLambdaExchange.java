@@ -5,7 +5,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.exception.LambdaExchangeStateException;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.aws.lambda.handler.chain.PooledChainLinkExecutor;
+import com.networknt.aws.lambda.handler.chain.ChainExecutor;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.aws.lambda.handler.middleware.ExceptionUtil;
 import com.networknt.aws.lambda.listener.LambdaExchangeFailureListener;
@@ -15,8 +15,6 @@ import com.networknt.status.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.*;
 
 
@@ -29,7 +27,7 @@ public final class LightLambdaExchange {
     private APIGatewayProxyResponseEvent response;
     private final Context context;
     private final Map<Attachable<?>, Object> attachments = Collections.synchronizedMap(new HashMap<>());
-    private final PooledChainLinkExecutor executor;
+    private final ChainExecutor executor;
     private final List<LambdaResponseCompleteListener> responseCompleteListeners = Collections.synchronizedList(new ArrayList<>());
     private final List<LambdaRequestCompleteListener> requestCompleteListeners = Collections.synchronizedList(new ArrayList<>());
     private final List<LambdaExchangeFailureListener> exchangeFailedListeners = Collections.synchronizedList(new ArrayList<>());
@@ -67,7 +65,7 @@ public final class LightLambdaExchange {
     public LightLambdaExchange(Context context, Chain chain) {
         this.context = context;
         this.chain = chain;
-        this.executor = new PooledChainLinkExecutor();
+        this.executor = new ChainExecutor();
     }
 
     public void executeChain() {
