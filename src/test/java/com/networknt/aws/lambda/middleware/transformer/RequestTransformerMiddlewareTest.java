@@ -48,12 +48,11 @@ public class RequestTransformerMiddlewareTest {
         APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         RequestTransformerConfig config = RequestTransformerConfig.load("reqtrans_test");
         RequestTransformerMiddleware requestTransformerMiddleware = new RequestTransformerMiddleware(config);
         requestChain.addChainable(requestTransformerMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
         this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();
@@ -83,12 +82,11 @@ public class RequestTransformerMiddlewareTest {
         APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         RequestTransformerConfig config = RequestTransformerConfig.load("reqtrans_test");
         RequestTransformerMiddleware requestTransformerMiddleware = new RequestTransformerMiddleware(config);
         requestChain.addChainable(requestTransformerMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
         this.exchange.setInitialRequest(requestEvent);
         this.exchange.executeChain();

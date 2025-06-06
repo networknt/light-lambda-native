@@ -33,7 +33,7 @@ class LightLambdaExchangeTest {
         var testAsynchronousMiddleware = new TestAsynchronousMiddleware();
         var testInvocationHandler = new TestInvocationHandler();
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
 
         requestChain.addChainable(testAsynchronousMiddleware);
         requestChain.addChainable(testAsynchronousMiddleware);
@@ -42,8 +42,7 @@ class LightLambdaExchangeTest {
         requestChain.addChainable(testAsynchronousMiddleware);
         requestChain.addChainable(testAsynchronousMiddleware);
         requestChain.addChainable(testAsynchronousMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, requestChain);
 
         /* Request should NOT be in progress without setting the initial request data. */
@@ -73,7 +72,7 @@ class LightLambdaExchangeTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         var testAsynchronousMiddleware = new TestAsynchronousMiddleware();
         var testInvocationExceptionHandler = new TestInvocationExceptionHandler();
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         requestChain.addChainable(testAsynchronousMiddleware);
         requestChain.addChainable(testAsynchronousMiddleware);
         requestChain.addChainable(testAsynchronousMiddleware);
@@ -81,7 +80,7 @@ class LightLambdaExchangeTest {
         requestChain.addChainable(testAsynchronousMiddleware);
         requestChain.addChainable(testAsynchronousMiddleware);
         requestChain.addChainable(testAsynchronousMiddleware);
-        requestChain.setupGroupedChain();
+        requestChain.setFinalized(true);
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, requestChain);
 
         /* Request should NOT be in progress without setting the initial request data. */
@@ -114,10 +113,10 @@ class LightLambdaExchangeTest {
         var testExchangeCompleteListenerMiddleware = new TestExchangeCompleteListenerMiddleware();
         var testInvocationHandler = new TestInvocationHandler();
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         requestChain.addChainable(testExchangeCompleteListenerMiddleware);
         requestChain.addChainable(testInvocationHandler);
-        requestChain.setupGroupedChain();
+        requestChain.setFinalized(true);
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, requestChain);
         exchange.setInitialRequest(requestEvent);
         exchange.executeChain();
@@ -145,7 +144,7 @@ class LightLambdaExchangeTest {
         var testAsynchronousMiddleware = new TestAsynchronousMiddleware();
         var testInvocationHandler = new TestInvocationHandler();
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
 
         requestChain.addChainable(testAsynchronousMiddleware);
         requestChain.addChainable(testAsynchronousMiddleware);
@@ -154,8 +153,7 @@ class LightLambdaExchangeTest {
         requestChain.addChainable(testAsynchronousMiddleware);
         requestChain.addChainable(testAsynchronousMiddleware);
         requestChain.addChainable(testAsynchronousMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         LightLambdaExchange exchange = new LightLambdaExchange(lambdaContext, requestChain);
 
         /* Request should NOT be in progress without setting the initial request data. */

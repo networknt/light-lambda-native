@@ -30,12 +30,11 @@ public class LimitMiddlewareTest {
         APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
-        Chain requestChain = new Chain(false);
+        Chain requestChain = new Chain();
         LimitConfig limitConfig = LimitConfig.load("limit_test");
         LimitMiddleware limitMiddleware = new LimitMiddleware(limitConfig);
         requestChain.addChainable(limitMiddleware);
-        requestChain.setupGroupedChain();
-
+        requestChain.setFinalized(true);
         for(int i =  0; i < 12; i++) {
             this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
             this.exchange.setInitialRequest(requestEvent);

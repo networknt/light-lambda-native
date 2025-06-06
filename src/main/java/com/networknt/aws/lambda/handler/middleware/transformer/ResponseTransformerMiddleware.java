@@ -117,6 +117,8 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
             if (endpointRules == null) {
                 if (LOG.isDebugEnabled())
                     LOG.debug("endpointRules iS NULL");
+                // if there is no endpoint rules, we will not do any transformation.
+                return successMiddlewareStatus();
             } else {
                 if (LOG.isDebugEnabled())
                     LOG.debug("endpointRules: {}", endpointRules.get(RESPONSE_TRANSFORM).size());

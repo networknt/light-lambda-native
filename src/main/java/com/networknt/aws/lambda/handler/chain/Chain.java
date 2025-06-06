@@ -12,18 +12,14 @@ import java.util.LinkedList;
 public class Chain {
     private static final Logger LOG = LoggerFactory.getLogger(Chain.class);
     private final LinkedList<LambdaHandler> chain = new LinkedList<>();
-    private final LinkedList<ArrayList<LambdaHandler>> groupedChain = new LinkedList<>();
-
-    private final boolean forceSynchronousExecution;
 
     private static final String CONFIG_NAME = "pooled-chain-executor";
     private static final PooledChainConfig CONFIG = (PooledChainConfig) Config.getInstance().getJsonObjectConfig(CONFIG_NAME, PooledChainConfig.class);
 
     private boolean isFinalized;
 
-    public Chain(boolean forceSynchronousExecution) {
+    public Chain() {
         this.isFinalized = false;
-        this.forceSynchronousExecution = forceSynchronousExecution;
     }
 
     public void addChainable(LambdaHandler chainable) {
@@ -38,43 +34,14 @@ public class Chain {
         return isFinalized;
     }
 
-    public LinkedList<ArrayList<LambdaHandler>> getGroupedChain() {
-        return groupedChain;
+    public void setFinalized(boolean finalized) {
+        this.isFinalized = finalized;
     }
 
     public int getChainSize() {
         return this.chain.size();
     }
 
-    public void setupGroupedChain() {
-
-        if (this.isFinalized)
-            return;
-
-        var group = new ArrayList<LambdaHandler>();
-        for (var chainable : this.chain) {
-
-            if (this.forceSynchronousExecution || (!chainable.isAsynchronous() && group.isEmpty())) {
-                this.cutGroup(group, chainable);
-                group = new ArrayList<>();
-
-            } else if (chainable.isAsynchronous()) {
-                group.add(chainable);
-
-            } else if (!chainable.isAsynchronous() && !group.isEmpty()) {
-                this.groupedChain.add(group);
-                group = new ArrayList<>();
-                this.cutGroup(group, chainable);
-                group = new ArrayList<>();
-            }
-        }
-
-        if (!group.isEmpty()) {
-            this.groupedChain.add(group);
-        }
-
-        this.isFinalized = true;
-    }
 
     /**
      * Add to chain from string parameter
@@ -133,11 +100,6 @@ public class Chain {
         }
 
         return this;
-    }
-
-    private void cutGroup(ArrayList<LambdaHandler> group, LambdaHandler chainable) {
-        group.add(chainable);
-        this.groupedChain.add(group);
     }
 
     public LinkedList<LambdaHandler> getChain() {
