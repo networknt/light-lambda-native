@@ -210,9 +210,20 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
 
                     } catch (MalformedClaimException e) {
                         LOG.error("MalformedClaimException", e);
+                        
                         if (LOG.isDebugEnabled())
                             LOG.debug("JwtVerifyHandler.execute ends with an error.");
+                        
                         return new Status(STATUS_INVALID_AUTH_TOKEN);
+                    
+                    } catch (VerificationException e) {
+                        LOG.error("VerificationException", e);
+                        
+                        if (LOG.isDebugEnabled())
+                            LOG.debug("JwtVerifyHandler.execute ends with an error.");
+                        
+                        return new Status(STATUS_INVALID_AUTH_TOKEN);
+                    
                     }
                 } else {
                     if (LOG.isDebugEnabled())
