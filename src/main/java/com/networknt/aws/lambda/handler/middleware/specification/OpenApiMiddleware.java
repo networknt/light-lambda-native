@@ -25,6 +25,7 @@ public class OpenApiMiddleware implements MiddlewareHandler {
     public static final String OPENAPI_CONFIG_NAME = "openapi-validator";
     private static final Logger LOG = LoggerFactory.getLogger(OpenApiMiddleware.class);
     private static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
+    private static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
     private static final String CONFIG_NAME = "openapi";
     static ValidatorConfig CONFIG = ValidatorConfig.load();
     private static final String SPEC_INJECT = "openapi-inject";
@@ -58,6 +59,9 @@ public class OpenApiMiddleware implements MiddlewareHandler {
         }
         final Optional<NormalisedPath> maybeApiPath = helper.findMatchingApiPath(requestPath);
 
+        if (maybeApiPath.isEmpty()) {
+            return new Status(STATUS_INVALID_REQUEST_PATH, requestPath.normalised());
+        }
         final NormalisedPath openApiPathString = maybeApiPath.get();
         final Path path = helper.openApi3.getPath(openApiPathString.original());
 
