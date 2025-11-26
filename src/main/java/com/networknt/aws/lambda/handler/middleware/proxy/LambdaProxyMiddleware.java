@@ -29,9 +29,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LambdaProxyMiddleware implements MiddlewareHandler {
     private static LambdaAsyncClient client;
+    private static final AtomicBoolean CLIENT_SETUP = new AtomicBoolean(false);
     private static final Logger LOG = LoggerFactory.getLogger(LambdaProxyMiddleware.class);
     private static AbstractMetricsMiddleware metricsMiddleware;
 
@@ -39,35 +41,61 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
     public static final String EXCHANGE_HAS_FAILED_STATE = "ERR10087";
 
     public static final LambdaProxyConfig CONFIG = (LambdaProxyConfig) Config.getInstance().getJsonObjectConfig(LambdaProxyConfig.CONFIG_NAME, LambdaProxyConfig.class);
-
     static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
 
     public LambdaProxyMiddleware() {
-        SdkAsyncHttpClient asyncHttpClient = NettyNioAsyncHttpClient.builder()
-                .readTimeout(Duration.ofMillis(CONFIG.getApiCallAttemptTimeout()))
-                .writeTimeout(Duration.ofMillis(CONFIG.getApiCallAttemptTimeout()))
-                .connectionTimeout(Duration.ofMillis(CONFIG.getApiCallAttemptTimeout()))
-                .build();
-        ClientOverrideConfiguration overrideConfig = ClientOverrideConfiguration.builder()
-                .apiCallTimeout(Duration.ofMillis(CONFIG.getApiCallTimeout()))
-                .apiCallAttemptTimeout(Duration.ofSeconds(CONFIG.getApiCallAttemptTimeout()))
-                .build();
-
-        var builder = LambdaAsyncClient.builder().region(Region.of(CONFIG.getRegion()))
-                        .httpClient(asyncHttpClient)
-                        .overrideConfiguration(overrideConfig);
-        if (!StringUtils.isEmpty(CONFIG.getEndpointOverride()))
-            builder.endpointOverride(URI.create(CONFIG.getEndpointOverride()));
-        client = builder.build();
-
-        if(CONFIG.isMetricsInjection()) lookupMetricsMiddleware();
+        if (getClient() != null) {
+            LOG.debug("LambdaAsyncClient initialized.");
+        }
+        if (CONFIG.isMetricsInjection()) lookupMetricsMiddleware();
         populateMethodToMatcherMap(CONFIG.getFunctions());
         if (LOG.isInfoEnabled()) LOG.info("LambdaProxyMiddleware is constructed");
     }
 
+    private static LambdaAsyncClient getClient() {
+        if (CLIENT_SETUP.compareAndExchange(false, true)) {
+
+            /* Create our netty client */
+            var readTimeout = CONFIG.getReadTimeout();
+            var writeTimeout = CONFIG.getWriteTimeout();
+            var connectionTimeout = CONFIG.getConnectionTimeout();
+            LOG.debug("Creating 'SdkAsyncHttpClient' with readTimeout = '{}ms' writeTimeout = '{}ms' connectionTimeout = '{}ms'",
+                    readTimeout,
+                    writeTimeout,
+                    connectionTimeout
+            );
+            SdkAsyncHttpClient asyncHttpClient = NettyNioAsyncHttpClient.builder()
+                    .readTimeout(Duration.ofMillis(readTimeout))
+                    .writeTimeout(Duration.ofMillis(writeTimeout))
+                    .connectionTimeout(Duration.ofMillis(connectionTimeout))
+                    .build();
+
+            /* Add some override properties */
+            var apiCallTimeout = CONFIG.getApiCallTimeout();
+            var apiCallAttemptTimeout = CONFIG.getApiCallAttemptTimeout();
+            LOG.debug("Creating 'ClientOverrideConfiguration' with apiCallTimeout = '{}ms' apiCallAttemptTimeout = '{}ms'",
+                    apiCallTimeout,
+                    apiCallAttemptTimeout
+            );
+            ClientOverrideConfiguration overrideConfig = ClientOverrideConfiguration.builder()
+                    .apiCallTimeout(Duration.ofMillis(apiCallTimeout))
+                    .apiCallAttemptTimeout(Duration.ofMillis(apiCallAttemptTimeout))
+                    .build();
+
+            /* Build lambda client using the netty client and additional configuration */
+            var builder = LambdaAsyncClient.builder().region(Region.of(CONFIG.getRegion()))
+                    .httpClient(asyncHttpClient)
+                    .overrideConfiguration(overrideConfig);
+            if (!StringUtils.isEmpty(CONFIG.getEndpointOverride()))
+                builder.endpointOverride(URI.create(CONFIG.getEndpointOverride()));
+            client = builder.build();
+        }
+        return client;
+    }
+
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if(LOG.isTraceEnabled()) LOG.trace("LambdaProxyMiddleware.execute starts.");
+        if (LOG.isTraceEnabled()) LOG.trace("LambdaProxyMiddleware.execute starts.");
         if (!exchange.hasFailedState()) {
             /* invoke lambda function */
             var path = exchange.getRequest().getPath();
@@ -79,8 +107,8 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
                 return new Status(FAILED_TO_INVOKE_LAMBDA, path + "@" + method);
             }
             var functionName = result.getValue();
-            if(LOG.isTraceEnabled()) LOG.trace("Function name: {}", functionName);
-            var res = this.invokeFunction(client, functionName, exchange);
+            if (LOG.isTraceEnabled()) LOG.trace("Function name: {}", functionName);
+            var res = this.invokeFunction(getClient(), functionName, exchange);
             if (res == null) {
                 LOG.error("Failed to invoke lambda function: {}", functionName);
                 return new Status(FAILED_TO_INVOKE_LAMBDA, functionName);
@@ -88,7 +116,7 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
             LOG.debug("Invoke Time - Finish: {}", System.currentTimeMillis());
             var responseEvent = JsonMapper.fromJson(res, APIGatewayProxyResponseEvent.class);
             exchange.setInitialResponse(responseEvent);
-            if(LOG.isTraceEnabled()) LOG.trace("LambdaProxyMiddleware.execute ends.");
+            if (LOG.isTraceEnabled()) LOG.trace("LambdaProxyMiddleware.execute ends.");
             return this.successMiddlewareStatus();
         } else {
             LOG.error("Exchange has failed state {}", exchange.getState());
@@ -102,7 +130,7 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
             var path = endpoint.split("@")[0];
             var method = endpoint.split("@")[1];
             PathTemplateMatcher<String> matcher = methodToMatcherMap.computeIfAbsent(method, k -> new PathTemplateMatcher<>());
-            if(matcher.get(path) == null) matcher.add(path, entry.getValue());
+            if (matcher.get(path) == null) matcher.add(path, entry.getValue());
             methodToMatcherMap.put(method, matcher);
         }
     }
@@ -119,9 +147,9 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
             long startTime = System.nanoTime();
             CompletableFuture<String> futureResponse = client.invoke(request)
                     .thenApply(res -> {
-                        if(CONFIG.isMetricsInjection()) {
-                            if(metricsMiddleware == null) lookupMetricsMiddleware();
-                            if(metricsMiddleware != null) {
+                        if (CONFIG.isMetricsInjection()) {
+                            if (metricsMiddleware == null) lookupMetricsMiddleware();
+                            if (metricsMiddleware != null) {
                                 if (LOG.isTraceEnabled()) LOG.trace("Inject metrics for {}", CONFIG.getMetricsName());
                                 metricsMiddleware.injectMetrics(exchange, startTime, CONFIG.getMetricsName(), null);
                             }
@@ -134,8 +162,11 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
                         return null;
                     });
             return futureResponse.get();
-        } catch (InterruptedException | ExecutionException e) {
-            LOG.error("LambdaException", e);
+        } catch (ExecutionException e) {
+            LOG.error("ExecutionException", e);
+        } catch (InterruptedException e) {
+            LOG.error("InterruptedException", e);
+            Thread.currentThread().interrupt();
         }
         return null;
     }
@@ -184,7 +215,7 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
         // get the metrics middleware instance from the chain.
         Map<String, LambdaHandler> handlers = Handler.getHandlers();
         metricsMiddleware = (AbstractMetricsMiddleware) handlers.get(MetricsConfig.CONFIG_NAME);
-        if(metricsMiddleware == null) {
+        if (metricsMiddleware == null) {
             LOG.error("An instance of MetricsMiddleware is not configured in the handler.yml file.");
         }
     }
