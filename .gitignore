@@ -25,3 +25,5 @@ target/
 hs_err_pid*
 replay_pid*
 lambda-native.iml
+.gradle/
+.settings/org.eclipse.buildship.core.prefs
