@@ -7,6 +7,9 @@ public class LambdaProxyConfig {
     private boolean enabled;
     private String region;
     private String endpointOverride;
+    private int readTimeout;
+    private int writeTimeout;
+    private int connectionTimeout;
     private int apiCallAttemptTimeout;
     private int apiCallTimeout;
     private int maxRetryAttempts;
@@ -39,6 +42,30 @@ public class LambdaProxyConfig {
         this.endpointOverride = endpointOverride;
     }
 
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    public int getWriteTimeout() {
+        return writeTimeout;
+    }
+
+    public void setWriteTimeout(int writeTimeout) {
+        this.writeTimeout = writeTimeout;
+    }
+
+    public int getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
     public int getApiCallAttemptTimeout() {
         return apiCallAttemptTimeout;
     }
@@ -53,6 +80,14 @@ public class LambdaProxyConfig {
 
     public void setApiCallTimeout(int apiCallTimeout) {
         this.apiCallTimeout = apiCallTimeout;
+    }
+
+    public int getMaxRetryAttempts() {
+        return maxRetryAttempts;
+    }
+
+    public void setMaxRetryAttempts(int maxRetryAttempts) {
+        this.maxRetryAttempts = maxRetryAttempts;
     }
 
     public String getLogType() {
@@ -86,5 +121,4 @@ public class LambdaProxyConfig {
     public void setMetricsName(String metricsName) {
         this.metricsName = metricsName;
     }
-
 }

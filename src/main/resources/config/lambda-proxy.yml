@@ -12,6 +12,12 @@ endpointOverride: ${lambda-proxy.endpointOverride:}
 apiCallTimeout: ${lambda-proxy.apiCallTimeout:60000}
 # Api call attempt timeout in milliseconds. This sets the amount of time for each individual attempt.
 apiCallAttemptTimeout: ${lambda-proxy.apiCallAttemptTimeout:20000}
+# The amount of time to wait for a read socket. 0 to disable.
+readTimeout: ${lambda-proxy.readTimeout:60000}
+# The amount of time to wait for a write socket. 0 to disable.
+writeTimeout: ${lambda-proxy.writeTimeout:60000}
+# The amount of time to wait when trying to establish a connection.
+connectionTimeout: ${lambda-proxy.connectionTimeout:}
 # log type for the lambda function invocation
 logType: ${lambda-proxy.logType:Tail}
 # When LambdaFunctionInvoker is used to invoke the downstream Lambda Function, it can collect the metrics info
