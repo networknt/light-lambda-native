@@ -25,7 +25,6 @@ import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.
 public abstract class AbstractMetricsMiddleware implements MiddlewareHandler {
     static final Logger logger = LoggerFactory.getLogger(AbstractMetricsMiddleware.class);
     // The metrics.yml configuration that supports reload.
-    public static MetricsConfig config;
     static Pattern pattern;
     // The structure that collect all the metrics entries. Even others will be using this structure to inject.
     public static final MetricRegistry registry = new MetricRegistry();
@@ -37,13 +36,13 @@ public abstract class AbstractMetricsMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return config.isEnabled();
+        return MetricsConfig.load().isEnabled();
     }
 
     public void createJVMMetricsReporter(final TimeSeriesDbSender sender) {
         JVMMetricsDbReporter jvmReporter = new JVMMetricsDbReporter(new MetricRegistry(), sender, "jvm-reporter",
                 MetricFilter.ALL, TimeUnit.SECONDS, TimeUnit.MILLISECONDS, commonTags);
-        jvmReporter.start(config.getReportInMinutes(), TimeUnit.MINUTES);
+        jvmReporter.start(MetricsConfig.load().getReportInMinutes(), TimeUnit.MINUTES);
     }
 
     public void incCounterForStatusCode(int statusCode, Map<String, String> commonTags, Map<String, String> tags) {
@@ -74,7 +73,8 @@ public abstract class AbstractMetricsMiddleware implements MiddlewareHandler {
      */
     public void injectMetrics(LightLambdaExchange exchange, long startTime, String metricsName, String endpoint) {
         Map<String, Object> auditInfo = (Map<String, Object>)exchange.getAttachment(AUDIT_ATTACHMENT_KEY);
-        if(logger.isTraceEnabled()) logger.trace("auditInfo = " + auditInfo);
+        if(logger.isTraceEnabled()) logger.trace("auditInfo = {}", auditInfo);
+        MetricsConfig config = MetricsConfig.load();
         Map<String, String> tags = new HashMap<>();
         if (auditInfo != null) {
             // for external handlers, the endpoint must be unknown in the auditInfo. If that is the case, use the endpoint passed in.

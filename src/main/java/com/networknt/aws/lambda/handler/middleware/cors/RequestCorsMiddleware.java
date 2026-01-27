@@ -8,7 +8,6 @@ import com.networknt.config.Config;
 import com.networknt.cors.CorsConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.MapUtil;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,45 +27,38 @@ import static com.networknt.cors.CorsUtil.sanitizeDefaultPort;
  *
  */
 public class RequestCorsMiddleware implements MiddlewareHandler {
-    static CorsConfig CONFIG;
     private static final Logger LOG = LoggerFactory.getLogger(RequestCorsMiddleware.class);
     private static final String SUC10200 = "SUC10200";
     private static final String CORS_PREFLIGHT_REQUEST_FAILED = "ERR10092";
 
-    private List<String> allowedOrigins;
-    private List<String> allowedMethods;
     private static final String ONE_HOUR_IN_SECONDS = "3600";
 
     public RequestCorsMiddleware() {
-        CONFIG = CorsConfig.load();
-        allowedOrigins = CONFIG.getAllowedOrigins();
-        allowedMethods = CONFIG.getAllowedMethods();
-        LOG.info("RequestCorsMiddleware is constructed");
-    }
-
-    public RequestCorsMiddleware(CorsConfig cfg) {
-        CONFIG = cfg;
-        allowedOrigins = CONFIG.getAllowedOrigins();
-        allowedMethods = CONFIG.getAllowedMethods();
         LOG.info("RequestCorsMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware.executeMiddleware starts.");
-        if (!CONFIG.isEnabled()) {
+        CorsConfig config = CorsConfig.load();
+        if (!config.isEnabled()) {
             if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware is not enabled.");
             return disabledMiddlewareStatus();
         }
+
         APIGatewayProxyRequestEvent requestEvent = exchange.getRequest();
         if(requestEvent != null) {
             if(LOG.isTraceEnabled()) LOG.trace("Request event is not null.");
+
+            List<String> allowedOrigins = config.getAllowedOrigins();
+            List<String> allowedMethods = config.getAllowedMethods();
+
             Map<String, String> requestHeaders = requestEvent.getHeaders();
             if(isCorsRequest(requestHeaders)) {
                 // set the allowed origins and methods based on the path prefix.
-                if (CONFIG.getPathPrefixAllowed() != null) {
+                if (config.getPathPrefixAllowed() != null) {
                     String requestPath = requestEvent.getPath();
-                    for(Map.Entry<String, Object> entry: CONFIG.getPathPrefixAllowed().entrySet()) {
+                    for(Map.Entry<String, Object> entry: config.getPathPrefixAllowed().entrySet()) {
                         if (requestPath.startsWith(entry.getKey())) {
                             Map endpointCorsMap = (Map) entry.getValue();
                             allowedOrigins = (List<String>) endpointCorsMap.get(CorsConfig.ALLOWED_ORIGINS);
@@ -97,22 +89,7 @@ public class RequestCorsMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                CorsConfig.CONFIG_NAME,
-                RequestCorsMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CorsConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
+        return CorsConfig.load().isEnabled();
     }
 
     @Override

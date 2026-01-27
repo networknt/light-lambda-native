@@ -11,7 +11,6 @@ import com.networknt.config.Config;
 import com.networknt.security.UnifiedPathPrefixAuth;
 import com.networknt.security.UnifiedSecurityConfig;
 import com.networknt.status.Status;
-import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,27 +31,32 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
     static final String HANDLER_NOT_FOUND = "ERR11200";
     static final String MISSING_PATH_PREFIX_AUTH = "ERR10078";
 
-    private static UnifiedSecurityConfig CONFIG;
+    private volatile String configName = UnifiedSecurityConfig.CONFIG_NAME;
 
     public UnifiedSecurityMiddleware() {
-        CONFIG = UnifiedSecurityConfig.load();
+        if(LOG.isInfoEnabled()) LOG.info("UnifiedSecurityMiddleware is constructed");
+    }
+
+    public UnifiedSecurityMiddleware(String configName) {
+        this.configName = configName;
         if(LOG.isInfoEnabled()) LOG.info("UnifiedSecurityMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if (LOG.isDebugEnabled()) LOG.debug("UnifiedSecurityMiddleware.execute starts.");
+        UnifiedSecurityConfig config = UnifiedSecurityConfig.load(configName);
         // need to skip this handler if the response is set by the router handler.
         String reqPath = exchange.getRequest().getPath();
         // check if the path prefix is in the anonymousPrefixes list. If yes, skip all other check and goes to next handler.
-        if (CONFIG.getAnonymousPrefixes() != null && CONFIG.getAnonymousPrefixes().stream().anyMatch(reqPath::startsWith)) {
+        if (config.getAnonymousPrefixes() != null && config.getAnonymousPrefixes().stream().anyMatch(reqPath::startsWith)) {
             if(LOG.isTraceEnabled()) LOG.trace("Skip request path base on anonymousPrefixes for " + reqPath);
             return successMiddlewareStatus();
         }
-        if(CONFIG.getPathPrefixAuths() != null) {
+        if(config.getPathPrefixAuths() != null) {
             boolean found = false;
             // iterate each entry to check enabled security methods.
-            for(UnifiedPathPrefixAuth pathPrefixAuth: CONFIG.getPathPrefixAuths()) {
+            for(UnifiedPathPrefixAuth pathPrefixAuth: config.getPathPrefixAuths()) {
                 if(LOG.isTraceEnabled())
                     LOG.trace("Check with requestPath = {} prefix = {}", reqPath, pathPrefixAuth.getPrefix());
                 if(reqPath.startsWith(pathPrefixAuth.getPrefix())) {
@@ -208,20 +212,7 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                UnifiedSecurityConfig.CONFIG_NAME,
-                UnifiedSecurityMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(UnifiedSecurityConfig.CONFIG_NAME), null);
-    }
-
-    @Override
-    public void reload() {
-
+        return UnifiedSecurityConfig.load(configName).isEnabled();
     }
 
     @Override

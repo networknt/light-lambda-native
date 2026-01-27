@@ -6,7 +6,6 @@ import com.networknt.config.Config;
 import com.networknt.handler.config.EndpointSource;
 import com.networknt.handler.config.HandlerConfig;
 import com.networknt.handler.config.PathChain;
-import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.PathTemplateMatcher;
 import com.networknt.utility.Tuple;
 import org.slf4j.Logger;
@@ -20,7 +19,7 @@ public class Handler {
 
     private static final Logger LOG = LoggerFactory.getLogger(Handler.class);
     // Accessed directly.
-    public static HandlerConfig config = HandlerConfig.load();
+    // public static HandlerConfig config = HandlerConfig.load();
     // handlers defined in the handlers section. each handler keyed by a name.
     static final Map<String, LambdaHandler> handlers = new HashMap<>();
     // chain name to list of handlers mapping
@@ -29,18 +28,18 @@ public class Handler {
     static Chain defaultChain;
 
     public static void init() {
-        initHandlers();
-        initChains();
-        initPaths();
-        initDefaultHandlers();
-        ModuleRegistry.registerModule(HandlerConfig.CONFIG_NAME, Handler.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(HandlerConfig.CONFIG_NAME), null);
+        HandlerConfig config = HandlerConfig.load();
+        initHandlers(config);
+        initChains(config);
+        initPaths(config);
+        initDefaultHandlers(config);
     }
 
     /**
      * Construct the named map of handlers. Note: All handlers in use for this
      * microservice should be listed in this handlers list.
      */
-    static void initHandlers() {
+    static void initHandlers(HandlerConfig config) {
         if (config != null && config.getHandlers() != null) {
             // initialize handlers
             for (var handler : config.getHandlers()) {
@@ -54,7 +53,7 @@ public class Handler {
      * Construct chains of handlers, if any are configured NOTE: It is recommended
      * to define reusable chains of handlers
      */
-    static void initChains() {
+    static void initChains(HandlerConfig config) {
 
         if (config != null && config.getChains() != null) {
 
@@ -78,7 +77,7 @@ public class Handler {
     /**
      * Build "handlerListById" and "reqTypeMatcherMap" from the paths in the config.
      */
-    static void initPaths() {
+    static void initPaths(HandlerConfig config) {
 
         if (config != null && config.getPaths() != null) {
 
@@ -96,7 +95,7 @@ public class Handler {
     /**
      * Build "defaultHandlers" from the defaultHandlers in the config.
      */
-    static void initDefaultHandlers() {
+    static void initDefaultHandlers(HandlerConfig config) {
 
         if (config != null && config.getDefaultHandlers() != null) {
             defaultChain = getHandlersFromExecList(config.getDefaultHandlers());
@@ -191,19 +190,6 @@ public class Handler {
     }
 
     /**
-     * Detect if the handler is a MiddlewareHandler instance. If yes, then register it.
-     *
-     * @param handler Object
-     */
-    private static void registerLambdaHandler(Object handler) {
-        if (handler instanceof LambdaHandler) {
-            // register the lambda handler if it is enabled.
-            if (((LambdaHandler) handler).isEnabled())
-                ((LambdaHandler) handler).register();
-        }
-    }
-
-    /**
      * Helper method for generating the instance of a handler from its string
      * definition in config. Ie. No mapped values for setters, or list of
      * constructor fields. To note: It could either implement HttpHandler, or
@@ -233,7 +219,6 @@ public class Handler {
 
         else throw new RuntimeException("Unsupported type of handler provided: " + handlerOrProviderObject);
 
-        registerLambdaHandler(resolvedHandler);
         handlers.put(namedClass.first, resolvedHandler);
     }
 
@@ -264,14 +249,6 @@ public class Handler {
             }
         }
         throw new RuntimeException("Invalid format provided for class label: " + classLabel);
-    }
-
-    // Exposed for testing only.
-    static void setConfig(String configName) throws Exception {
-        config = HandlerConfig.load(configName);
-        initHandlers();
-        initChains();
-        initPaths();
     }
 
     public static Map<String, LambdaHandler> getHandlers() {

@@ -73,11 +73,6 @@ public abstract class AbstractTransformerMiddleware implements MiddlewareHandler
     }
 
     @Override
-    public void reload() {
-
-    }
-
-    @Override
     public boolean isAsynchronous() {
         return false;
     }

@@ -52,8 +52,7 @@ public class BasicLdapAuthTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-ldap");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-ldap");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(403, status.getStatusCode());
@@ -77,8 +76,7 @@ public class BasicLdapAuthTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-ldap");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-ldap");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(200, status.getStatusCode());
@@ -99,8 +97,7 @@ public class BasicLdapAuthTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-ldap");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-ldap");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(401, status.getStatusCode());
@@ -122,8 +119,7 @@ public class BasicLdapAuthTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-ldap");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-ldap");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(401, status.getStatusCode());
@@ -145,8 +141,7 @@ public class BasicLdapAuthTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-ldap");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-ldap");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(401, status.getStatusCode());
@@ -168,8 +163,7 @@ public class BasicLdapAuthTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-ldap");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-ldap");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(401, status.getStatusCode());

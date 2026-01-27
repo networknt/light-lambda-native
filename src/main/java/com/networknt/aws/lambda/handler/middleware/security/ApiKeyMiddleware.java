@@ -8,7 +8,6 @@ import com.networknt.utility.MapUtil;
 import com.networknt.config.Config;
 import com.networknt.status.Status;
 import com.networknt.utility.HashUtil;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,19 +19,18 @@ public class ApiKeyMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ApiKeyMiddleware.class);
     static final String API_KEY_MISMATCH = "ERR10075";
 
-    static ApiKeyConfig config;
+    private volatile String configName = ApiKeyConfig.CONFIG_NAME;
 
     public ApiKeyMiddleware() {
         if(LOG.isTraceEnabled()) LOG.trace("ApiKeyMiddleware is loaded.");
-        config = ApiKeyConfig.load();
     }
     /**
      * This is a constructor for test cases only. Please don't use it.
-     * @param cfg ApiKeyConfig
+     * @param configName String
      */
     @Deprecated
-    public ApiKeyMiddleware(ApiKeyConfig cfg) {
-        config = cfg;
+    public ApiKeyMiddleware(String configName) {
+        this.configName = configName;
         if(LOG.isInfoEnabled()) LOG.info("ApiKeyMiddleware is loaded.");
     }
 
@@ -44,7 +42,8 @@ public class ApiKeyMiddleware implements MiddlewareHandler {
     }
 
     public Status handleApiKey(LightLambdaExchange exchange, String requestPath) {
-        if(LOG.isTraceEnabled()) LOG.trace("requestPath = " + requestPath);
+        if(LOG.isTraceEnabled()) LOG.trace("requestPath = {}", requestPath);
+        ApiKeyConfig config = ApiKeyConfig.load(configName);
         if (config.getPathPrefixAuths() != null) {
             boolean matched = false;
             boolean found = false;
@@ -92,22 +91,7 @@ public class ApiKeyMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return config.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        List<String> masks = new ArrayList<>();
-        // if hashEnabled, there is no need to mask in the first place.
-        if(!config.isHashEnabled()) {
-            masks.add("apiKey");
-        }
-        ModuleRegistry.registerModule(ApiKeyConfig.CONFIG_NAME, ApiKeyMiddleware.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(ApiKeyConfig.CONFIG_NAME), masks);
-    }
-
-    @Override
-    public void reload() {
-
+        return ApiKeyConfig.load(configName).isEnabled();
     }
 
     @Override

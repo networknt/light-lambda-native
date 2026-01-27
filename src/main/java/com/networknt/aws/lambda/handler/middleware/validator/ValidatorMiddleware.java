@@ -14,7 +14,6 @@ import com.networknt.openapi.OpenApiOperation;
 import com.networknt.openapi.ValidatorConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,21 +93,6 @@ public class ValidatorMiddleware implements MiddlewareHandler {
     @Override
     public boolean isEnabled() {
         return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                ValidatorConfig.CONFIG_NAME,
-                ValidatorMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(ValidatorConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
     }
 
     @Override

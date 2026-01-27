@@ -31,8 +31,7 @@ public class LimitMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
         Chain requestChain = new Chain();
-        LimitConfig limitConfig = LimitConfig.load("limit_test");
-        LimitMiddleware limitMiddleware = new LimitMiddleware(limitConfig);
+        LimitMiddleware limitMiddleware = new LimitMiddleware("limit_test");
         requestChain.addChainable(limitMiddleware);
         requestChain.setFinalized(true);
         for(int i =  0; i < 12; i++) {

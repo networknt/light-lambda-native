@@ -8,7 +8,6 @@ import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.logging.model.LoggerConfig;
 import com.networknt.status.Status;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,16 +19,14 @@ public class LoggerSetHandler implements LambdaHandler {
     static final String HANDLER_IS_DISABLED = "ERR10065";
     static final String REQUEST_BODY_MISSING = "ERR10059";
 
-    static LoggerConfig config;
-
     public LoggerSetHandler() {
         if(logger.isInfoEnabled()) logger.info("LoggerSetHandler is constructed");
-        config = LoggerConfig.load();
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if (logger.isTraceEnabled()) logger.trace("LoggerSetHandler.handleRequest starts.");
+        LoggerConfig config = LoggerConfig.load();
         Map<String, String> headers = Map.of("Content-Type", "application/json");
         if (config.isEnabled()) {
             // get the body from the request event
@@ -60,21 +57,7 @@ public class LoggerSetHandler implements LambdaHandler {
 
     @Override
     public boolean isEnabled() {
-        return config.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                LoggerConfig.CONFIG_NAME,
-                LoggerSetHandler.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LoggerConfig.CONFIG_NAME),
-                null);
-    }
-
-    @Override
-    public void reload() {
-
+        return LoggerConfig.load().isEnabled();
     }
 
     @Override

@@ -7,7 +7,6 @@ import com.networknt.config.Config;
 import com.networknt.cors.CorsConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.MapUtil;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,23 +20,17 @@ import org.slf4j.LoggerFactory;
  */
 public class ResponseCorsMiddleware implements MiddlewareHandler {
 
-    static CorsConfig CONFIG;
     private static final Logger LOG = LoggerFactory.getLogger(ResponseCorsMiddleware.class);
 
     public ResponseCorsMiddleware() {
-        CONFIG = CorsConfig.load();
-        LOG.info("ResponseCorsMiddleware is constructed");
-    }
-
-    public ResponseCorsMiddleware(CorsConfig cfg) {
-        CONFIG = cfg;
         LOG.info("ResponseCorsMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware.executeMiddleware starts.");
-        if (!CONFIG.isEnabled()) {
+        CorsConfig config = CorsConfig.load();
+        if (!config.isEnabled()) {
             if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware is not enabled.");
             return disabledMiddlewareStatus();
         }
@@ -59,21 +52,7 @@ public class ResponseCorsMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                CorsConfig.CONFIG_NAME,
-                ResponseCorsMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CorsConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
+        return CorsConfig.load().isEnabled();
     }
 
     @Override

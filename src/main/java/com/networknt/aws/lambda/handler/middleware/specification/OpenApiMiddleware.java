@@ -10,7 +10,6 @@ import com.networknt.openapi.*;
 import com.networknt.service.SingletonServiceFactory;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,26 +20,25 @@ import java.util.Optional;
 import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.AUDIT_ATTACHMENT_KEY;
 
 public class OpenApiMiddleware implements MiddlewareHandler {
-
-    public static final String OPENAPI_CONFIG_NAME = "openapi-validator";
     private static final Logger LOG = LoggerFactory.getLogger(OpenApiMiddleware.class);
     private static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
     private static final String STATUS_INVALID_REQUEST_PATH = "ERR10007";
-    private static final String CONFIG_NAME = "openapi";
-    static ValidatorConfig CONFIG = ValidatorConfig.load();
+    private static final String OPENAPI_NAME = "openapi";
     private static final String SPEC_INJECT = "openapi-inject";
+
+    private volatile OpenApiHandlerConfig config;
 
     public static OpenApiHelper helper;
 
     public OpenApiMiddleware() {
         if (LOG.isInfoEnabled()) LOG.info("OpenApiMiddleware is constructed");
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
-        Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(CONFIG_NAME);
+        Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(OPENAPI_NAME);
         validateSpec(openapi, inject, "openapi.yaml");
         openapi = OpenApiHelper.merge(openapi, inject);
         try {
             String openapiString = Config.getInstance().getMapper().writeValueAsString(openapi);
-            if(LOG.isTraceEnabled()) LOG.trace("OpenApiMiddleware openapiString: " + openapiString);
+            if(LOG.isTraceEnabled()) LOG.trace("OpenApiMiddleware openapiString: {}", openapiString);
             helper = new OpenApiHelper(openapiString);
         } catch (JsonProcessingException e) {
             LOG.error("merge specification failed");
@@ -165,22 +163,14 @@ public class OpenApiMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                OPENAPI_CONFIG_NAME,
-                OpenApiMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(OPENAPI_CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
+        OpenApiHandlerConfig config = OpenApiHandlerConfig.load();
+        boolean enabled = false;
+        if (config.isMultipleSpec()) {
+            enabled = !config.getMappedConfig().isEmpty();
+        } else {
+            enabled = helper.openApi3 != null;
+        }
+        return enabled;
     }
 
     @Override

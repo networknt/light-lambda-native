@@ -28,8 +28,7 @@ public class ApiKeyMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        ApiKeyConfig config = ApiKeyConfig.load("apikey_test");
-        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware(config);
+        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware("apikey_test");
         Status status = apiKeyMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(200, status.getStatusCode());
@@ -53,8 +52,7 @@ public class ApiKeyMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        ApiKeyConfig config = ApiKeyConfig.load("apikey_test");
-        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware(config);
+        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware("apikey_test");
         Status status = apiKeyMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(200, status.getStatusCode());
@@ -77,8 +75,7 @@ public class ApiKeyMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        ApiKeyConfig config = ApiKeyConfig.load("apikey_test");
-        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware(config);
+        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware("apikey_test");
         Status status = apiKeyMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(200, status.getStatusCode());
@@ -103,8 +100,7 @@ public class ApiKeyMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        ApiKeyConfig config = ApiKeyConfig.load("apikey_test");
-        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware(config);
+        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware("apikey_test");
         Status status = apiKeyMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(200, status.getStatusCode());
@@ -126,8 +122,7 @@ public class ApiKeyMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        ApiKeyConfig config = ApiKeyConfig.load("apikey_test");
-        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware(config);
+        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware("apikey_test");
         Status status = apiKeyMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(401, status.getStatusCode());
@@ -150,8 +145,7 @@ public class ApiKeyMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        ApiKeyConfig config = ApiKeyConfig.load("apikey_test");
-        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware(config);
+        ApiKeyMiddleware apiKeyMiddleware = new ApiKeyMiddleware("apikey_test");
         Status status = apiKeyMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(401, status.getStatusCode());

@@ -28,7 +28,6 @@ import static com.networknt.aws.lambda.utility.HeaderKey.SCOPE_TOKEN;
 public class SwtVerifyMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(SwtVerifyMiddleware.class);
 
-    static final String OPENAPI_SECURITY_CONFIG = "openapi-security";
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
     static final String STATUS_MISSING_AUTH_TOKEN = "ERR10002";
     static final String STATUS_AUTH_TOKEN_SCOPE_MISMATCH = "ERR10005";
@@ -38,23 +37,44 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
     static final String STATUS_CLIENT_EXCEPTION = "ERR10082";
     static final String STATUS_OPENAPI_OPERATION_MISSED = "ERR10085";
 
-    public static SwtVerifier swtVerifier;
-
-    private static SecurityConfig CONFIG;
+    private volatile SwtVerifier swtVerifier;
+    private volatile String configName = SecurityConfig.CONFIG_NAME;
+    private volatile SecurityConfig config;
 
     public SwtVerifyMiddleware() {
-        CONFIG = SecurityConfig.load(OPENAPI_SECURITY_CONFIG);
-        swtVerifier = new SwtVerifier(CONFIG);
+        config = SecurityConfig.load(configName);
+        swtVerifier = new SwtVerifier(config);
+        if(LOG.isInfoEnabled()) LOG.info("SwtVerifyMiddleware is constructed");
+    }
+
+    /**
+     * Please note that this constructor is only for testing to load different config files
+     * to test different configurations.
+     * @param configName String
+     */
+    public SwtVerifyMiddleware(String configName) {
+        this.configName = configName;
+        config = SecurityConfig.load(configName);
+        swtVerifier = new SwtVerifier(config);
         if(LOG.isInfoEnabled()) LOG.info("SwtVerifyMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute starts.");
-
+        SecurityConfig newConfig = SecurityConfig.load(configName);
+        if(config != newConfig) {
+            synchronized (this) {
+                if(config != newConfig) {
+                    config = newConfig;
+                    swtVerifier = new SwtVerifier(config);
+                    if(LOG.isInfoEnabled()) LOG.info("SwtVerifyMiddleware is reloaded.");
+                }
+            }
+        }
         String reqPath = exchange.getRequest().getPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
-        if (CONFIG.getSkipPathPrefixes() != null && CONFIG.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
+        if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
             if(LOG.isTraceEnabled()) LOG.trace("Skip request path base on skipPathPrefixes for " + reqPath);
             if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends.");
             return successMiddlewareStatus();
@@ -88,8 +108,8 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                 String swt = SwtVerifier.getTokenFromAuthorization(authorization);
                 if (swt != null) {
                     if (LOG.isTraceEnabled()) LOG.trace("parsed swt from authorization = " + swt.substring(0, 10));
-                    Optional<String> optionalSwtClientId = MapUtil.getValueIgnoreCase(headerMap, CONFIG.getSwtClientIdHeader());
-                    Optional<String> optionalSwtClientSecret = MapUtil.getValueIgnoreCase(headerMap, CONFIG.getSwtClientSecretHeader());
+                    Optional<String> optionalSwtClientId = MapUtil.getValueIgnoreCase(headerMap, config.getSwtClientIdHeader());
+                    Optional<String> optionalSwtClientSecret = MapUtil.getValueIgnoreCase(headerMap, config.getSwtClientSecretHeader());
 
                     if(LOG.isTraceEnabled()) LOG.trace("header swtClientId = " + optionalSwtClientId.orElse(null) + ", header swtClientSecret = " + StringUtils.maskHalfString(optionalSwtClientSecret.orElse(null)));
                     Result<TokenInfo> tokenInfoResult = swtVerifier.verifySwt(swt, reqPath, jwkServiceIds, optionalSwtClientId.orElse(null), optionalSwtClientSecret.orElse(null));
@@ -111,7 +131,7 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                         auditInfo.put(Constants.CALLER_ID_STRING, optionalCallerId.get());
                     exchange.addAttachment(AUDIT_ATTACHMENT_KEY, auditInfo);
 
-                    if (CONFIG != null && CONFIG.isEnableVerifyScope()) {
+                    if (config != null && config.isEnableVerifyScope()) {
                         if (LOG.isTraceEnabled()) LOG.trace("verify scope from the primary token when enableVerifyScope is true");
 
                         /* get openapi operation */
@@ -119,7 +139,7 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                         // here we assume that the OpenApiMiddleware has been executed before this middleware and the openApiOperation is set in the auditInfo.
                         Operation operation = openApiOperation.getOperation();
                         if(operation == null) {
-                            if(CONFIG.isSkipVerifyScopeWithoutSpec()) {
+                            if(config.isSkipVerifyScopeWithoutSpec()) {
                                 if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends without verifying scope due to spec.");
                                 return successMiddlewareStatus();
                             } else {
@@ -147,9 +167,9 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                         }
                     }
                     // pass through claims through request headers after verification is done.
-                    if(CONFIG.getPassThroughClaims() != null && !CONFIG.getPassThroughClaims().isEmpty()) {
+                    if(config.getPassThroughClaims() != null && !config.getPassThroughClaims().isEmpty()) {
                         try {
-                            for (Map.Entry<String, String> entry : CONFIG.getPassThroughClaims().entrySet()) {
+                            for (Map.Entry<String, String> entry : config.getPassThroughClaims().entrySet()) {
                                 String key = entry.getKey();
                                 String header = entry.getValue();
                                 Field field = tokenInfo.getClass().getDeclaredField(key);
@@ -191,7 +211,7 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
      */
     protected Status hasValidScope(String scopeHeader, List<String> secondaryScopes, TokenInfo tokenInfo, Operation operation) {
         // validate the scope against the scopes configured in the OpenAPI spec
-        if (CONFIG.isEnableVerifyScope()) {
+        if (config.isEnableVerifyScope()) {
             // get scope defined in OpenAPI spec for this endpoint.
             Collection<String> specScopes = null;
             Collection<SecurityRequirement> securityRequirements = operation.getSecurityRequirements();
@@ -270,8 +290,8 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                 LOG.trace("start verifying scope token = " + scopeSwt.substring(0, 10));
             try {
                 Map<String, String> headerMap = exchange.getRequest().getHeaders();
-                Optional<String> optionalSwtClientId = MapUtil.getValueIgnoreCase(headerMap, CONFIG.getSwtClientIdHeader());
-                Optional<String> optionalSwtClientSecret = MapUtil.getValueIgnoreCase(headerMap, CONFIG.getSwtClientSecretHeader());
+                Optional<String> optionalSwtClientId = MapUtil.getValueIgnoreCase(headerMap, config.getSwtClientIdHeader());
+                Optional<String> optionalSwtClientSecret = MapUtil.getValueIgnoreCase(headerMap, config.getSwtClientSecretHeader());
                 if(LOG.isTraceEnabled()) LOG.trace("header swtClientId = " + optionalSwtClientId.orElse(null) + ", header swtClientSecret = " + StringUtils.maskHalfString(optionalSwtClientSecret.orElse(null)));
                 Result<TokenInfo> scopeTokenInfo = swtVerifier.verifySwt(scopeSwt, reqPath, jwkServiceIds, optionalSwtClientId.orElse(null), optionalSwtClientSecret.orElse(null));
                 if(scopeTokenInfo.isFailure()) {
@@ -323,17 +343,7 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnableVerifySwt();
-    }
-
-    @Override
-    public void register() {
-
-    }
-
-    @Override
-    public void reload() {
-
+        return config.isEnableVerifySwt();
     }
 
     @Override

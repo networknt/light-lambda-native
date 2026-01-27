@@ -7,7 +7,6 @@ import com.networknt.aws.lambda.handler.middleware.proxy.LambdaProxyConfig;
 import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.status.Status;
-import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.PathTemplateMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,21 +88,6 @@ public class MockLambdaProxyMiddleware implements MiddlewareHandler {
     @Override
     public boolean isEnabled() {
         return true;
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                LambdaProxyConfig.CONFIG_NAME,
-                MockLambdaProxyMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaProxyConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
     }
 
     @Override

@@ -28,17 +28,18 @@ public class ResponseHeaderMiddleware extends HeaderMiddleware implements Middle
 
     /**
      * Constructor with configuration for testing purpose only
-     * @param cfg HeaderConfig
+     * @param configName String
      */
-    public ResponseHeaderMiddleware(HeaderConfig cfg) {
-        super(cfg);
-        LOG.info("ResponseHeaderMiddleware is constructed");
+    public ResponseHeaderMiddleware(String configName) {
+        super(configName);
+        LOG.info("ResponseHeaderMiddleware is constructed with config {}", configName);
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if(LOG.isTraceEnabled()) LOG.trace("ResponseHeaderMiddleware.executeMiddleware starts.");
-        if (!CONFIG.isEnabled()) {
+        HeaderConfig config = HeaderConfig.load(configName);
+        if (!config.isEnabled()) {
             if(LOG.isTraceEnabled()) LOG.trace("ResponseHeaderMiddleware is not enabled.");
             return disabledMiddlewareStatus();
         }
@@ -49,18 +50,18 @@ public class ResponseHeaderMiddleware extends HeaderMiddleware implements Middle
             if (responseHeaders != null) {
                 if (LOG.isTraceEnabled()) LOG.trace("Response headers is not null.");
                 // handler all response header
-                List<String> removeList = CONFIG.getResponseRemoveList();
+                List<String> removeList = config.getResponseRemoveList();
                 if(removeList != null) {
                     if(LOG.isTraceEnabled()) LOG.trace("Response header removeList found.");
                     removeHeaders(removeList, responseHeaders);
                 }
-                Map<String, String> updateMap = CONFIG.getResponseUpdateMap();
+                Map<String, String> updateMap = config.getResponseUpdateMap();
                 if(updateMap != null) {
                     if(LOG.isTraceEnabled()) LOG.trace("Response header updateMap found.");
                     updateHeaders(updateMap, responseHeaders);
                 }
                 // handle per path prefix header if configured
-                Map<String, HeaderPathPrefixConfig> pathPrefixHeader = CONFIG.getPathPrefixHeader();
+                Map<String, HeaderPathPrefixConfig> pathPrefixHeader = config.getPathPrefixHeader();
                 if(pathPrefixHeader != null) {
                     String path = exchange.getReadOnlyRequest().getPath();
                     for (Map.Entry<String, HeaderPathPrefixConfig> entry : pathPrefixHeader.entrySet()) {

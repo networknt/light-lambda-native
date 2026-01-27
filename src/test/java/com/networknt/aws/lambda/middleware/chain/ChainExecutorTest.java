@@ -33,8 +33,7 @@ class ChainExecutorTest {
         var lambdaContext = new LambdaContext(invocation.getRequestId());
 
         /* create a disabled header middleware */
-        var disabledHeaderConfig = HeaderConfig.load("header_disabled_test");
-        var headerDisabledHandler = new RequestHeaderMiddleware(disabledHeaderConfig);
+        var headerDisabledHandler = new RequestHeaderMiddleware("header_disabled_test");
 
         var testSynchronousMiddleware = new TestSynchronousMiddleware();
 

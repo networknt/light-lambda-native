@@ -33,8 +33,7 @@ public class BasicAnonymousBearerTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-anonymous");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-anonymous");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(401, status.getStatusCode());
@@ -57,8 +56,7 @@ public class BasicAnonymousBearerTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-anonymous");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-anonymous");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(200, status.getStatusCode());
@@ -79,8 +77,7 @@ public class BasicAnonymousBearerTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-anonymous");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-anonymous");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(200, status.getStatusCode());
@@ -101,8 +98,7 @@ public class BasicAnonymousBearerTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-anonymous");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-anonymous");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(401, status.getStatusCode());

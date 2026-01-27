@@ -40,8 +40,7 @@ class RequestHeaderMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        HeaderConfig headerConfig = HeaderConfig.load("header_test");
-        RequestHeaderMiddleware requestHeaderMiddleware = new RequestHeaderMiddleware(headerConfig);
+        RequestHeaderMiddleware requestHeaderMiddleware = new RequestHeaderMiddleware("header_test");
         requestHeaderMiddleware.execute(exchange);
         requestEvent = exchange.getRequest();
 

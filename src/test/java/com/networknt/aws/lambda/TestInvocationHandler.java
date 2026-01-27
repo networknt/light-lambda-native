@@ -31,16 +31,6 @@ public class TestInvocationHandler implements MiddlewareHandler {
     }
 
     @Override
-    public void register() {
-
-    }
-
-    @Override
-    public void reload() {
-
-    }
-
-    @Override
     public boolean isAsynchronous() {
         return false;
     }

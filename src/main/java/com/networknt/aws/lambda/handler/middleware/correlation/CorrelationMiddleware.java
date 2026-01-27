@@ -3,11 +3,9 @@ import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.aws.lambda.utility.LoggerKey;
-import com.networknt.config.Config;
 import com.networknt.correlation.CorrelationConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.MapUtil;
-import com.networknt.utility.ModuleRegistry;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +19,6 @@ import java.util.UUID;
 
 public class CorrelationMiddleware implements MiddlewareHandler {
 
-    private static final CorrelationConfig CONFIG = CorrelationConfig.load();
     private static final Logger LOG = LoggerFactory.getLogger(CorrelationMiddleware.class);
     private static final LightLambdaExchange.Attachable<CorrelationMiddleware> CORRELATION_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(CorrelationMiddleware.class);
 
@@ -32,7 +29,7 @@ public class CorrelationMiddleware implements MiddlewareHandler {
     @Override
     public Status execute(final LightLambdaExchange exchange) {
         LOG.debug("CorrelationHandler.handleRequest starts.");
-
+        CorrelationConfig config = CorrelationConfig.load();
         // check if the cid is in the request header
         String cid = null;
         if(exchange.getRequest().getHeaders() != null) {
@@ -41,7 +38,7 @@ public class CorrelationMiddleware implements MiddlewareHandler {
         } else {
             exchange.getRequest().setHeaders(new HashMap<>());
         }
-        if (cid == null && CONFIG.isAutogenCorrelationID()) {
+        if (cid == null && config.isAutogenCorrelationID()) {
             cid = this.getUUID();
             exchange.getRequest().getHeaders().put(HeaderKey.CORRELATION, cid);
             exchange.addAttachment(CORRELATION_ATTACHMENT_KEY, cid);
@@ -73,22 +70,7 @@ public class CorrelationMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                CorrelationConfig.CONFIG_NAME,
-                CorrelationMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(CorrelationConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
+        return CorrelationConfig.load().isEnabled();
     }
 
     @Override

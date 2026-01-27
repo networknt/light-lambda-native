@@ -8,7 +8,6 @@ import com.networknt.config.JsonMapper;
 import com.networknt.info.ServerInfoConfig;
 import com.networknt.info.ServerInfoUtil;
 import com.networknt.status.Status;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,16 +16,15 @@ import java.util.Map;
 public class ServerInfoHandler implements LambdaHandler {
     static final String STATUS_SERVER_INFO_DISABLED = "ERR10013";
     static final Logger logger = LoggerFactory.getLogger(ServerInfoHandler.class);
-    static ServerInfoConfig config;
 
     public ServerInfoHandler() {
         logger.info("ServerInfoHandler is constructed");
-        config = ServerInfoConfig.load();
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if (logger.isTraceEnabled()) logger.trace("ServerInfoHandler.handleRequest starts.");
+        ServerInfoConfig config = ServerInfoConfig.load();
         Map<String, String> headers = Map.of("Content-Type", "application/json");
         if (config.isEnableServerInfo()) {
             Map<String, Object> infoMap = ServerInfoUtil.getServerInfo(config);
@@ -54,21 +52,7 @@ public class ServerInfoHandler implements LambdaHandler {
 
     @Override
     public boolean isEnabled() {
-        return config.isEnableServerInfo();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                ServerInfoConfig.CONFIG_NAME,
-                ServerInfoHandler.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(ServerInfoConfig.CONFIG_NAME),
-                null);
-    }
-
-    @Override
-    public void reload() {
-
+        return ServerInfoConfig.load().isEnableServerInfo();
     }
 
     @Override
