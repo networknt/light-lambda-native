@@ -4,15 +4,12 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.aws.lambda.utility.HeaderValue;
-import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.reqtrans.RequestTransformerConfig;
 import com.networknt.rule.*;
 import com.networknt.status.Status;
 import com.networknt.utility.ConfigUtils;
-import com.networknt.utility.Constants;
 import com.networknt.utility.MapUtil;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,17 +185,6 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
     @Override
     public boolean isEnabled() {
         return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                RequestTransformerConfig.CONFIG_NAME,
-                RequestTransformerMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(RequestTransformerConfig.CONFIG_NAME),
-                null
-        );
-
     }
 
 }

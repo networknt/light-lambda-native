@@ -7,9 +7,7 @@ import com.networknt.restrans.ResponseTransformerConfig;
 import com.networknt.rule.RuleConstants;
 import com.networknt.status.Status;
 import com.networknt.utility.ConfigUtils;
-import com.networknt.utility.Constants;
 import com.networknt.utility.MapUtil;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -202,16 +200,6 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
     @Override
     public boolean isEnabled() {
         return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                ResponseTransformerConfig.CONFIG_NAME,
-                ResponseTransformerMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(ResponseTransformerConfig.CONFIG_NAME),
-                null
-        );
     }
 
     /**

@@ -9,7 +9,6 @@ import com.networknt.config.JsonMapper;
 import com.networknt.logging.model.LoggerConfig;
 import com.networknt.logging.model.LoggerInfo;
 import com.networknt.status.Status;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,30 +20,14 @@ import java.util.Map;
 public class LoggerGetHandler implements LambdaHandler {
     static final Logger logger = LoggerFactory.getLogger(LoggerGetHandler.class);
     public static final String HANDLER_IS_DISABLED = "ERR10065";
-    static LoggerConfig config;
 
     public LoggerGetHandler() {
         if(logger.isInfoEnabled()) logger.info("LoggerGetHandler is constructed");
-        config = LoggerConfig.load();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                LoggerConfig.CONFIG_NAME,
-                LoggerGetHandler.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LoggerConfig.CONFIG_NAME),
-                null);
     }
 
     @Override
     public boolean isEnabled() {
-        return config.isEnabled();
-    }
-
-    @Override
-    public void reload() {
-
+        return LoggerConfig.load().isEnabled();
     }
 
     @Override
@@ -55,6 +38,7 @@ public class LoggerGetHandler implements LambdaHandler {
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if (logger.isTraceEnabled()) logger.trace("LoggerGetHandler.handleRequest starts.");
+        LoggerConfig config = LoggerConfig.load();
         Map<String, String> headers = Map.of("Content-Type", "application/json");
         if (config.isEnabled()) {
             List<LoggerInfo> loggersList = new ArrayList<LoggerInfo>();

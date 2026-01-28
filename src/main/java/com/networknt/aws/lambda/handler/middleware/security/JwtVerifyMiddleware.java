@@ -16,7 +16,6 @@ import com.networknt.security.JwtVerifier;
 import com.networknt.security.SecurityConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.consumer.InvalidJwtException;
@@ -30,8 +29,6 @@ import static com.networknt.aws.lambda.utility.HeaderKey.SCOPE_TOKEN;
 
 public class JwtVerifyMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(JwtVerifyMiddleware.class);
-    private static final SecurityConfig config = SecurityConfig.load(SecurityConfig.CONFIG_NAME);
-    public static JwtVerifier jwtVerifier;
 
     static final String STATUS_INVALID_AUTH_TOKEN = "ERR10000";
     static final String STATUS_AUTH_TOKEN_EXPIRED = "ERR10001";
@@ -44,23 +41,54 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
     static final String STATUS_OPENAPI_OPERATION_MISSED = "ERR10085";
 
+    private volatile String configName = SecurityConfig.CONFIG_NAME;
+    private volatile SecurityConfig config;
+    private volatile JwtVerifier jwtVerifier;
+
     public JwtVerifyMiddleware() {
         if(LOG.isInfoEnabled()) LOG.info("JwtVerifyMiddleware is constructed");
+        config = SecurityConfig.load(configName);
         if(config.isEnableVerifyJwt()) {
             jwtVerifier = new JwtVerifier(config);
         }
+        if(LOG.isInfoEnabled()) LOG.info("JwtVerifyMiddleware is loaded.");
+    }
+
+    /**
+     * Please note that this constructor is only for testing to load different config files
+     * to test different configurations.
+     * @param configName String
+     */
+    @Deprecated
+    public JwtVerifyMiddleware(String configName) {
+        this.configName = configName;
+        config = SecurityConfig.load(configName);
+        if(config.isEnableVerifyJwt()) {
+            jwtVerifier = new JwtVerifier(config);
+        }
+        if(LOG.isInfoEnabled()) LOG.info("JwtVerifyMiddleware is loaded.");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if(LOG.isDebugEnabled()) LOG.debug("JwtVerifyMiddleware.executeMiddleware starts");
-
         LOG.debug("JWT Verification Time - Start: {}", System.currentTimeMillis());
-
+        SecurityConfig newConfig = SecurityConfig.load(configName);
+        if(config != newConfig) {
+            synchronized (this) {
+                if(config != newConfig) {
+                    config = newConfig;
+                    if(config.isEnableVerifyJwt()) {
+                        jwtVerifier = new JwtVerifier(config);
+                    }
+                    if(LOG.isInfoEnabled()) LOG.info("JwtVerifyMiddleware is reloaded.");
+                }
+            }
+        }
         String reqPath = exchange.getRequest().getPath();
         if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
             if(LOG.isTraceEnabled())
-                LOG.trace("Skip request path base on skipPathPrefixes for " + reqPath);
+                LOG.trace("Skip request path base on skipPathPrefixes for {}", reqPath);
             return successMiddlewareStatus();
         }
         // only UnifiedSecurityHandler will have the jwkServiceIds as the third parameter.
@@ -409,21 +437,6 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
     @Override
     public boolean isEnabled() {
         return config.isEnableVerifyJwt();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                SecurityConfig.CONFIG_NAME,
-                JwtVerifyMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SecurityConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
     }
 
     @Override

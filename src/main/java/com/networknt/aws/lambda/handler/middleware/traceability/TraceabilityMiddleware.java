@@ -8,7 +8,6 @@ import com.networknt.config.Config;
 import com.networknt.status.Status;
 import com.networknt.traceability.TraceabilityConfig;
 import com.networknt.utility.MapUtil;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -19,16 +18,15 @@ import java.util.Optional;
 public class TraceabilityMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(TraceabilityMiddleware.class);
     public static final LightLambdaExchange.Attachable<TraceabilityMiddleware> TRACEABILITY_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(TraceabilityMiddleware.class);
-    private static TraceabilityConfig CONFIG;
 
     public TraceabilityMiddleware() {
         if (LOG.isInfoEnabled()) LOG.info("TraceabilityMiddleware is constructed");
-        CONFIG = TraceabilityConfig.load();
     }
 
     @Override
     public Status execute(final LightLambdaExchange exchange) {
-        if (!CONFIG.isEnabled())
+        TraceabilityConfig config = TraceabilityConfig.load();
+        if (!config.isEnabled())
             return disabledMiddlewareStatus();
 
         if (LOG.isDebugEnabled())
@@ -58,22 +56,7 @@ public class TraceabilityMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                TraceabilityConfig.CONFIG_NAME,
-                TraceabilityMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(TraceabilityConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
+        return TraceabilityConfig.load().isEnabled();
     }
 
     @Override

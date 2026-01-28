@@ -6,7 +6,6 @@ import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.sanitizer.SanitizerConfig;
 import com.networknt.status.Status;
-import com.networknt.utility.ModuleRegistry;
 import org.owasp.encoder.EncoderWrapper;
 import org.owasp.encoder.Encoders;
 import org.slf4j.Logger;
@@ -17,25 +16,27 @@ import java.util.Map;
 
 public class SanitizerMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(SanitizerMiddleware.class);
-    private static SanitizerConfig CONFIG;
-    EncoderWrapper bodyEncoder;
-    EncoderWrapper headerEncoder;
+    private volatile String configName = SanitizerConfig.CONFIG_NAME;
+    private volatile SanitizerConfig config;
+    private volatile EncoderWrapper bodyEncoder;
+    private volatile EncoderWrapper headerEncoder;
 
     public SanitizerMiddleware() {
-        CONFIG = SanitizerConfig.load();
-        bodyEncoder = new EncoderWrapper(Encoders.forName(CONFIG.getBodyEncoder()), CONFIG.getBodyAttributesToIgnore(), CONFIG.getBodyAttributesToEncode());
-        headerEncoder = new EncoderWrapper(Encoders.forName(CONFIG.getHeaderEncoder()), CONFIG.getHeaderAttributesToIgnore(), CONFIG.getHeaderAttributesToEncode());
+        config = SanitizerConfig.load(configName);
+        bodyEncoder = new EncoderWrapper(Encoders.forName(config.getBodyEncoder()), config.getBodyAttributesToIgnore(), config.getBodyAttributesToEncode());
+        headerEncoder = new EncoderWrapper(Encoders.forName(config.getHeaderEncoder()), config.getHeaderAttributesToIgnore(), config.getHeaderAttributesToEncode());
         if (LOG.isInfoEnabled()) LOG.info("SanitizerMiddleware is constructed");
     }
 
     /**
      * Constructor with configuration for testing purpose only
-     * @param cfg SanitizerConfig
+     * @param configName String
      */
-    public SanitizerMiddleware(SanitizerConfig cfg) {
-        CONFIG = cfg;
-        bodyEncoder = new EncoderWrapper(Encoders.forName(CONFIG.getBodyEncoder()), CONFIG.getBodyAttributesToIgnore(), CONFIG.getBodyAttributesToEncode());
-        headerEncoder = new EncoderWrapper(Encoders.forName(CONFIG.getHeaderEncoder()), CONFIG.getHeaderAttributesToIgnore(), CONFIG.getHeaderAttributesToEncode());
+    public SanitizerMiddleware(String configName) {
+        this.configName = configName;
+        config = SanitizerConfig.load(configName);
+        bodyEncoder = new EncoderWrapper(Encoders.forName(config.getBodyEncoder()), config.getBodyAttributesToIgnore(), config.getBodyAttributesToEncode());
+        headerEncoder = new EncoderWrapper(Encoders.forName(config.getHeaderEncoder()), config.getHeaderAttributesToIgnore(), config.getHeaderAttributesToEncode());
         LOG.info("SanitizerMiddleware is constructed");
     }
 
@@ -43,19 +44,30 @@ public class SanitizerMiddleware implements MiddlewareHandler {
     public Status execute(LightLambdaExchange exchange) {
         if (LOG.isDebugEnabled()) LOG.trace("SanitizerMiddleware.execute starts.");
         String method = exchange.getRequest().getHttpMethod();
-        if (CONFIG.isHeaderEnabled()) {
+        SanitizerConfig newConfig = SanitizerConfig.load(configName);
+        if(config != newConfig) {
+            synchronized (this) {
+                if (config != newConfig) {
+                    config = newConfig;
+                    bodyEncoder = new EncoderWrapper(Encoders.forName(config.getBodyEncoder()), config.getBodyAttributesToIgnore(), config.getBodyAttributesToEncode());
+                    headerEncoder = new EncoderWrapper(Encoders.forName(config.getHeaderEncoder()), config.getHeaderAttributesToIgnore(), config.getHeaderAttributesToEncode());
+                    LOG.info("SanitizerConfig is reloaded.");
+                }
+            }
+        }
+        if (config.isHeaderEnabled()) {
             Map<String, String> headerMap = exchange.getRequest().getHeaders();
             if (headerMap != null) {
                 for (Map.Entry<String, String> entry: headerMap.entrySet()) {
                     // if ignore list exists, it will take the precedence.
-                    if(CONFIG.getHeaderAttributesToIgnore() != null && CONFIG.getHeaderAttributesToIgnore().stream().anyMatch(entry.getKey()::equalsIgnoreCase)) {
+                    if(config.getHeaderAttributesToIgnore() != null && config.getHeaderAttributesToIgnore().stream().anyMatch(entry.getKey()::equalsIgnoreCase)) {
                         if(LOG.isTraceEnabled())
                             LOG.trace("Ignore header {} as it is in the ignore list.", entry.getKey());
                         continue;
                     }
 
-                    if(CONFIG.getHeaderAttributesToEncode() != null) {
-                        if(CONFIG.getHeaderAttributesToEncode().stream().anyMatch(entry.getKey()::equalsIgnoreCase)) {
+                    if(config.getHeaderAttributesToEncode() != null) {
+                        if(config.getHeaderAttributesToEncode().stream().anyMatch(entry.getKey()::equalsIgnoreCase)) {
                             if(LOG.isTraceEnabled())
                                 LOG.trace("Encode header {} as it is not in the ignore list and it is in the encode list.", entry.getKey());
                             entry.setValue(headerEncoder.applyEncoding(entry.getValue()));
@@ -70,7 +82,7 @@ public class SanitizerMiddleware implements MiddlewareHandler {
             }
         }
 
-        if (CONFIG.isBodyEnabled() && ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method))) {
+        if (config.isBodyEnabled() && ("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method))) {
             String body = exchange.getRequest().getBody();
             if (body != null && !body.isEmpty()) {
                 body = body.trim();
@@ -94,22 +106,7 @@ public class SanitizerMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                SanitizerConfig.CONFIG_NAME,
-                SanitizerMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(SanitizerConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
+        return config.isEnabled();
     }
 
     @Override

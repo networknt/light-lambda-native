@@ -47,16 +47,6 @@ public class TestSynchronousMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public void register() {
-
-    }
-
-    @Override
-    public void reload() {
-
-    }
-
-    @Override
     public boolean isContinueOnFailure() {
         return false;
     }

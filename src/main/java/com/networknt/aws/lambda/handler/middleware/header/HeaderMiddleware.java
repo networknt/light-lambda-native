@@ -1,47 +1,30 @@
 package com.networknt.aws.lambda.handler.middleware.header;
 
-import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.config.Config;
 import com.networknt.header.HeaderConfig;
-import com.networknt.status.Status;
-import com.networknt.utility.ModuleRegistry;
+import com.networknt.oas.model.Header;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public abstract class HeaderMiddleware implements MiddlewareHandler {
-    static HeaderConfig CONFIG;
     private static final Logger LOG = LoggerFactory.getLogger(HeaderMiddleware.class);
+    protected String configName = HeaderConfig.CONFIG_NAME;
 
     public HeaderMiddleware() {
-        CONFIG = HeaderConfig.load();
+        LOG.info("HeaderMiddleware is constructed");
     }
 
-    public HeaderMiddleware(HeaderConfig cfg) {
-        CONFIG = cfg;
-        LOG.info("HeaderMiddleware is constructed");
+    public HeaderMiddleware(String configName) {
+        this.configName = configName;
+        LOG.info("HeaderMiddleware is constructed with config {}", configName);
     }
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                HeaderConfig.CONFIG_NAME,
-                HeaderMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(HeaderConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
+        return HeaderConfig.load(configName).isEnabled();
     }
 
     @Override

@@ -3,10 +3,8 @@ package com.networknt.aws.lambda.handler.health;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.handler.LambdaHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.config.Config;
 import com.networknt.health.HealthConfig;
 import com.networknt.status.Status;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,25 +16,15 @@ public class HealthCheckHandler implements LambdaHandler {
     public static final String HEALTH_RESULT_ERROR = "ERROR";
 
     static final Logger logger = LoggerFactory.getLogger(HealthCheckHandler.class);
-    static HealthConfig config;
 
     public HealthCheckHandler() {
-        logger.info("HealthCheckHandler is constructed");
-        config = HealthConfig.load();
-    }
-
-    /**
-     * Constructor with configuration for testing purpose only
-     * @param cfg HealthConfig
-     */
-    public HealthCheckHandler(HealthConfig cfg) {
-        config = cfg;
         logger.info("HealthCheckHandler is constructed");
     }
 
     @Override
     public Status execute(final LightLambdaExchange exchange) {
         if(logger.isTraceEnabled()) logger.trace("HealthCheckHandler.handleRequest starts.");
+        HealthConfig config = HealthConfig.load();
 
         String result = HEALTH_RESULT_OK;
 
@@ -70,32 +58,17 @@ public class HealthCheckHandler implements LambdaHandler {
      * @return result String of OK or ERROR.
      */
     private String backendHealth() {
-        String result = HEALTH_RESULT_OK;
         long start = System.currentTimeMillis();
         // TODO call the backend health check endpoint
 
         long responseTime = System.currentTimeMillis() - start;
-        if(logger.isDebugEnabled()) logger.debug("Downstream health check response time = " + responseTime);
-        return result;
+        if(logger.isDebugEnabled()) logger.debug("Downstream health check response time = {}", responseTime);
+        return HEALTH_RESULT_OK;
     }
 
     @Override
     public boolean isEnabled() {
-        return config.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                HealthConfig.CONFIG_NAME,
-                HealthCheckHandler.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(HealthConfig.CONFIG_NAME),
-                null);
-    }
-
-    @Override
-    public void reload() {
-
+        return HealthConfig.load().isEnabled();
     }
 
     @Override

@@ -10,7 +10,6 @@ import com.networknt.config.JsonMapper;
 import com.networknt.mask.Mask;
 import com.networknt.status.Status;
 import com.networknt.utility.MapUtil;
-import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +27,6 @@ import java.util.*;
  */
 public class AuditMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(AuditMiddleware.class);
-    private static AuditConfig CONFIG;
     public static final LightLambdaExchange.Attachable<AuditMiddleware> AUDIT_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(AuditMiddleware.class);
     static final String STATUS_CODE = "statusCode";
     static final String RESPONSE_TIME = "responseTime";
@@ -42,20 +40,20 @@ public class AuditMiddleware implements MiddlewareHandler {
     static final String SERVICE_ID_KEY = "serviceId";
     static final String INVALID_CONFIG_VALUE_CODE = "ERR10060";
 
-    private final String serviceId;
-
-    private DateTimeFormatter DATE_TIME_FORMATTER;
+    private volatile String serviceId;
+    private volatile DateTimeFormatter dateTimeFormatter;
+    private volatile AuditConfig config;
 
     public AuditMiddleware() {
         if (LOG.isInfoEnabled()) LOG.info("AuditMiddleware is constructed.");
-        CONFIG = AuditConfig.load();
+        config = AuditConfig.load();
         // get the serviceId from the proxy config
-        LambdaAppConfig proxyConfig = (LambdaAppConfig) Config.getInstance().getJsonObjectConfig(LambdaAppConfig.CONFIG_NAME, LambdaAppConfig.class);
+        LambdaAppConfig proxyConfig = LambdaAppConfig.load();
         serviceId = proxyConfig.getLambdaAppId();
-        String timestampFormat = CONFIG.getTimestampFormat();
+        String timestampFormat = config.getTimestampFormat();
         if (!StringUtils.isBlank(timestampFormat)) {
             try {
-                DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(timestampFormat)
+                dateTimeFormatter = DateTimeFormatter.ofPattern(timestampFormat)
                         .withZone(ZoneId.systemDefault());
             } catch (IllegalArgumentException e) {
                 LOG.error(new Status(INVALID_CONFIG_VALUE_CODE, timestampFormat, "timestampFormat", "audit.yml").toString());
@@ -66,39 +64,58 @@ public class AuditMiddleware implements MiddlewareHandler {
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if(LOG.isDebugEnabled()) LOG.debug("AuditMiddleware.execute starts.");
+        AuditConfig newConfig = AuditConfig.load();
+        if(newConfig != config) {
+            synchronized (this) {
+                if(newConfig != config) {
+                    config = newConfig;
+                    LambdaAppConfig proxyConfig = LambdaAppConfig.load();
+                    serviceId = proxyConfig.getLambdaAppId();
+                    String timestampFormat = config.getTimestampFormat();
+                    if (!StringUtils.isBlank(timestampFormat)) {
+                        try {
+                            dateTimeFormatter = DateTimeFormatter.ofPattern(timestampFormat)
+                                    .withZone(ZoneId.systemDefault());
+                        } catch (IllegalArgumentException e) {
+                            LOG.error(new Status(INVALID_CONFIG_VALUE_CODE, timestampFormat, "timestampFormat", "audit.yml").toString());
+                        }
+                    }
+                }
+            }
+        }
         // as there is no way to write a separate audit log file in Lambda, we will skip this handler.
         Map<String, Object> auditInfo = (Map<String, Object>)exchange.getAttachment(AUDIT_ATTACHMENT_KEY);
         Map<String, Object> auditMap = new LinkedHashMap<>();
         final long start = System.currentTimeMillis();
         // add audit timestamp
-        auditMap.put(TIMESTAMP, DATE_TIME_FORMATTER == null ? System.currentTimeMillis() : DATE_TIME_FORMATTER.format(Instant.now()));
+        auditMap.put(TIMESTAMP, dateTimeFormatter == null ? System.currentTimeMillis() : dateTimeFormatter.format(Instant.now()));
 
         // dump audit info fields according to config
-        boolean needAuditData = auditInfo != null && CONFIG.hasAuditList();
+        boolean needAuditData = auditInfo != null && config.hasAuditList();
         if (needAuditData) {
             auditFields(auditInfo, auditMap);
         }
 
         // dump request header, request body, path parameters, query parameters and request cookies according to config
-        auditRequest(exchange, auditMap, CONFIG);
+        auditRequest(exchange, auditMap, config);
 
         // dump serviceId from server.yml
-        if (CONFIG.hasAuditList() && CONFIG.getAuditList().contains(SERVICE_ID_KEY)) {
+        if (config.hasAuditList() && config.getAuditList().contains(SERVICE_ID_KEY)) {
             auditServiceId(auditMap);
         }
-        if(CONFIG.isStatusCode() || CONFIG.isResponseTime()) {
+        if(config.isStatusCode() || config.isResponseTime()) {
             exchange.addResponseCompleteListener(finalExchange -> {
-                if (CONFIG.isStatusCode()) {
+                if (config.isStatusCode()) {
                     auditMap.put(STATUS_CODE, finalExchange.getStatusCode());
                 }
-                if (CONFIG.isResponseTime()) {
+                if (config.isResponseTime()) {
                     auditMap.put(RESPONSE_TIME, System.currentTimeMillis() - start);
                 }
 
                 Map<String, Object> auditInfo1 = (Map<String, Object>)exchange.getAttachment(AUDIT_ATTACHMENT_KEY);
 
-                if (auditInfo1 != null && CONFIG.getAuditList() != null) {
-                    for (String name : CONFIG.getAuditList()) {
+                if (auditInfo1 != null && config.getAuditList() != null) {
+                    for (String name : config.getAuditList()) {
                         Object object = auditInfo1.get(name);
                         if(object != null) {
                             auditMap.put(name, object);
@@ -106,11 +123,11 @@ public class AuditMiddleware implements MiddlewareHandler {
                     }
                 }
                 // audit the response body.
-                if(CONFIG.getAuditList() != null && CONFIG.getAuditList().contains(RESPONSE_BODY_KEY)) {
+                if(config.getAuditList() != null && config.getAuditList().contains(RESPONSE_BODY_KEY)) {
                     auditResponseBody(exchange, auditMap);
                 }
 
-                if (CONFIG.isAuditOnError()) {
+                if (config.isAuditOnError()) {
                     if (finalExchange.getStatusCode() >= 400)
                         logAuditMsg(JsonMapper.toJson(auditMap));
                 } else {
@@ -125,13 +142,13 @@ public class AuditMiddleware implements MiddlewareHandler {
     }
 
     private void logAuditMsg(String auditMsg) {
-        CONFIG.getAuditFunc().accept(auditMsg);
+        config.getAuditFunc().accept(auditMsg);
     }
 
     private void auditFields(Map<String, Object> auditInfo, Map<String, Object> auditMap) {
-        for (String name : CONFIG.getAuditList()) {
+        for (String name : config.getAuditList()) {
             Object value = auditInfo.get(name);
-            boolean needApplyMask = CONFIG.isMask() && value instanceof String;
+            boolean needApplyMask = config.isMask() && value instanceof String;
             auditMap.put(name, needApplyMask ? Mask.maskRegex((String) value, MASK_KEY, name) : value);
         }
     }
@@ -159,14 +176,14 @@ public class AuditMiddleware implements MiddlewareHandler {
     }
 
     private void auditHeader(LightLambdaExchange exchange, Map<String, Object> auditMap) {
-        for (String name : CONFIG.getHeaderList()) {
+        for (String name : config.getHeaderList()) {
             Optional<String> optionalValue = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), name);
             if(optionalValue.isEmpty()) {
                 if(LOG.isTraceEnabled()) LOG.trace("header name = {} header value is null", name);
                 continue;
             }
             if(LOG.isTraceEnabled()) LOG.trace("header name = {} header value = {}", name, optionalValue.get());
-            auditMap.put(name, CONFIG.isMask() ? Mask.maskRegex(optionalValue.get(), "requestHeader", name) : optionalValue.get());
+            auditMap.put(name, config.isMask() ? Mask.maskRegex(optionalValue.get(), "requestHeader", name) : optionalValue.get());
         }
     }
 
@@ -179,15 +196,15 @@ public class AuditMiddleware implements MiddlewareHandler {
             if(optionalContentType.isPresent()) {
                 String contentType = optionalContentType.get();
                 if(contentType.startsWith("application/json")) {
-                    if(CONFIG.isMask()) requestBodyString = Mask.maskJson(requestBodyString, REQUEST_BODY_KEY);
+                    if(config.isMask()) requestBodyString = Mask.maskJson(requestBodyString, REQUEST_BODY_KEY);
                 } else if(contentType.startsWith("text") || contentType.startsWith("application/xml")) {
-                    if(CONFIG.isMask()) requestBodyString = Mask.maskString(requestBodyString, REQUEST_BODY_KEY);
+                    if(config.isMask()) requestBodyString = Mask.maskString(requestBodyString, REQUEST_BODY_KEY);
                 } else {
                     LOG.error("Incorrect request content type " + contentType);
                 }
             }
-            if(requestBodyString.length() > CONFIG.getRequestBodyMaxSize()) {
-                requestBodyString = requestBodyString.substring(0, CONFIG.getRequestBodyMaxSize());
+            if(requestBodyString.length() > config.getRequestBodyMaxSize()) {
+                requestBodyString = requestBodyString.substring(0, config.getRequestBodyMaxSize());
             }
             auditMap.put(REQUEST_BODY_KEY, requestBodyString);
         }
@@ -202,15 +219,15 @@ public class AuditMiddleware implements MiddlewareHandler {
             if(optionalContentType.isPresent()) {
                 String contentType = optionalContentType.orElse(null);
                 if(contentType.startsWith("application/json")) {
-                    if(CONFIG.isMask()) responseBodyString =Mask.maskJson(responseBodyString, RESPONSE_BODY_KEY);
+                    if(config.isMask()) responseBodyString =Mask.maskJson(responseBodyString, RESPONSE_BODY_KEY);
                 } else if(contentType.startsWith("text") || contentType.startsWith("application/xml")) {
-                    if(CONFIG.isMask()) responseBodyString = Mask.maskString(responseBodyString, RESPONSE_BODY_KEY);
+                    if(config.isMask()) responseBodyString = Mask.maskString(responseBodyString, RESPONSE_BODY_KEY);
                 } else {
                     LOG.error("Incorrect response content type " + contentType);
                 }
             }
-            if(responseBodyString.length() > CONFIG.getResponseBodyMaxSize()) {
-                responseBodyString = responseBodyString.substring(0, CONFIG.getResponseBodyMaxSize());
+            if(responseBodyString.length() > config.getResponseBodyMaxSize()) {
+                responseBodyString = responseBodyString.substring(0, config.getResponseBodyMaxSize());
             }
             auditMap.put(RESPONSE_BODY_KEY, responseBodyString);
         }
@@ -223,7 +240,7 @@ public class AuditMiddleware implements MiddlewareHandler {
         if (queryParameters != null && !queryParameters.isEmpty()) {
             for (String query : queryParameters.keySet()) {
                 String value = queryParameters.get(query);
-                String mask = CONFIG.isMask() ? Mask.maskRegex(value, QUERY_PARAMETERS_KEY, query) : value;
+                String mask = config.isMask() ? Mask.maskRegex(value, QUERY_PARAMETERS_KEY, query) : value;
                 res.put(query, mask);
             }
             auditMap.put(QUERY_PARAMETERS_KEY, res.toString());
@@ -236,7 +253,7 @@ public class AuditMiddleware implements MiddlewareHandler {
         if (pathParameters != null && !pathParameters.isEmpty()) {
             for (String name : pathParameters.keySet()) {
                 String value = pathParameters.get(name);
-                String mask = CONFIG.isMask() ? Mask.maskRegex(value, PATH_PARAMETERS_KEY, name) : value;
+                String mask = config.isMask() ? Mask.maskRegex(value, PATH_PARAMETERS_KEY, name) : value;
                 res.put(name, mask);
             }
             auditMap.put(PATH_PARAMETERS_KEY, res.toString());
@@ -256,22 +273,7 @@ public class AuditMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                AuditConfig.CONFIG_NAME,
-                AuditMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(AuditConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
+        return config.isEnabled();
     }
 
     @Override

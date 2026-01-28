@@ -19,16 +19,6 @@ public interface LambdaHandler {
     boolean isEnabled();
 
     /**
-     * Register this handler to the handler registration.
-     */
-    void register();
-
-    /**
-     * Reload config values in case the config values changed by config server.
-     */
-    void reload();
-
-    /**
      * Indicate if this middleware handler is asynchronous or not.
      * @return boolean true if asynchronous
      */

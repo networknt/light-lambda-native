@@ -15,16 +15,6 @@ public class InfluxMetricsMiddleware extends AbstractMetricsMiddleware {
     }
 
     @Override
-    public void register() {
-
-    }
-
-    @Override
-    public void reload() {
-
-    }
-
-    @Override
     public boolean isAsynchronous() {
         return false;
     }

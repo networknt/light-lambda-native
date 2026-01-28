@@ -7,7 +7,6 @@ import com.networknt.cache.CacheManager;
 import com.networknt.config.JsonMapper;
 import com.networknt.service.SingletonServiceFactory;
 import com.networknt.status.Status;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,20 +63,6 @@ public class CacheExplorerHandler implements LambdaHandler {
     @Override
     public boolean isEnabled() {
         return true;
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                null,
-                CacheExplorerHandler.class.getName(),
-                null,
-                null);
-    }
-
-    @Override
-    public void reload() {
-
     }
 
     @Override

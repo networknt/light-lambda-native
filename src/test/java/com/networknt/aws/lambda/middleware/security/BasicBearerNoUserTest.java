@@ -28,8 +28,7 @@ public class BasicBearerNoUserTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-bearer");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-bearer");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(400, status.getStatusCode());
@@ -51,8 +50,7 @@ public class BasicBearerNoUserTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        BasicAuthConfig config = BasicAuthConfig.load("basic-auth-bearer");
-        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware(config);
+        BasicAuthMiddleware basicAuthMiddleware = new BasicAuthMiddleware("basic-auth-bearer");
         Status status = basicAuthMiddleware.execute(exchange);
         Assertions.assertNotNull(status);
         Assertions.assertEquals(400, status.getStatusCode());

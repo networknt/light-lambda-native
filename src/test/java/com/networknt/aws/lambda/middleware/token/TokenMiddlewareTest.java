@@ -39,8 +39,7 @@ public class TokenMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        TokenConfig tokenConfig = TokenConfig.load("token_test");
-        TokenMiddleware tokenMiddleware = new TokenMiddleware(tokenConfig);
+        TokenMiddleware tokenMiddleware = new TokenMiddleware("token_test");
         tokenMiddleware.execute(exchange);
         requestEvent = exchange.getRequest();
 
@@ -72,8 +71,7 @@ public class TokenMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        TokenConfig tokenConfig = TokenConfig.load("token_test");
-        TokenMiddleware tokenMiddleware = new TokenMiddleware(tokenConfig);
+        TokenMiddleware tokenMiddleware = new TokenMiddleware("token_test");
         tokenMiddleware.execute(exchange);
         requestEvent = exchange.getRequest();
 
@@ -112,7 +110,7 @@ public class TokenMiddlewareTest {
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
         TokenConfig tokenConfig = TokenConfig.load("token_test");
-        TokenMiddleware tokenMiddleware = new TokenMiddleware(tokenConfig);
+        TokenMiddleware tokenMiddleware = new TokenMiddleware("token_test");
         tokenMiddleware.execute(exchange);
         requestEvent = exchange.getRequest();
 
@@ -153,8 +151,7 @@ public class TokenMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
         final var exchange = new LightLambdaExchange(lambdaContext, null);
         exchange.setInitialRequest(requestEvent);
-        TokenConfig tokenConfig = TokenConfig.load("token_test");
-        TokenMiddleware tokenMiddleware = new TokenMiddleware(tokenConfig);
+        TokenMiddleware tokenMiddleware = new TokenMiddleware("token_test");
         tokenMiddleware.execute(exchange);
         requestEvent = exchange.getRequest();
 

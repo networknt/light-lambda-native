@@ -12,7 +12,6 @@ import com.networknt.limit.LimitConfig;
 import com.networknt.limit.RateLimitResponse;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,15 +20,15 @@ import java.util.HashMap;
 public class LimitMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(LimitMiddleware.class);
     public static final String RATE_LIMIT_EXCEEDED = "ERR10088";
-    private static LimitConfig CONFIG = LimitConfig.load();
-    private static RateLimiter rateLimiter;
-    private static final ObjectMapper mapper = Config.getInstance().getMapper();
+    private volatile String configName = LimitConfig.CONFIG_NAME;
+    private volatile LimitConfig config;
+    private volatile RateLimiter rateLimiter;
 
     public LimitMiddleware() {
         if (LOG.isInfoEnabled()) LOG.info("LimitMiddleware is constructed");
-        CONFIG = LimitConfig.load();
+        config = LimitConfig.load(configName);
         try {
-            rateLimiter = new RateLimiter(CONFIG);
+            rateLimiter = new RateLimiter(config);
         } catch (Exception e) {
             LOG.error("Exception:", e);
         }
@@ -37,13 +36,13 @@ public class LimitMiddleware implements MiddlewareHandler {
 
     /**
      * Constructor with configuration for testing purpose only
-     * @param cfg LimitConfig
+     * @param configName String
      */
-    public LimitMiddleware(LimitConfig cfg) {
-        if (LOG.isInfoEnabled()) LOG.info("LimitMiddleware is constructed for unit tests");
-        CONFIG = cfg;
+    public LimitMiddleware(String configName) {
+        if (LOG.isInfoEnabled()) LOG.info("LimitMiddleware is constructed for unit tests with configName {}", configName);
+        config = LimitConfig.load(configName);
         try {
-            rateLimiter = new RateLimiter(CONFIG);
+            rateLimiter = new RateLimiter(config);
         } catch (Exception e) {
             LOG.error("Exception:", e);
         }
@@ -52,7 +51,20 @@ public class LimitMiddleware implements MiddlewareHandler {
     @Override
     public Status execute(final LightLambdaExchange exchange) {
         if(LOG.isDebugEnabled()) LOG.debug("LimitMiddleware.execute starts.");
-        RateLimitResponse rateLimitResponse = rateLimiter.handleRequest(exchange, CONFIG.getKey());
+        LimitConfig newConfig = LimitConfig.load(configName);
+        if(config != newConfig) {
+            synchronized (this) {
+                if (config != newConfig) {
+                    config = newConfig;
+                    try {
+                        rateLimiter = new RateLimiter(config);
+                    } catch (Exception e) {
+                        LOG.error("Exception:", e);
+                    }
+                }
+            }
+        }
+        RateLimitResponse rateLimitResponse = rateLimiter.handleRequest(exchange, config.getKey());
         if (rateLimitResponse.isAllow()) {
             if(LOG.isDebugEnabled()) LOG.debug("LimitHandler.handleRequest ends.");
             return successMiddlewareStatus();
@@ -65,7 +77,7 @@ public class LimitMiddleware implements MiddlewareHandler {
             headers.put(Constants.RATELIMIT_REMAINING, rateLimitResponse.getHeaders().get(Constants.RATELIMIT_REMAINING));
             headers.put(Constants.RATELIMIT_RESET, rateLimitResponse.getHeaders().get(Constants.RATELIMIT_RESET));
             responseEvent.setHeaders(headers);
-            int statusCode = CONFIG.getErrorCode()==0 ? 429:CONFIG.getErrorCode();
+            int statusCode = config.getErrorCode()==0 ? 429:config.getErrorCode();
             responseEvent.setStatusCode(statusCode);
             responseEvent.setBody(status.toString());
             exchange.setInitialResponse(responseEvent);
@@ -81,22 +93,7 @@ public class LimitMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                LimitConfig.CONFIG_NAME,
-                LimitMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LimitConfig.CONFIG_NAME),
-                null
-        );
-    }
-
-    @Override
-    public void reload() {
-
+        return LimitConfig.load(configName).isEnabled();
     }
 
     @Override

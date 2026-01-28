@@ -45,8 +45,7 @@ public class SanitizerMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
         Chain requestChain = new Chain();
-        SanitizerConfig sanitizerConfig = SanitizerConfig.load("sanitizer_test");
-        SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware(sanitizerConfig);
+        SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware("sanitizer_test");
         requestChain.addChainable(sanitizerMiddleware);
         requestChain.setFinalized(true);
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
@@ -72,8 +71,7 @@ public class SanitizerMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
         Chain requestChain = new Chain();
-        SanitizerConfig sanitizerConfig = SanitizerConfig.load("sanitizer_test");
-        SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware(sanitizerConfig);
+        SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware("sanitizer_test");
         requestChain.addChainable(sanitizerMiddleware);
         requestChain.setFinalized(true);
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);

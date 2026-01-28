@@ -9,7 +9,6 @@ import com.networknt.metrics.MetricsConfig;
 import com.networknt.metrics.TimeSeriesDbSender;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
-import com.networknt.utility.ModuleRegistry;
 import io.dropwizard.metrics.Clock;
 import io.dropwizard.metrics.MetricFilter;
 import io.dropwizard.metrics.MetricName;
@@ -29,25 +28,25 @@ import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.
 
 public class APMMetricsMiddleware extends AbstractMetricsMiddleware {
     static final Logger logger = LoggerFactory.getLogger(APMMetricsMiddleware.class);
-    public static final LambdaAppConfig LAMBDA_APP_CONFIG = (LambdaAppConfig) Config.getInstance().getJsonObjectConfig(LambdaAppConfig.CONFIG_NAME, LambdaAppConfig.class);
     // this is the indicator to start the reporter and construct the common tags. It cannot be static as
     // the currentPort and currentAddress are not available during the handler initialization.
     private boolean firstTime = true;
     private long startTime;
 
     public APMMetricsMiddleware() {
-        config = MetricsConfig.load();
+        MetricsConfig config = MetricsConfig.load();
         if(config.getIssuerRegex() != null) {
             pattern = Pattern.compile(config.getIssuerRegex());
         }
-        ModuleRegistry.registerModule(MetricsConfig.CONFIG_NAME, APMMetricsMiddleware.class.getName(), Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(MetricsConfig.CONFIG_NAME), null);
         if(logger.isDebugEnabled()) logger.debug("ApmMetricsMiddleware is constructed!");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
+        MetricsConfig config = MetricsConfig.load();
+        LambdaAppConfig appConfig = LambdaAppConfig.load();
         if (firstTime) {
-            commonTags.put("api", LAMBDA_APP_CONFIG.getLambdaAppId());
+            commonTags.put("api", appConfig.getLambdaAppId());
 //            commonTags.put("env", );
 //            commonTags.put("addr", Server.currentAddress);
 //            commonTags.put("port", "" + (ServerConfig.getInstance().isEnableHttps() ? Server.currentHttpsPort : Server.currentHttpPort));
@@ -59,7 +58,7 @@ public class APMMetricsMiddleware extends AbstractMetricsMiddleware {
 
             try {
                 TimeSeriesDbSender sender =
-                        new APMEPAgentSender(config.getServerProtocol(), config.getServerHost(), config.getServerPort(), config.getServerPath(), LAMBDA_APP_CONFIG.getLambdaAppId(),  config.getProductName());
+                        new APMEPAgentSender(config.getServerProtocol(), config.getServerHost(), config.getServerPort(), config.getServerPath(), appConfig.getLambdaAppId(),  config.getProductName());
                 APMAgentReporter reporter = APMAgentReporter
                         .forRegistry(registry)
                         .convertRatesTo(TimeUnit.SECONDS)
@@ -130,22 +129,6 @@ public class APMMetricsMiddleware extends AbstractMetricsMiddleware {
             }
         });
         return successMiddlewareStatus();
-    }
-
-    @Override
-    public void register() {
-        ModuleRegistry.registerModule(
-                MetricsConfig.CONFIG_NAME,
-                APMMetricsMiddleware.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(MetricsConfig.CONFIG_NAME),
-                null
-        );
-
-    }
-
-    @Override
-    public void reload() {
-
     }
 
     @Override

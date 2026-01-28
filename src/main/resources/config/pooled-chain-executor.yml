@@ -1,6 +1,0 @@
-maxPoolSize: ${pooled-chain-executor.maxPoolSize:10}
-corePoolSize: ${pooled-chain-executor.corePoolSize:10}
-keepAliveTime: ${pooled-chain-executor.keepAliveTime:0}
-maxChainSize: ${pooled-chain-executor.maxChainSize:20}
-forceSynchronousExecution: ${pooled-chain-executor.forceSynchronousExecution:false}
-exitOnMiddlewareInstanceCreationFailure: ${pooled-chain-executor.exitOnMiddlewareInstanceCreationFailure:true}

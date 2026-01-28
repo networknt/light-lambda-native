@@ -1,6 +1,9 @@
 package com.networknt.aws.lambda.handler.middleware.security;
 
+import com.networknt.client.AuthServerConfig;
 import com.networknt.client.ClientConfig;
+import com.networknt.client.OAuthTokenConfig;
+import com.networknt.client.OAuthTokenKeyConfig;
 import com.networknt.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,17 +14,17 @@ import java.util.regex.Pattern;
 public class TokenVerifier {
     static final Logger logger = LoggerFactory.getLogger(TokenVerifier.class);
 
-    protected Map<String, Object> getJwkConfig(ClientConfig clientConfig, String serviceId) {
+    protected AuthServerConfig getJwkConfig(ClientConfig clientConfig, String serviceId) {
         if (logger.isTraceEnabled())
-            logger.trace("serviceId = " + serviceId);
+            logger.trace("serviceId = {}", serviceId);
         // get the serviceIdAuthServers for key definition
-        Map<String, Object> tokenConfig = clientConfig.getTokenConfig();
-        Map<String, Object> keyConfig = (Map<String, Object>) tokenConfig.get(ClientConfig.KEY);
-        Map<String, Object> serviceIdAuthServers = ClientConfig.getServiceIdAuthServers(keyConfig.get(ClientConfig.SERVICE_ID_AUTH_SERVERS));
+        OAuthTokenConfig tokenConfig = clientConfig.getOAuth().getToken();
+        OAuthTokenKeyConfig keyConfig = tokenConfig.getKey();
+        Map<String, AuthServerConfig> serviceIdAuthServers = keyConfig.getServiceIdAuthServers();
         if (serviceIdAuthServers == null) {
             throw new ConfigException("serviceIdAuthServers property is missing in the token key configuration in client.yml");
         }
-        return (Map<String, Object>) serviceIdAuthServers.get(serviceId);
+        return serviceIdAuthServers.get(serviceId);
     }
 
     /**

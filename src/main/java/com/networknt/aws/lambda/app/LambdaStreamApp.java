@@ -8,7 +8,6 @@ import com.networknt.aws.lambda.handler.Handler;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
-import com.networknt.utility.ModuleRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,13 +31,10 @@ public class LambdaStreamApp implements RequestStreamHandler {
 
     public LambdaStreamApp() {
         if (LOG.isInfoEnabled()) LOG.info("LambdaStreamProxy is constructed");
+        // Call the config load to register it only. This appId change doesn't support config reload as it is
+        // called only once here in the constructor.
+        LambdaAppConfig.load();
         Handler.init();
-        ModuleRegistry.registerModule(
-                LambdaAppConfig.CONFIG_NAME,
-                LambdaStreamApp.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaAppConfig.CONFIG_NAME),
-                null
-        );
     }
 
     @Override

@@ -7,8 +7,6 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.networknt.aws.lambda.handler.Handler;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.config.Config;
-import com.networknt.utility.ModuleRegistry;
 import com.networknt.utility.PathTemplateMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,18 +25,14 @@ import java.util.Map;
 public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(LambdaApp.class);
-    public static final LambdaAppConfig CONFIG = (LambdaAppConfig) Config.getInstance().getJsonObjectConfig(LambdaAppConfig.CONFIG_NAME, LambdaAppConfig.class);
     static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
 
     public LambdaApp() {
         if (LOG.isInfoEnabled()) LOG.info("LambdaApp is constructed");
+        // Call the config load to register it only. This appId change doesn't support config reload as it is
+        // called only once here in the constructor.
+        LambdaAppConfig.load();
         Handler.init();
-        ModuleRegistry.registerModule(
-                LambdaAppConfig.CONFIG_NAME,
-                LambdaApp.class.getName(),
-                Config.getNoneDecryptedInstance().getJsonMapConfigNoCache(LambdaAppConfig.CONFIG_NAME),
-                null
-        );
     }
 
     @Override
