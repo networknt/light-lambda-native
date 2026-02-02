@@ -81,7 +81,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <version.light-4j>2.3.2</version.light-4j>
-        <version.http-client>1.0.16</version.http-client>
+        <version.http-client>1.0.17</version.http-client>
         <version.json-schema-validator>1.5.1</version.json-schema-validator>
         <version.jackson>2.18.3</version.jackson>
         <version.slf4j>2.0.17</version.slf4j>
