@@ -89,7 +89,6 @@
         <version.lambda-core>1.4.0</version.lambda-core>
         <version.lambda-events>3.16.1</version.lambda-events>
         <version.lambda-awssdk>2.41.24</version.lambda-awssdk>
-        <version.dynamodb>2.41.24</version.dynamodb>
         <version.jose4j>0.9.6</version.jose4j>
         <version.logback>1.5.26</version.logback>
         <version.maven-shade>3.2.4</version.maven-shade>
@@ -324,14 +323,14 @@
             <version>${version.lambda-core}</version>
         </dependency>
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>dynamodb</artifactId>
-            <version>${version.dynamodb}</version>
-        </dependency>
-        <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-events</artifactId>
             <version>${version.lambda-events}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>dynamodb</artifactId>
+            <version>${version.lambda-awssdk}</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
