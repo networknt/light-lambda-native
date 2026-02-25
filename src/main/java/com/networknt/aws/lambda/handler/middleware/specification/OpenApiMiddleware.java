@@ -157,11 +157,6 @@ public class OpenApiMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public void getCachedConfigurations() {
-
-    }
-
-    @Override
     public boolean isEnabled() {
         OpenApiHandlerConfig config = OpenApiHandlerConfig.load();
         boolean enabled = false;
@@ -171,21 +166,6 @@ public class OpenApiMiddleware implements MiddlewareHandler {
             enabled = helper.openApi3 != null;
         }
         return enabled;
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
     }
 
 }

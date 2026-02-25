@@ -24,8 +24,6 @@ import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.
 public class ValidatorMiddleware implements MiddlewareHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(ValidatorMiddleware.class);
-    private static final String OPENAPI_NAME = "openapi.yaml";
-    static final String CONTENT_TYPE_MISMATCH = "ERR10015";
     static final String STATUS_MISSING_OPENAPI_OPERATION = "ERR10012";
 
     RequestValidator requestValidator;
@@ -68,46 +66,14 @@ public class ValidatorMiddleware implements MiddlewareHandler {
         return successMiddlewareStatus();
     }
 
-    private boolean shouldValidateRequestBody(final LightLambdaExchange exchange) {
-        return exchange.isRequestInProgress()
-                && this.isApplicationJsonContentType(exchange.getRequest().getHeaders())
-                && !CONFIG.isSkipBodyValidation();
-    }
-
-    private boolean shouldValidateResponseBody(final LightLambdaExchange exchange) {
-        return exchange.isResponseInProgress()
-                && this.isApplicationJsonContentType(exchange.getResponse().getHeaders())
-                && CONFIG.isValidateResponse();
-    }
-
     private boolean isApplicationJsonContentType(Map<String, String> headers) {
         return headers.containsKey(HeaderKey.CONTENT_TYPE)
                 && headers.get(HeaderKey.CONTENT_TYPE).equals(HeaderValue.APPLICATION_JSON);
     }
 
     @Override
-    public void getCachedConfigurations() {
-
-    }
-
-    @Override
     public boolean isEnabled() {
         return CONFIG.isEnabled();
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
     }
 
 }

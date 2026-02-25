@@ -13,24 +13,4 @@ public class InfluxMetricsMiddleware extends AbstractMetricsMiddleware {
         if(LOG.isDebugEnabled()) LOG.debug("InfluxMetricsMiddleware.execute starts.");
         return null;
     }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public void getCachedConfigurations() {
-
-    }
 }

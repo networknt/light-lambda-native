@@ -30,10 +30,6 @@ public class LoggerGetHandler implements LambdaHandler {
         return LoggerConfig.load().isEnabled();
     }
 
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {

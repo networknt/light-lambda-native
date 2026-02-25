@@ -18,12 +18,6 @@ public interface LambdaHandler {
      */
     boolean isEnabled();
 
-    /**
-     * Indicate if this middleware handler is asynchronous or not.
-     * @return boolean true if asynchronous
-     */
-    boolean isAsynchronous();
-
     default Status disabledMiddlewareStatus() {
         return new Status(409, DISABLED_LAMBDA_HANDLER_RETURN, "Middleware handler is disabled", "CONFLICT", "ERROR");
     }
@@ -31,9 +25,5 @@ public interface LambdaHandler {
     default Status successMiddlewareStatus() {
         return new Status(200, SUCCESS_LAMBDA_HANDLER_RETURN, "OK", "SUCCESS", "SUCCESS");
     }
-
-    default boolean isResponseMiddleware() {
-        return false;
-    };
 
 }

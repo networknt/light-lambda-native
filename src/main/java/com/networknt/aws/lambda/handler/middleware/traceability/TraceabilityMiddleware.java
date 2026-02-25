@@ -50,27 +50,7 @@ public class TraceabilityMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public void getCachedConfigurations() {
-        // TODO
-    }
-
-    @Override
     public boolean isEnabled() {
         return TraceabilityConfig.load().isEnabled();
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return true;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return true;
-    }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
     }
 }

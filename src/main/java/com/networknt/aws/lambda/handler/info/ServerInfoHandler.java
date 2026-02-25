@@ -54,9 +54,4 @@ public class ServerInfoHandler implements LambdaHandler {
     public boolean isEnabled() {
         return ServerInfoConfig.load().isEnableServerInfo();
     }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
 }

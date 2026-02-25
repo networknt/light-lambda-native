@@ -60,10 +60,5 @@ public class LoggerSetHandler implements LambdaHandler {
         return LoggerConfig.load().isEnabled();
     }
 
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
-
 
 }

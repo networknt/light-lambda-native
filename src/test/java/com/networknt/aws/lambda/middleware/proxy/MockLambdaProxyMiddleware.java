@@ -90,23 +90,4 @@ public class MockLambdaProxyMiddleware implements MiddlewareHandler {
         return true;
     }
 
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public void getCachedConfigurations() {
-
-    }
 }

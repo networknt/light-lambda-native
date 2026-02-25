@@ -27,26 +27,6 @@ public abstract class HeaderMiddleware implements MiddlewareHandler {
         return HeaderConfig.load(configName).isEnabled();
     }
 
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public void getCachedConfigurations() {
-
-    }
-
     public void removeHeaders(List<String> removeList, Map<String, String> headers) {
         // convert the list to lower case.
         Set<String> lowercaseSet = new HashSet<>();
