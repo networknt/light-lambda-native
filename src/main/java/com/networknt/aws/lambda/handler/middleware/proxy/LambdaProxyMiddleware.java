@@ -131,6 +131,7 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
     }
 
     private void populateMethodToMatcherMap(final Map<String, String> functions) {
+        this.methodToMatcherMap.clear();
         for (var entry : functions.entrySet()) {
             var endpoint = entry.getKey().split("@");
             var path = endpoint[0];
