@@ -130,24 +130,4 @@ public class APMMetricsMiddleware extends AbstractMetricsMiddleware {
         });
         return successMiddlewareStatus();
     }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public void getCachedConfigurations() {
-
-    }
 }

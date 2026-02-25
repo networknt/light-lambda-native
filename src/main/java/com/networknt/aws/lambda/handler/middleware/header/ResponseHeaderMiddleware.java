@@ -89,9 +89,4 @@ public class ResponseHeaderMiddleware extends HeaderMiddleware implements Middle
         if(LOG.isTraceEnabled()) LOG.trace("ResponseHeaderMiddleware.executeMiddleware ends.");
         return successMiddlewareStatus();
     }
-
-    @Override
-    public boolean isResponseMiddleware() {
-        return true;
-    }
 }

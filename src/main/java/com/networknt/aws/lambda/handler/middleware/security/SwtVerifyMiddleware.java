@@ -338,26 +338,7 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public void getCachedConfigurations() {
-    }
-
-    @Override
     public boolean isEnabled() {
         return config.isEnableVerifySwt();
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
     }
 }

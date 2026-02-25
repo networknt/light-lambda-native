@@ -65,9 +65,4 @@ public class CacheExplorerHandler implements LambdaHandler {
         return true;
     }
 
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
-
 }

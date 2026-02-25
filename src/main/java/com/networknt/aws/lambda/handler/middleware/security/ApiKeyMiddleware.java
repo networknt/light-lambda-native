@@ -93,24 +93,4 @@ public class ApiKeyMiddleware implements MiddlewareHandler {
     public boolean isEnabled() {
         return ApiKeyConfig.load(configName).isEnabled();
     }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public void getCachedConfigurations() {
-
-    }
 }

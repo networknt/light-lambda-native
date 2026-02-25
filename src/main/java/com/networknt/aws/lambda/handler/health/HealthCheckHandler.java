@@ -35,8 +35,9 @@ public class HealthCheckHandler implements LambdaHandler {
         // for security reason, we don't output the details about the error. Users can check the log for the failure.
         var responseEvent = new APIGatewayProxyResponseEvent();
         Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "text/plain");
+        headers.put("Content-Type", "text/plain; charset=utf-8");
         responseEvent.setHeaders(headers);
+        responseEvent.setIsBase64Encoded(false);
         if(HEALTH_RESULT_ERROR.equals(result)) {
             responseEvent.setStatusCode(400);
             responseEvent.setBody(HEALTH_RESULT_ERROR);
@@ -69,10 +70,5 @@ public class HealthCheckHandler implements LambdaHandler {
     @Override
     public boolean isEnabled() {
         return HealthConfig.load().isEnabled();
-    }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
     }
 }

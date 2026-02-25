@@ -206,28 +206,8 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
     }
 
     @Override
-    public void getCachedConfigurations() {
-
-    }
-
-    @Override
     public boolean isEnabled() {
         return UnifiedSecurityConfig.load(configName).isEnabled();
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
     }
 
 }

@@ -34,28 +34,10 @@ public class TestAsynchronousMiddleware implements MiddlewareHandler {
         return this.successMiddlewareStatus();
     }
 
-    @Override
-    public void getCachedConfigurations() {
-
-    }
 
     @Override
     public boolean isEnabled() {
         return true;
     }
 
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return true;
-    }
-
-    @Override
-    public boolean isAsynchronous() {
-        return true;
-    }
 }

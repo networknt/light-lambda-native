@@ -243,26 +243,6 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
         return true;
     }
 
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
-
-    @Override
-    public void getCachedConfigurations() {
-
-    }
-
     private void lookupMetricsMiddleware() {
         // get the metrics middleware instance from the chain.
         Map<String, LambdaHandler> handlers = Handler.getHandlers();

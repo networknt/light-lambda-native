@@ -11,6 +11,7 @@ import com.networknt.utility.PathTemplateMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, AP
     static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
 
     public LambdaApp() {
-        if (LOG.isInfoEnabled()) LOG.info("LambdaApp is constructed");
+        LOG.info("LambdaApp is constructed");
         // Call the config load to register it only. This appId change doesn't support config reload as it is
         // called only once here in the constructor.
         LambdaAppConfig.load();
@@ -37,16 +38,30 @@ public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, AP
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, final Context context) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("file.encoding: {}", Charset.defaultCharset().displayName());
+            LOG.debug("sun.stdout.encoding: {}", System.getProperty("sun.stdout.encoding"));
+            LOG.debug("sun.stderr.encoding: {}", System.getProperty("sun.stderr.encoding"));
+            LOG.debug("native.encoding: {}", System.getProperty("native.encoding"));
+        }
+
         LOG.debug("Lambda CCC --start with request: {}", apiGatewayProxyRequestEvent);
         var requestPath = apiGatewayProxyRequestEvent.getPath();
         var requestMethod = apiGatewayProxyRequestEvent.getHttpMethod();
+
         LOG.debug("Request path: {} -- Request method: {}", requestPath, requestMethod);
+
         Chain chain = Handler.getChain(apiGatewayProxyRequestEvent);
-        if(chain == null) chain = Handler.getDefaultChain();
+        if (chain == null)
+            chain = Handler.getDefaultChain();
+
         final var exchange = new LightLambdaExchange(context, chain);
+
         exchange.setInitialRequest(apiGatewayProxyRequestEvent);
         exchange.executeChain();
+
         APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse(false);
+
         LOG.debug("Lambda CCC --end with response: {}", response);
         return response;
     }

@@ -92,26 +92,6 @@ public class RequestCorsMiddleware implements MiddlewareHandler {
         return CorsConfig.load().isEnabled();
     }
 
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public void getCachedConfigurations() {
-
-    }
-
     private Status handlePreflightRequest(LightLambdaExchange exchange, List<String> allowedOrigins, List<String> allowedMethods) {
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent();
         Map<String, String> requestHeaders = exchange.getRequest().getHeaders();

@@ -265,24 +265,4 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
     public boolean isEnabled() {
         return BasicAuthConfig.load(configName).isEnabled();
     }
-
-    @Override
-    public boolean isAsynchronous() {
-        return false;
-    }
-
-    @Override
-    public boolean isContinueOnFailure() {
-        return false;
-    }
-
-    @Override
-    public boolean isAudited() {
-        return false;
-    }
-
-    @Override
-    public void getCachedConfigurations() {
-
-    }
 }
