@@ -40,11 +40,13 @@ public class TokenMiddleware implements MiddlewareHandler {
     private static final String HANDLER_DEPENDENCY_ERROR = "ERR10074";
     private static final String TOKEN = "token";
 
-    private static final CacheManager cacheManager = CacheManager.getInstance();
-    private volatile String configName = TokenConfig.CONFIG_NAME;
+    private final CacheManager cacheManager;
+    private final TokenConfig config;
 
     public TokenMiddleware() {
-        if (LOG.isInfoEnabled()) LOG.info("TokenMiddleware is constructed");
+        this.config = TokenConfig.load();
+        this.cacheManager = CacheManager.getInstance();
+        LOG.info("TokenMiddleware is constructed");
     }
 
     /**
@@ -53,30 +55,30 @@ public class TokenMiddleware implements MiddlewareHandler {
      */
     @Deprecated
     public TokenMiddleware(String configName) {
-        this.configName = configName;
-        if (LOG.isInfoEnabled()) LOG.info("TokenMiddleware is constructed");
+        this.config = TokenConfig.load(configName);
+        this.cacheManager = CacheManager.getInstance();
+        LOG.info("TokenMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
         // This handler must be put after the prefix or dict handler so that the serviceId is
         // readily available in the header resolved by the path or the endpoint from the request.
-        if(LOG.isDebugEnabled()) LOG.debug("TokenMiddleware.execute starts.");
-        TokenConfig config = TokenConfig.load(configName);
+        LOG.debug("TokenMiddleware.execute starts.");
         // get the service_url from the header to determine if the request needs to be handled.
         Optional<String> optionalServiceId = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), HeaderKey.SERVICE_ID);
         if(optionalServiceId.isEmpty()) {
-            if(LOG.isDebugEnabled()) LOG.debug("TokenMiddleware.execute ends. The service_id is not in the header.");
+            LOG.debug("TokenMiddleware.execute ends. The service_id is not in the header.");
             return successMiddlewareStatus();
         }
         String requestPath = exchange.getRequest().getPath();
         // this handler will only work with a list of applied path prefixes in the token.yml config file.
-        if (config.getAppliedPathPrefixes() != null && config.getAppliedPathPrefixes().stream().anyMatch(s -> requestPath.startsWith(s))) {
+        if (config.getAppliedPathPrefixes() != null && config.getAppliedPathPrefixes().stream().anyMatch(requestPath::startsWith)) {
             String serviceId = optionalServiceId.get();
             Result<Jwt> result = getJwtToken(serviceId);
             if(result.isFailure()) {
                 LOG.error("Cannot populate or renew jwt for client credential grant type: {}", result.getError().toString());
-                if(LOG.isDebugEnabled()) LOG.debug("TokenMiddleware.execute ends with an error.");
+                LOG.debug("TokenMiddleware.execute ends with an error.");
                 return result.getError();
             } else {
                 Jwt cachedJwt = result.getResult();
@@ -87,8 +89,7 @@ public class TokenMiddleware implements MiddlewareHandler {
                 // assume that the subject token has the scope already?)
                 Optional<String> optionalToken = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), HeaderKey.AUTHORIZATION);
                 if(optionalToken.isEmpty()) {
-                    if(LOG.isTraceEnabled())
-                        LOG.trace("Adding jwt token to Authorization header with Bearer {}", cachedJwt.getJwt().substring(0, 20));
+                    LOG.trace("Adding jwt token to Authorization header with Bearer {}", cachedJwt.getJwt().substring(0, 20));
                     exchange.getRequest().getHeaders().put(HeaderKey.AUTHORIZATION, "Bearer " + cachedJwt.getJwt());
                 } else {
                     String token = optionalToken.get();
@@ -105,7 +106,7 @@ public class TokenMiddleware implements MiddlewareHandler {
     }
 
 
-    public static Result<Jwt> getJwtToken(String serviceId) {
+    public Result<Jwt> getJwtToken(String serviceId) {
         ClientConfig clientConfig = ClientConfig.get();
         OAuthTokenConfig tokenConfig = clientConfig.getOAuth().getToken();
         OAuthTokenClientCredentialConfig ccConfig = tokenConfig.getClientCredentials();
@@ -113,10 +114,10 @@ public class TokenMiddleware implements MiddlewareHandler {
         // get the jwt token from the cache.
         Jwt cachedJwt = null;
         if(cacheManager != null) {
-            if(LOG.isTraceEnabled()) LOG.trace("Get jwt token from cache for serviceId: {}", serviceId);
+            LOG.trace("Get jwt token from cache for serviceId: {}", serviceId);
             String cachedJwtString = (String) cacheManager.get(TOKEN, serviceId);
             if(cachedJwtString != null && !cachedJwtString.isEmpty()) {
-                if(LOG.isTraceEnabled()) LOG.trace("Cached jwt token: {}", cachedJwtString);
+                LOG.trace("Cached jwt token: {}", cachedJwtString);
                 cachedJwt = JsonMapper.fromJson(cachedJwtString, Jwt.class);
             }
         }
@@ -170,6 +171,6 @@ public class TokenMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return TokenConfig.load(configName).isEnabled();
+        return config.isEnabled();
     }
 }

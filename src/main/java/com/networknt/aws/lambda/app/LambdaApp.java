@@ -26,14 +26,13 @@ import java.util.Map;
 public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(LambdaApp.class);
-    static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
 
+    public static final LightLambdaExchange.Attachable<String> APP_ID = LightLambdaExchange.Attachable.createAttachable(String.class);
+    private final LambdaAppConfig config;
     public LambdaApp() {
-        LOG.info("LambdaApp is constructed");
-        // Call the config load to register it only. This appId change doesn't support config reload as it is
-        // called only once here in the constructor.
-        LambdaAppConfig.load();
+        this.config = LambdaAppConfig.load();
         Handler.init();
+        LOG.info("LambdaApp is constructed");
     }
 
     @Override
@@ -56,6 +55,7 @@ public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, AP
             chain = Handler.getDefaultChain();
 
         final var exchange = new LightLambdaExchange(context, chain);
+        exchange.addAttachment(APP_ID, config.getLambdaAppId());
 
         exchange.setInitialRequest(apiGatewayProxyRequestEvent);
         exchange.executeChain();

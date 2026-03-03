@@ -45,9 +45,8 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
     public static final String FAILED_TO_INVOKE_SERVICE = "ERR10089";
     public static final String EXCHANGE_HAS_FAILED_STATE = "ERR10087";
 
-    private volatile LambdaClient client;
-    private volatile RouterConfig config;
-    private String protocol;
+    private final RouterConfig config;
+    private final String protocol;
     static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
 
     public LambdaRouterMiddleware() {
@@ -55,27 +54,12 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
         this.protocol = config.isHttpsEnabled() ? "https" : "http";
         if (config.isMetricsInjection())
             lookupMetricsMiddleware();
-        if (LOG.isInfoEnabled())
-            LOG.info("LambdaRouterMiddleware is constructed");
+        LOG.info("LambdaRouterMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if (LOG.isTraceEnabled())
-            LOG.trace("LambdaRouterMiddleware.execute starts.");
-        RouterConfig newConfig = RouterConfig.load();
-        if(newConfig != config) {
-            synchronized (this) {
-                newConfig = RouterConfig.load();
-                if(newConfig != config) {
-                    this.config = newConfig;
-                    this.protocol = config.isHttpsEnabled() ? "https" : "http";
-                    if (config.isMetricsInjection())
-                        lookupMetricsMiddleware();
-                    if(LOG.isInfoEnabled()) LOG.info("RouterConfig is reloaded.");
-                }
-            }
-        }
+        LOG.trace("LambdaRouterMiddleware.execute starts.");
 
         // check if the Function-Name is in the header. If it is, we will continue.
         // Otherwise, return immediately.
@@ -108,11 +92,9 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                 if (urlRewriteRules != null && !urlRewriteRules.isEmpty()) {
                     // apply the url rewrite rules to the path.
                     targetPath = createRouterRequestPath(urlRewriteRules, originalPath);
-                    if (LOG.isTraceEnabled())
-                        LOG.trace("Rewritten original path {} to targetPath {}", originalPath, targetPath);
+                    LOG.trace("Rewritten original path {} to targetPath {}", originalPath, targetPath);
                 }
-                if (LOG.isTraceEnabled())
-                    LOG.trace("Discovered host {} for ServiceId {}", host, serviceId);
+                LOG.trace("Discovered host {} for ServiceId {}", host, serviceId);
                 // call the downstream service based on the request methods.
                 long startTime = System.nanoTime();
                 if ("get".equalsIgnoreCase(method) || "delete".equalsIgnoreCase(method)) {
@@ -132,8 +114,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                             if (metricsMiddleware == null)
                                 lookupMetricsMiddleware();
                             if (metricsMiddleware != null) {
-                                if (LOG.isTraceEnabled())
-                                    LOG.trace("Inject metrics for {}", config.getMetricsName());
+                                LOG.trace("Inject metrics for {}", config.getMetricsName());
                                 metricsMiddleware.injectMetrics(exchange, startTime, config.getMetricsName(), null);
                             }
                         }
@@ -162,8 +143,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                             if (metricsMiddleware == null)
                                 lookupMetricsMiddleware();
                             if (metricsMiddleware != null) {
-                                if (LOG.isTraceEnabled())
-                                    LOG.trace("Inject metrics for {}", config.getMetricsName());
+                                LOG.trace("Inject metrics for {}", config.getMetricsName());
                                 metricsMiddleware.injectMetrics(exchange, startTime, config.getMetricsName(), null);
                             }
                         }
@@ -178,8 +158,8 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                     LOG.error("Unsupported HTTP method: {}", method);
                     return new Status(FAILED_TO_INVOKE_SERVICE, serviceId);
                 }
-                if (LOG.isTraceEnabled())
-                    LOG.trace("LambdaRouterMiddleware.execute ends.");
+
+                LOG.trace("LambdaRouterMiddleware.execute ends.");
                 return this.successMiddlewareStatus();
             } else {
                 LOG.error("Exchange has failed state {}", exchange.getState());

@@ -36,8 +36,8 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
     public static final String FAILED_TO_INVOKE_LAMBDA = "ERR10086";
     public static final String EXCHANGE_HAS_FAILED_STATE = "ERR10087";
 
-    private volatile LambdaAsyncClient client;
-    private volatile LambdaProxyConfig config;
+    private final LambdaAsyncClient client;
+    private final LambdaProxyConfig config;
     private final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
 
     public LambdaProxyMiddleware() {
@@ -46,8 +46,7 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
         if (config.isMetricsInjection())
             lookupMetricsMiddleware();
         populateMethodToMatcherMap(config.getFunctions());
-        if (LOG.isInfoEnabled())
-            LOG.info("LambdaProxyMiddleware is constructed");
+        LOG.info("LambdaProxyMiddleware is constructed");
     }
 
     private LambdaAsyncClient initClient(LambdaProxyConfig config) {
@@ -89,19 +88,7 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
     @Override
     public Status execute(LightLambdaExchange exchange) {
         LOG.trace("LambdaProxyMiddleware.execute starts.");
-        LambdaProxyConfig newConfig = LambdaProxyConfig.load();
-        if (config != newConfig) {
-            synchronized (this) {
-                if (config != newConfig) {
-                    this.config = newConfig;
-                    this.client = initClient(config);
-                    if (config.isMetricsInjection())
-                        lookupMetricsMiddleware();
-                    populateMethodToMatcherMap(config.getFunctions());
-                    LOG.info("LambdaProxyConfig is reloaded.");
-                }
-            }
-        }
+
         if (!exchange.hasFailedState()) {
             /* invoke lambda function */
             var path = exchange.getRequest().getPath();

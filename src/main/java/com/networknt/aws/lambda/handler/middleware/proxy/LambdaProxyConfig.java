@@ -42,7 +42,12 @@ public class LambdaProxyConfig {
     @IntegerField(configFieldName = WRITE_TIMEOUT, externalizedKeyName = WRITE_TIMEOUT, description = "Write timeout in milliseconds.")
     private int writeTimeout;
 
-    @IntegerField(configFieldName = CONNECTION_TIMEOUT, externalizedKeyName = CONNECTION_TIMEOUT, description = "Connection timeout in milliseconds.")
+    @IntegerField(
+            configFieldName = CONNECTION_TIMEOUT,
+            externalizedKeyName = CONNECTION_TIMEOUT,
+            defaultValue = "10000",
+            description = "Connection timeout in milliseconds. AWS requires that this value must be greater than 0. Default value is 10000ms"
+    )
     private int connectionTimeout;
 
     @IntegerField(configFieldName = API_CALL_ATTEMPT_TIMEOUT, externalizedKeyName = API_CALL_ATTEMPT_TIMEOUT, description = "Api call attempt timeout in milliseconds.")

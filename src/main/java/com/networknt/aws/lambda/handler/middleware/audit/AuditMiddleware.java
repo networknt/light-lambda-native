@@ -40,12 +40,12 @@ public class AuditMiddleware implements MiddlewareHandler {
     static final String SERVICE_ID_KEY = "serviceId";
     static final String INVALID_CONFIG_VALUE_CODE = "ERR10060";
 
-    private volatile String serviceId;
-    private volatile DateTimeFormatter dateTimeFormatter;
-    private volatile AuditConfig config;
+    private final String serviceId;
+    private DateTimeFormatter dateTimeFormatter;
+    private final AuditConfig config;
 
     public AuditMiddleware() {
-        if (LOG.isInfoEnabled()) LOG.info("AuditMiddleware is constructed.");
+        LOG.info("AuditMiddleware is constructed.");
         config = AuditConfig.load();
         // get the serviceId from the proxy config
         LambdaAppConfig proxyConfig = LambdaAppConfig.load();
@@ -63,32 +63,18 @@ public class AuditMiddleware implements MiddlewareHandler {
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if(LOG.isDebugEnabled()) LOG.debug("AuditMiddleware.execute starts.");
-        AuditConfig newConfig = AuditConfig.load();
-        if(newConfig != config) {
-            synchronized (this) {
-                if(newConfig != config) {
-                    config = newConfig;
-                    LambdaAppConfig proxyConfig = LambdaAppConfig.load();
-                    serviceId = proxyConfig.getLambdaAppId();
-                    String timestampFormat = config.getTimestampFormat();
-                    if (!StringUtils.isBlank(timestampFormat)) {
-                        try {
-                            dateTimeFormatter = DateTimeFormatter.ofPattern(timestampFormat)
-                                    .withZone(ZoneId.systemDefault());
-                        } catch (IllegalArgumentException e) {
-                            LOG.error(new Status(INVALID_CONFIG_VALUE_CODE, timestampFormat, "timestampFormat", "audit.yml").toString());
-                        }
-                    }
-                }
-            }
-        }
+        LOG.debug("AuditMiddleware.execute starts.");
         // as there is no way to write a separate audit log file in Lambda, we will skip this handler.
         Map<String, Object> auditInfo = (Map<String, Object>)exchange.getAttachment(AUDIT_ATTACHMENT_KEY);
         Map<String, Object> auditMap = new LinkedHashMap<>();
         final long start = System.currentTimeMillis();
         // add audit timestamp
-        auditMap.put(TIMESTAMP, dateTimeFormatter == null ? System.currentTimeMillis() : dateTimeFormatter.format(Instant.now()));
+        if (dateTimeFormatter != null) {
+            auditMap.put(TIMESTAMP, dateTimeFormatter.format(Instant.now()));
+        } else {
+            auditMap.put(TIMESTAMP, System.currentTimeMillis());
+        }
+
 
         // dump audit info fields according to config
         boolean needAuditData = auditInfo != null && config.hasAuditList();

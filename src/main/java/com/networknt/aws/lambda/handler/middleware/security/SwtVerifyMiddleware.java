@@ -39,44 +39,36 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
 
     private volatile SwtVerifier swtVerifier;
     private volatile String configName = SecurityConfig.CONFIG_NAME;
-    private volatile SecurityConfig config;
+    private final SecurityConfig config;
 
     public SwtVerifyMiddleware() {
         config = SecurityConfig.load(configName);
         swtVerifier = new SwtVerifier(config);
-        if(LOG.isInfoEnabled()) LOG.info("SwtVerifyMiddleware is constructed");
+        if (LOG.isInfoEnabled()) LOG.info("SwtVerifyMiddleware is constructed");
     }
 
     /**
      * Please note that this constructor is only for testing to load different config files
      * to test different configurations.
+     *
      * @param configName String
      */
     public SwtVerifyMiddleware(String configName) {
         this.configName = configName;
         config = SecurityConfig.load(configName);
         swtVerifier = new SwtVerifier(config);
-        if(LOG.isInfoEnabled()) LOG.info("SwtVerifyMiddleware is constructed");
+        if (LOG.isInfoEnabled()) LOG.info("SwtVerifyMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute starts.");
-        SecurityConfig newConfig = SecurityConfig.load(configName);
-        if(config != newConfig) {
-            synchronized (this) {
-                if(config != newConfig) {
-                    config = newConfig;
-                    swtVerifier = new SwtVerifier(config);
-                    if(LOG.isInfoEnabled()) LOG.info("SwtVerifyMiddleware is reloaded.");
-                }
-            }
-        }
+        LOG.debug("SwtVerifyMiddleware.execute starts.");
+
         String reqPath = exchange.getRequest().getPath();
         // if request path is in the skipPathPrefixes in the config, call the next handler directly to skip the security check.
         if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
-            if(LOG.isTraceEnabled()) LOG.trace("Skip request path base on skipPathPrefixes for " + reqPath);
-            if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends.");
+            LOG.trace("Skip request path base on skipPathPrefixes for " + reqPath);
+            LOG.debug("SwtVerifyMiddleware.execute ends.");
             return successMiddlewareStatus();
         }
         // only UnifiedSecurityHandler will have the jwkServiceIds as the third parameter.
@@ -88,17 +80,17 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
         Map<String, String> headerMap = exchange.getRequest().getHeaders();
         Optional<String> optionalAuth = MapUtil.getValueIgnoreCase(headerMap, HeaderKey.AUTHORIZATION);
 
-        if (LOG.isTraceEnabled()) LOG.trace("reqPath = {} and headerMap = {}", reqPath, headerMap.isEmpty() ? "empty" : headerMap.toString());
+        LOG.trace("reqPath = {} and headerMap = {}", reqPath, headerMap.isEmpty() ? "empty" : headerMap.toString());
 
         // if an empty authorization header or a value length less than 6 ("Basic "), return an error
-        if(optionalAuth.isEmpty()) {
-            if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends with an error. Authorization header value is NULL.");
+        if (optionalAuth.isEmpty()) {
+            LOG.debug("SwtVerifyMiddleware.execute ends with an error. Authorization header value is NULL.");
             return new Status(STATUS_MISSING_AUTH_TOKEN);
         } else {
             // the authorization header is not empty
             String authorization = optionalAuth.get();
-            if(authorization.trim().length() < 6) {
-                if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
+            if (authorization.trim().length() < 6) {
+                LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
                 return new Status(STATUS_INVALID_AUTH_TOKEN);
             } else {
                 if (LOG.isTraceEnabled() && authorization.length() > 10)
@@ -107,13 +99,13 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                 authorization = this.getScopeToken(authorization, headerMap);
                 String swt = SwtVerifier.getTokenFromAuthorization(authorization);
                 if (swt != null) {
-                    if (LOG.isTraceEnabled()) LOG.trace("parsed swt from authorization = " + swt.substring(0, 10));
+                    LOG.trace("parsed swt from authorization = {}", swt.substring(0, 10));
                     Optional<String> optionalSwtClientId = MapUtil.getValueIgnoreCase(headerMap, config.getSwtClientIdHeader());
                     Optional<String> optionalSwtClientSecret = MapUtil.getValueIgnoreCase(headerMap, config.getSwtClientSecretHeader());
 
-                    if(LOG.isTraceEnabled()) LOG.trace("header swtClientId = " + optionalSwtClientId.orElse(null) + ", header swtClientSecret = " + StringUtils.maskHalfString(optionalSwtClientSecret.orElse(null)));
+                    LOG.trace("header swtClientId = {} header swtClientSecret = {}", optionalSwtClientId.orElse(null), StringUtils.maskHalfString(optionalSwtClientSecret.orElse(null)));
                     Result<TokenInfo> tokenInfoResult = swtVerifier.verifySwt(swt, reqPath, jwkServiceIds, optionalSwtClientId.orElse(null), optionalSwtClientSecret.orElse(null));
-                    if(tokenInfoResult.isFailure()) {
+                    if (tokenInfoResult.isFailure()) {
                         // return error status to the user.
                         if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
                         return tokenInfoResult.getError();
@@ -131,43 +123,40 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                         auditInfo.put(Constants.CALLER_ID_STRING, optionalCallerId.get());
                     exchange.addAttachment(AUDIT_ATTACHMENT_KEY, auditInfo);
 
-                    if (config != null && config.isEnableVerifyScope()) {
-                        if (LOG.isTraceEnabled()) LOG.trace("verify scope from the primary token when enableVerifyScope is true");
+                    if (config.isEnableVerifyScope()) {
+                        LOG.trace("verify scope from the primary token when enableVerifyScope is true");
 
                         /* get openapi operation */
                         OpenApiOperation openApiOperation = (OpenApiOperation) auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
                         // here we assume that the OpenApiMiddleware has been executed before this middleware and the openApiOperation is set in the auditInfo.
                         Operation operation = openApiOperation.getOperation();
-                        if(operation == null) {
-                            if(config.isSkipVerifyScopeWithoutSpec()) {
-                                if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends without verifying scope due to spec.");
+                        if (operation == null) {
+                            if (config.isSkipVerifyScopeWithoutSpec()) {
+                                LOG.debug("SwtVerifyMiddleware.execute ends without verifying scope due to spec.");
                                 return successMiddlewareStatus();
-                            } else {
-                                // this will return an error message to the client.
                             }
-                            if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
+                            LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
                             return new Status(STATUS_OPENAPI_OPERATION_MISSED);
                         }
 
                         /* validate scope from operation */
                         Optional<String> optionalScopeHeader = MapUtil.getValueIgnoreCase(headerMap, SCOPE_TOKEN);
-                        String scopeSwt = SwtVerifier.getTokenFromAuthorization(optionalScopeHeader.orElse(null));
                         List<String> secondaryScopes = new ArrayList<>();
 
                         Status status = hasValidSecondaryScopes(exchange, optionalScopeHeader.orElse(null), secondaryScopes, reqPath, jwkServiceIds, auditInfo);
-                        if(status.getStatusCode() >= 400) {
-                            if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
+                        if (status.getStatusCode() >= 400) {
+                            LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
                             return status;
                         }
 
                         status = hasValidScope(optionalScopeHeader.orElse(null), secondaryScopes, tokenInfo, operation);
-                        if(status.getStatusCode() >= 400) {
-                            if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
+                        if (status.getStatusCode() >= 400) {
+                            LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
                             return status;
                         }
                     }
                     // pass through claims through request headers after verification is done.
-                    if(config.getPassThroughClaims() != null && !config.getPassThroughClaims().isEmpty()) {
+                    if (config.getPassThroughClaims() != null && !config.getPassThroughClaims().isEmpty()) {
                         try {
                             for (Map.Entry<String, String> entry : config.getPassThroughClaims().entrySet()) {
                                 String key = entry.getKey();
@@ -175,23 +164,19 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                                 Field field = tokenInfo.getClass().getDeclaredField(key);
                                 field.setAccessible(true);
                                 Object value = field.get(tokenInfo);
-                                if (LOG.isTraceEnabled())
-                                    LOG.trace("pass through header {} with value {}", header, value);
+                                LOG.trace("pass through header {} with value {}", header, value);
                                 headerMap.put(header, value.toString());
                             }
                         } catch (Exception e) {
                             LOG.error("Exception:", e);
                         }
                     }
-                    if (LOG.isTraceEnabled())
-                        LOG.trace("complete SWT verification for request path = " + exchange.getRequest().getPath());
-
-                    if (LOG.isDebugEnabled())
-                        LOG.debug("SwtVerifyMiddleware.execute ends.");
+                    LOG.trace("complete SWT verification for request path = {}", exchange.getRequest().getPath());
+                    LOG.debug("SwtVerifyMiddleware.execute ends.");
 
                     return successMiddlewareStatus();
                 } else {
-                    if (LOG.isDebugEnabled()) LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
+                    LOG.debug("SwtVerifyMiddleware.execute ends with an error.");
                     return new Status(STATUS_MISSING_AUTH_TOKEN);
                 }
             }
@@ -203,10 +188,10 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
     /**
      * Makes sure the provided scope in the JWT or SWT is valid for the main scope or secondary scopes.
      *
-     * @param scopeHeader - the scope header
+     * @param scopeHeader     - the scope header
      * @param secondaryScopes - list of secondary scopes (can be empty)
-     * @param tokenInfo - TokenInfo returned from the introspection
-     * @param operation - the openapi operation
+     * @param tokenInfo       - TokenInfo returned from the introspection
+     * @param operation       - the openapi operation
      * @return - return status to indicate if valid or not
      */
     protected Status hasValidScope(String scopeHeader, List<String> secondaryScopes, TokenInfo tokenInfo, Operation operation) {
@@ -243,7 +228,7 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                 if (LOG.isTraceEnabled()) LOG.trace("validate the scope with primary token");
                 List<String> primaryScopes = null;
                 String scope = tokenInfo.getScope();
-                if(scope != null) {
+                if (scope != null) {
                     primaryScopes = Arrays.asList(scope.split(" "));
                 }
 
@@ -276,12 +261,12 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
     /**
      * Check is the request has secondary scopes, and they are valid.
      *
-     * @param exchange - current exchange
-     * @param scopeSwt - the swt token that associate with a scope
+     * @param exchange        - current exchange
+     * @param scopeSwt        - the swt token that associate with a scope
      * @param secondaryScopes - Initially an empty list that is then filled with the secondary scopes if there are any.
-     * @param reqPath - the request path as string
-     * @param jwkServiceIds - a list of serviceIds for jwk loading
-     * @param auditInfo - a map of audit info properties
+     * @param reqPath         - the request path as string
+     * @param jwkServiceIds   - a list of serviceIds for jwk loading
+     * @param auditInfo       - a map of audit info properties
      * @return - return Status to indicate valid or not.
      */
     protected Status hasValidSecondaryScopes(LightLambdaExchange exchange, String scopeSwt, List<String> secondaryScopes, String reqPath, List<String> jwkServiceIds, Map<String, Object> auditInfo) {
@@ -292,14 +277,15 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
                 Map<String, String> headerMap = exchange.getRequest().getHeaders();
                 Optional<String> optionalSwtClientId = MapUtil.getValueIgnoreCase(headerMap, config.getSwtClientIdHeader());
                 Optional<String> optionalSwtClientSecret = MapUtil.getValueIgnoreCase(headerMap, config.getSwtClientSecretHeader());
-                if(LOG.isTraceEnabled()) LOG.trace("header swtClientId = " + optionalSwtClientId.orElse(null) + ", header swtClientSecret = " + StringUtils.maskHalfString(optionalSwtClientSecret.orElse(null)));
+                if (LOG.isTraceEnabled())
+                    LOG.trace("header swtClientId = " + optionalSwtClientId.orElse(null) + ", header swtClientSecret = " + StringUtils.maskHalfString(optionalSwtClientSecret.orElse(null)));
                 Result<TokenInfo> scopeTokenInfo = swtVerifier.verifySwt(scopeSwt, reqPath, jwkServiceIds, optionalSwtClientId.orElse(null), optionalSwtClientSecret.orElse(null));
-                if(scopeTokenInfo.isFailure()) {
+                if (scopeTokenInfo.isFailure()) {
                     return scopeTokenInfo.getError();
                 }
                 TokenInfo tokenInfo = scopeTokenInfo.getResult();
                 String scope = tokenInfo.getScope();
-                if(scope != null) {
+                if (scope != null) {
                     secondaryScopes.addAll(Arrays.asList(scope.split(" ")));
                     auditInfo.put(Constants.SCOPE_CLIENT_ID_STRING, tokenInfo.getClientId());
                 }
@@ -317,7 +303,7 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
      * This covers situations where there is a secondary auth token.
      *
      * @param authorization - The auth token from authorization header
-     * @param headerMap - complete header map
+     * @param headerMap     - complete header map
      * @return - return either x-scope-token or the initial auth token
      */
     protected String getScopeToken(String authorization, Map<String, String> headerMap) {
@@ -328,7 +314,7 @@ public class SwtVerifyMiddleware implements MiddlewareHandler {
 
             // get the jwt token from the X-Scope-Token header in this case and allow the verification done with the secondary token.
             Optional<String> optionalScopeToken = MapUtil.getValueIgnoreCase(headerMap, SCOPE_TOKEN);
-            if(optionalScopeToken.isPresent()) {
+            if (optionalScopeToken.isPresent()) {
                 returnToken = optionalScopeToken.get();
                 if (LOG.isTraceEnabled() && returnToken.length() > 10)
                     LOG.trace("The replaced authorization from X-Scope-Token header = " + returnToken.substring(0, 10));

@@ -4,7 +4,6 @@ import ch.qos.logback.classic.Level;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.handler.LambdaHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.config.Config;
 import com.networknt.config.JsonMapper;
 import com.networknt.logging.model.LoggerConfig;
 import com.networknt.status.Status;
@@ -15,18 +14,19 @@ import java.util.List;
 import java.util.Map;
 
 public class LoggerSetHandler implements LambdaHandler {
-    static final Logger logger = LoggerFactory.getLogger(LoggerGetHandler.class);
+    static final Logger logger = LoggerFactory.getLogger(LoggerSetHandler.class);
     static final String HANDLER_IS_DISABLED = "ERR10065";
     static final String REQUEST_BODY_MISSING = "ERR10059";
+    private final LoggerConfig config;
 
     public LoggerSetHandler() {
-        if(logger.isInfoEnabled()) logger.info("LoggerSetHandler is constructed");
+        this.config = LoggerConfig.load();
+        logger.info("LoggerSetHandler is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if (logger.isTraceEnabled()) logger.trace("LoggerSetHandler.handleRequest starts.");
-        LoggerConfig config = LoggerConfig.load();
+        logger.trace("LoggerSetHandler.handleRequest starts.");
         Map<String, String> headers = Map.of("Content-Type", "application/json");
         if (config.isEnabled()) {
             // get the body from the request event
@@ -51,13 +51,13 @@ public class LoggerSetHandler implements LambdaHandler {
         } else {
             return new Status(HANDLER_IS_DISABLED, "LoggerSetHandler");
         }
-        if (logger.isTraceEnabled()) logger.trace("LoggerSetHandler.handleRequest ends.");
+        logger.trace("LoggerSetHandler.handleRequest ends.");
         return this.successMiddlewareStatus();
     }
 
     @Override
     public boolean isEnabled() {
-        return LoggerConfig.load().isEnabled();
+        return this.config.isEnabled();
     }
 
 

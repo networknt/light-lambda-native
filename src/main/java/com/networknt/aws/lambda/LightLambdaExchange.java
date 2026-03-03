@@ -421,7 +421,7 @@ public final class LightLambdaExchange {
      * @param o   - object value.
      * @param <T> - Middleware key type.
      */
-    public <T extends MiddlewareHandler> void addAttachment(final Attachable<T> key, final Object o) {
+    public <T> void addAttachment(final Attachable<T> key, final Object o) {
         this.attachments.put(key, o);
     }
 
@@ -431,8 +431,8 @@ public final class LightLambdaExchange {
      * @param attachable - middleware key
      * @return - returns the object for the provided key. Can return null if it does not exist.
      */
-    public Object getAttachment(final Attachable<?> attachable) {
-        return this.attachments.get(attachable);
+    public <T> T getAttachment(final Attachable<T> attachable) {
+        return (T) this.attachments.get(attachable);
     }
 
     public Map<Attachable<?>, Object> getAttachments() {
@@ -444,7 +444,7 @@ public final class LightLambdaExchange {
      *
      * @param <T> -
      */
-    public static class Attachable<T extends MiddlewareHandler> {
+    public static class Attachable<T> {
         private final Class<T> key;
 
         private Attachable(Class<T> key) {
@@ -462,7 +462,7 @@ public final class LightLambdaExchange {
          * @param <T>        - given class has to implement the MiddlewareHandler interface.
          * @return - returns new attachable instance.
          */
-        public static <T extends MiddlewareHandler> Attachable<T> createAttachable(final Class<T> middleware) {
+        public static <T> Attachable<T> createAttachable(final Class<T> middleware) {
             return new Attachable<>(middleware);
         }
     }

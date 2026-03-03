@@ -33,22 +33,19 @@ public class RequestCorsMiddleware implements MiddlewareHandler {
 
     private static final String ONE_HOUR_IN_SECONDS = "3600";
 
+    private final CorsConfig config;
     public RequestCorsMiddleware() {
+        this.config = CorsConfig.load();
         LOG.info("RequestCorsMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware.executeMiddleware starts.");
-        CorsConfig config = CorsConfig.load();
-        if (!config.isEnabled()) {
-            if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware is not enabled.");
-            return disabledMiddlewareStatus();
-        }
+        LOG.trace("RequestCorsMiddleware.executeMiddleware starts.");
 
         APIGatewayProxyRequestEvent requestEvent = exchange.getRequest();
         if(requestEvent != null) {
-            if(LOG.isTraceEnabled()) LOG.trace("Request event is not null.");
+            LOG.trace("Request event is not null.");
 
             List<String> allowedOrigins = config.getAllowedOrigins();
             List<String> allowedMethods = config.getAllowedMethods();
@@ -83,7 +80,7 @@ public class RequestCorsMiddleware implements MiddlewareHandler {
         // need to set the response header for the normal cors request that passed the origin check. It needs
         // to be set in the response chain instead of request chain.
 
-        if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware.executeMiddleware ends.");
+        LOG.trace("RequestCorsMiddleware.executeMiddleware ends.");
         return successMiddlewareStatus();
     }
 
@@ -133,7 +130,7 @@ public class RequestCorsMiddleware implements MiddlewareHandler {
         Map<String, String> requestHeaders = requestEvent.getHeaders();
         Optional<String> optionalOrigin = MapUtil.getValueIgnoreCase(requestHeaders, ORIGIN);
         String origin = optionalOrigin.orElse(null);
-        if(LOG.isTraceEnabled()) LOG.trace("origin from the request header = {} allowedOrigins = {}", origin, allowedOrigins);
+        LOG.trace("origin from the request header = {} allowedOrigins = {}", origin, allowedOrigins);
         if (origin != null && allowedOrigins != null && !allowedOrigins.isEmpty()) {
             for (String allowedOrigin : allowedOrigins) {
                 if (allowedOrigin.equalsIgnoreCase(sanitizeDefaultPort(origin))) {

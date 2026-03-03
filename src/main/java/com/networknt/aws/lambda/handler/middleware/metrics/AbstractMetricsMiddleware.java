@@ -6,7 +6,6 @@ import com.networknt.config.JsonMapper;
 import com.networknt.metrics.JVMMetricsDbReporter;
 import com.networknt.metrics.MetricsConfig;
 import com.networknt.metrics.TimeSeriesDbSender;
-import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import io.dropwizard.metrics.MetricFilter;
 import io.dropwizard.metrics.MetricName;
@@ -23,20 +22,25 @@ import java.util.regex.Pattern;
 import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.AUDIT_ATTACHMENT_KEY;
 
 public abstract class AbstractMetricsMiddleware implements MiddlewareHandler {
-    static final Logger logger = LoggerFactory.getLogger(AbstractMetricsMiddleware.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractMetricsMiddleware.class);
     // The metrics.yml configuration that supports reload.
-    static Pattern pattern;
+    protected Pattern pattern;
     // The structure that collect all the metrics entries. Even others will be using this structure to inject.
     public static final MetricRegistry registry = new MetricRegistry();
     public Map<String, String> commonTags = new HashMap<>();
+    protected final MetricsConfig config;
 
-    public AbstractMetricsMiddleware() {
+    protected AbstractMetricsMiddleware() {
+        config = MetricsConfig.load();
+        if (config.getIssuerRegex() != null) {
+            pattern = Pattern.compile(config.getIssuerRegex());
+        }
     }
 
 
     @Override
     public boolean isEnabled() {
-        return MetricsConfig.load().isEnabled();
+        return config.isEnabled();
     }
 
     public void createJVMMetricsReporter(final TimeSeriesDbSender sender) {
@@ -73,8 +77,8 @@ public abstract class AbstractMetricsMiddleware implements MiddlewareHandler {
      */
     public void injectMetrics(LightLambdaExchange exchange, long startTime, String metricsName, String endpoint) {
         Map<String, Object> auditInfo = (Map<String, Object>)exchange.getAttachment(AUDIT_ATTACHMENT_KEY);
-        if(logger.isTraceEnabled()) logger.trace("auditInfo = {}", auditInfo);
-        MetricsConfig config = MetricsConfig.load();
+        LOG.trace("auditInfo = {}", auditInfo);
+
         Map<String, String> tags = new HashMap<>();
         if (auditInfo != null) {
             // for external handlers, the endpoint must be unknown in the auditInfo. If that is the case, use the endpoint passed in.
@@ -84,7 +88,7 @@ public abstract class AbstractMetricsMiddleware implements MiddlewareHandler {
                 tags.put(Constants.ENDPOINT_STRING, (String) auditInfo.get(Constants.ENDPOINT_STRING));
             }
             String clientId = auditInfo.get(Constants.CLIENT_ID_STRING) != null ? (String) auditInfo.get(Constants.CLIENT_ID_STRING) : "unknown";
-            if(logger.isTraceEnabled()) logger.trace("clientId = {}", clientId);
+            LOG.trace("clientId = {}", clientId);
             tags.put("clientId", clientId);
             // scope client id will only be available if two token is used. For example, authorization code flow.
             if (config.isSendScopeClientId()) {
@@ -102,11 +106,11 @@ public abstract class AbstractMetricsMiddleware implements MiddlewareHandler {
                         Matcher matcher = pattern.matcher(issuer);
                         if (matcher.find()) {
                             String iss = matcher.group(1);
-                            if(logger.isTraceEnabled()) logger.trace("Extracted issuer {} from Original issuer {] is sent.", iss, issuer);
+                            LOG.trace("Extracted issuer {} from Original issuer {] is sent.", iss, issuer);
                             tags.put("issuer", iss != null ? iss : "unknown");
                         }
                     } else {
-                        if(logger.isTraceEnabled()) logger.trace("Original issuer {} is sent.", issuer);
+                        LOG.trace("Original issuer {} is sent.", issuer);
                         tags.put("issuer", issuer);
                     }
                 }
@@ -130,9 +134,7 @@ public abstract class AbstractMetricsMiddleware implements MiddlewareHandler {
         metricName = metricName.tagged(tags);
         long time = System.nanoTime() - startTime;
         registry.getOrAdd(metricName, MetricRegistry.MetricBuilder.TIMERS).update(time, TimeUnit.NANOSECONDS);
-        if(logger.isTraceEnabled())
-            logger.trace("metricName = {} commonTags = {} tags = {}", metricName, JsonMapper.toJson(commonTags), JsonMapper.toJson(tags));
-        // the metrics handler will collect the status code metrics and increase the counter. Here we don't want to increase it again.
-        // incCounterForStatusCode(httpServerExchange.getStatusCode(), commonTags, tags);
+        if(LOG.isTraceEnabled())
+            LOG.trace("metricName = {} commonTags = {} tags = {}", metricName, JsonMapper.toJson(commonTags), JsonMapper.toJson(tags));
     }
 }

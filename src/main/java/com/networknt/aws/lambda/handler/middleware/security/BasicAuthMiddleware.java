@@ -33,10 +33,11 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
     static final String INVALID_AUTHORIZATION_HEADER = "ERR12003";
     static final String BEARER_USER_NOT_FOUND = "ERR10072";
 
-    private volatile String configName = BasicAuthConfig.CONFIG_NAME;
+    private final BasicAuthConfig config;
 
     public BasicAuthMiddleware() {
-        if(LOG.isTraceEnabled()) LOG.trace("BasicAuthMiddleware is loaded.");
+        this.config = BasicAuthConfig.load();
+        LOG.info("BasicAuthMiddleware is constructed.");
     }
 
     /**
@@ -46,8 +47,8 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
      */
     @Deprecated
     public BasicAuthMiddleware(String configName) {
-        this.configName = configName;
-        if(LOG.isInfoEnabled()) LOG.info("BasicAuthMiddleware is loaded.");
+        this.config = BasicAuthConfig.load(configName);
+        LOG.info("BasicAuthMiddleware is constructed.");
     }
 
 
@@ -56,7 +57,7 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
         if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute starts.");
         Optional<String> optionalAuth = MapUtil.getValueIgnoreCase(exchange.getRequest().getHeaders(), HeaderKey.AUTHORIZATION);
         String requestPath = exchange.getRequest().getPath();
-        BasicAuthConfig config = BasicAuthConfig.load(configName);
+
         if (optionalAuth.isEmpty()) {
             /* no auth header */
             return this.handleAnonymousAuth(exchange, requestPath, config);
@@ -144,7 +145,6 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
      * @return Status to indicate if an error or success.
      */
     public Status handleBasicAuth(LightLambdaExchange exchange, String requestPath, String auth) {
-        BasicAuthConfig config = BasicAuthConfig.load(configName);
         String credentials = auth.substring(6);
         int pos = credentials.indexOf(':');
         if (pos == -1) {
@@ -263,6 +263,6 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return BasicAuthConfig.load(configName).isEnabled();
+        return config.isEnabled();
     }
 }

@@ -26,24 +26,25 @@ public class OpenApiMiddleware implements MiddlewareHandler {
     private static final String OPENAPI_NAME = "openapi";
     private static final String SPEC_INJECT = "openapi-inject";
 
-    private volatile OpenApiHandlerConfig config;
+    private final OpenApiHandlerConfig config;
 
     public static OpenApiHelper helper;
 
     public OpenApiMiddleware() {
-        if (LOG.isInfoEnabled()) LOG.info("OpenApiMiddleware is constructed");
+        this.config = OpenApiHandlerConfig.load();
         Map<String, Object> inject = Config.getInstance().getJsonMapConfig(SPEC_INJECT);
         Map<String, Object> openapi = Config.getInstance().getJsonMapConfigNoCache(OPENAPI_NAME);
         validateSpec(openapi, inject, "openapi.yaml");
         openapi = OpenApiHelper.merge(openapi, inject);
         try {
             String openapiString = Config.getInstance().getMapper().writeValueAsString(openapi);
-            if(LOG.isTraceEnabled()) LOG.trace("OpenApiMiddleware openapiString: {}", openapiString);
+            LOG.trace("OpenApiMiddleware openapiString: {}", openapiString);
             helper = new OpenApiHelper(openapiString);
         } catch (JsonProcessingException e) {
             LOG.error("merge specification failed");
             throw new RuntimeException("merge specification failed");
         }
+        LOG.info("OpenApiMiddleware is constructed");
     }
 
     @Override
@@ -145,27 +146,21 @@ public class OpenApiMiddleware implements MiddlewareHandler {
     }
 
     // this is used to get the basePath from the OpenApiMiddleware.
-    public static String getBasePath(String requestPath) {
-        String basePath = "";
-        // assume there is a single spec.
+    public static String getBasePath() {
         if (helper != null) {
-            basePath = helper.basePath;
-            if (LOG.isTraceEnabled())
-                LOG.trace("Found basePath for single spec from OpenApiMiddleware helper: {}", basePath);
+            return helper.basePath;
+        } else {
+            return "";
         }
-        return basePath;
     }
 
     @Override
     public boolean isEnabled() {
-        OpenApiHandlerConfig config = OpenApiHandlerConfig.load();
-        boolean enabled = false;
         if (config.isMultipleSpec()) {
-            enabled = !config.getMappedConfig().isEmpty();
+            return !config.getMappedConfig().isEmpty();
         } else {
-            enabled = helper.openApi3 != null;
+            return helper.openApi3 != null;
         }
-        return enabled;
     }
 
 }

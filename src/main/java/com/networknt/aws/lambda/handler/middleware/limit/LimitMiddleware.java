@@ -21,17 +21,17 @@ public class LimitMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(LimitMiddleware.class);
     public static final String RATE_LIMIT_EXCEEDED = "ERR10088";
     private volatile String configName = LimitConfig.CONFIG_NAME;
-    private volatile LimitConfig config;
-    private volatile RateLimiter rateLimiter;
+    private final LimitConfig config;
+    private RateLimiter rateLimiter;
 
     public LimitMiddleware() {
-        if (LOG.isInfoEnabled()) LOG.info("LimitMiddleware is constructed");
         config = LimitConfig.load(configName);
         try {
             rateLimiter = new RateLimiter(config);
         } catch (Exception e) {
-            LOG.error("Exception:", e);
+            LOG.error("Error creating new rate limiter:", e);
         }
+        LOG.info("LimitMiddleware is constructed");
     }
 
     /**
@@ -39,34 +39,22 @@ public class LimitMiddleware implements MiddlewareHandler {
      * @param configName String
      */
     public LimitMiddleware(String configName) {
-        if (LOG.isInfoEnabled()) LOG.info("LimitMiddleware is constructed for unit tests with configName {}", configName);
         config = LimitConfig.load(configName);
         try {
             rateLimiter = new RateLimiter(config);
         } catch (Exception e) {
             LOG.error("Exception:", e);
         }
+        LOG.info("LimitMiddleware is constructed for unit tests with configName {}", configName);
     }
 
     @Override
     public Status execute(final LightLambdaExchange exchange) {
-        if(LOG.isDebugEnabled()) LOG.debug("LimitMiddleware.execute starts.");
-        LimitConfig newConfig = LimitConfig.load(configName);
-        if(config != newConfig) {
-            synchronized (this) {
-                if (config != newConfig) {
-                    config = newConfig;
-                    try {
-                        rateLimiter = new RateLimiter(config);
-                    } catch (Exception e) {
-                        LOG.error("Exception:", e);
-                    }
-                }
-            }
-        }
+        LOG.debug("LimitMiddleware.execute starts.");
+
         RateLimitResponse rateLimitResponse = rateLimiter.handleRequest(exchange, config.getKey());
         if (rateLimitResponse.isAllow()) {
-            if(LOG.isDebugEnabled()) LOG.debug("LimitHandler.handleRequest ends.");
+            LOG.debug("LimitHandler.handleRequest ends.");
             return successMiddlewareStatus();
         } else {
             Status status = new Status(RATE_LIMIT_EXCEEDED);
@@ -81,13 +69,13 @@ public class LimitMiddleware implements MiddlewareHandler {
             responseEvent.setStatusCode(statusCode);
             responseEvent.setBody(status.toString());
             exchange.setInitialResponse(responseEvent);
-            if(LOG.isDebugEnabled()) LOG.warn("LimitHandler.handleRequest ends with an error code {}", RATE_LIMIT_EXCEEDED);
+            LOG.warn("LimitHandler.handleRequest ends with an error code {}", RATE_LIMIT_EXCEEDED);
             return status;
         }
     }
 
     @Override
     public boolean isEnabled() {
-        return LimitConfig.load(configName).isEnabled();
+        return config.isEnabled();
     }
 }
