@@ -20,7 +20,7 @@ public class ChainExecutor {
             return;
         }
 
-        for(var handler : chain.getChain()) {
+        for (var handler : chain.getChain()) {
             if (!handler.isEnabled()) {
                 LOG.debug("Skipping disabled handler: {}", handler.getClass().getName());
                 continue;
