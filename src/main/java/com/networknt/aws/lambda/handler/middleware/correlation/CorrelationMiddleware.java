@@ -20,16 +20,19 @@ import java.util.UUID;
 public class CorrelationMiddleware implements MiddlewareHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(CorrelationMiddleware.class);
-    private static final LightLambdaExchange.Attachable<CorrelationMiddleware> CORRELATION_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(CorrelationMiddleware.class);
+    private static final LightLambdaExchange.Attachable<String> CORRELATION_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(String.class);
+
+    private final CorrelationConfig config;
 
     public CorrelationMiddleware() {
-        if (LOG.isInfoEnabled()) LOG.info("CorrelationHandler is construct.");
+        config = CorrelationConfig.load();
+        LOG.info("CorrelationHandler is construct.");
     }
 
     @Override
     public Status execute(final LightLambdaExchange exchange) {
         LOG.debug("CorrelationHandler.handleRequest starts.");
-        CorrelationConfig config = CorrelationConfig.load();
+
         // check if the cid is in the request header
         String cid = null;
         if(exchange.getRequest().getHeaders() != null) {
@@ -65,7 +68,7 @@ public class CorrelationMiddleware implements MiddlewareHandler {
 
     @Override
     public boolean isEnabled() {
-        return CorrelationConfig.load().isEnabled();
+        return config.isEnabled();
     }
 
 

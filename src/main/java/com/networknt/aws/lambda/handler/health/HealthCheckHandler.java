@@ -16,19 +16,20 @@ public class HealthCheckHandler implements LambdaHandler {
     public static final String HEALTH_RESULT_ERROR = "ERROR";
 
     static final Logger logger = LoggerFactory.getLogger(HealthCheckHandler.class);
+    private final HealthConfig config;
 
     public HealthCheckHandler() {
+        this.config = HealthConfig.load();
         logger.info("HealthCheckHandler is constructed");
     }
 
     @Override
     public Status execute(final LightLambdaExchange exchange) {
-        if(logger.isTraceEnabled()) logger.trace("HealthCheckHandler.handleRequest starts.");
-        HealthConfig config = HealthConfig.load();
+        logger.trace("HealthCheckHandler.handleRequest starts.");
 
         String result = HEALTH_RESULT_OK;
 
-        if(config.isDownstreamEnabled()) {
+        if (config.isDownstreamEnabled()) {
             result = backendHealth();
         }
 
@@ -38,17 +39,16 @@ public class HealthCheckHandler implements LambdaHandler {
         headers.put("Content-Type", "text/plain; charset=utf-8");
         responseEvent.setHeaders(headers);
         responseEvent.setIsBase64Encoded(false);
-        if(HEALTH_RESULT_ERROR.equals(result)) {
+        if (HEALTH_RESULT_ERROR.equals(result)) {
             responseEvent.setStatusCode(400);
             responseEvent.setBody(HEALTH_RESULT_ERROR);
-            if(logger.isTraceEnabled()) logger.trace("HealthCheckHandler.handleRequest ends with an error.");
+            logger.trace("HealthCheckHandler.handleRequest ends with an error.");
         } else {
             responseEvent.setStatusCode(200);
             responseEvent.setBody(HEALTH_RESULT_OK);
-            if(logger.isTraceEnabled()) logger.trace("HealthCheckHandler.handleRequest ends.");
+            logger.trace("HealthCheckHandler.handleRequest ends.");
         }
         exchange.setInitialResponse(responseEvent);
-        if(logger.isTraceEnabled()) logger.trace("HealthCheckHandler.handleRequest ends.");
         return this.successMiddlewareStatus();
     }
 
@@ -63,12 +63,12 @@ public class HealthCheckHandler implements LambdaHandler {
         // TODO call the backend health check endpoint
 
         long responseTime = System.currentTimeMillis() - start;
-        if(logger.isDebugEnabled()) logger.debug("Downstream health check response time = {}", responseTime);
+        logger.debug("Downstream health check response time = {}", responseTime);
         return HEALTH_RESULT_OK;
     }
 
     @Override
     public boolean isEnabled() {
-        return HealthConfig.load().isEnabled();
+        return config.isEnabled();
     }
 }

@@ -49,8 +49,7 @@ public class RequestTransformerMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
         Chain requestChain = new Chain();
-        RequestTransformerConfig config = RequestTransformerConfig.load("reqtrans_test");
-        RequestTransformerMiddleware requestTransformerMiddleware = new RequestTransformerMiddleware(config);
+        RequestTransformerMiddleware requestTransformerMiddleware = new RequestTransformerMiddleware("reqtrans_test");
         requestChain.addChainable(requestTransformerMiddleware);
         requestChain.setFinalized(true);
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
@@ -83,8 +82,7 @@ public class RequestTransformerMiddlewareTest {
         Context lambdaContext = new LambdaContext(invocation.getRequestId());
 
         Chain requestChain = new Chain();
-        RequestTransformerConfig config = RequestTransformerConfig.load("reqtrans_test");
-        RequestTransformerMiddleware requestTransformerMiddleware = new RequestTransformerMiddleware(config);
+        RequestTransformerMiddleware requestTransformerMiddleware = new RequestTransformerMiddleware("reqtrans_test");
         requestChain.addChainable(requestTransformerMiddleware);
         requestChain.setFinalized(true);
         this.exchange = new LightLambdaExchange(lambdaContext, requestChain);

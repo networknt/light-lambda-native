@@ -16,16 +16,15 @@ import java.util.Map;
 
 public class SanitizerMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(SanitizerMiddleware.class);
-    private volatile String configName = SanitizerConfig.CONFIG_NAME;
-    private volatile SanitizerConfig config;
-    private volatile EncoderWrapper bodyEncoder;
-    private volatile EncoderWrapper headerEncoder;
+    private final SanitizerConfig config;
+    private final EncoderWrapper bodyEncoder;
+    private final EncoderWrapper headerEncoder;
 
     public SanitizerMiddleware() {
-        config = SanitizerConfig.load(configName);
+        config = SanitizerConfig.load();
         bodyEncoder = new EncoderWrapper(Encoders.forName(config.getBodyEncoder()), config.getBodyAttributesToIgnore(), config.getBodyAttributesToEncode());
         headerEncoder = new EncoderWrapper(Encoders.forName(config.getHeaderEncoder()), config.getHeaderAttributesToIgnore(), config.getHeaderAttributesToEncode());
-        if (LOG.isInfoEnabled()) LOG.info("SanitizerMiddleware is constructed");
+        LOG.info("SanitizerMiddleware is constructed");
     }
 
     /**
@@ -33,7 +32,6 @@ public class SanitizerMiddleware implements MiddlewareHandler {
      * @param configName String
      */
     public SanitizerMiddleware(String configName) {
-        this.configName = configName;
         config = SanitizerConfig.load(configName);
         bodyEncoder = new EncoderWrapper(Encoders.forName(config.getBodyEncoder()), config.getBodyAttributesToIgnore(), config.getBodyAttributesToEncode());
         headerEncoder = new EncoderWrapper(Encoders.forName(config.getHeaderEncoder()), config.getHeaderAttributesToIgnore(), config.getHeaderAttributesToEncode());
@@ -42,40 +40,30 @@ public class SanitizerMiddleware implements MiddlewareHandler {
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if (LOG.isDebugEnabled()) LOG.trace("SanitizerMiddleware.execute starts.");
+        LOG.trace("SanitizerMiddleware.execute starts.");
         String method = exchange.getRequest().getHttpMethod();
-        SanitizerConfig newConfig = SanitizerConfig.load(configName);
-        if(config != newConfig) {
-            synchronized (this) {
-                if (config != newConfig) {
-                    config = newConfig;
-                    bodyEncoder = new EncoderWrapper(Encoders.forName(config.getBodyEncoder()), config.getBodyAttributesToIgnore(), config.getBodyAttributesToEncode());
-                    headerEncoder = new EncoderWrapper(Encoders.forName(config.getHeaderEncoder()), config.getHeaderAttributesToIgnore(), config.getHeaderAttributesToEncode());
-                    LOG.info("SanitizerConfig is reloaded.");
-                }
-            }
-        }
+
         if (config.isHeaderEnabled()) {
             Map<String, String> headerMap = exchange.getRequest().getHeaders();
             if (headerMap != null) {
                 for (Map.Entry<String, String> entry: headerMap.entrySet()) {
                     // if ignore list exists, it will take the precedence.
                     if(config.getHeaderAttributesToIgnore() != null && config.getHeaderAttributesToIgnore().stream().anyMatch(entry.getKey()::equalsIgnoreCase)) {
-                        if(LOG.isTraceEnabled())
-                            LOG.trace("Ignore header {} as it is in the ignore list.", entry.getKey());
+
+                        LOG.trace("Ignore header {} as it is in the ignore list.", entry.getKey());
                         continue;
                     }
 
                     if(config.getHeaderAttributesToEncode() != null) {
                         if(config.getHeaderAttributesToEncode().stream().anyMatch(entry.getKey()::equalsIgnoreCase)) {
-                            if(LOG.isTraceEnabled())
-                                LOG.trace("Encode header {} as it is not in the ignore list and it is in the encode list.", entry.getKey());
+
+                            LOG.trace("Encode header {} as it is not in the ignore list and it is in the encode list.", entry.getKey());
                             entry.setValue(headerEncoder.applyEncoding(entry.getValue()));
                         }
                     } else {
                         // no attributes to encode, encode everything except the ignore list.
-                        if(LOG.isTraceEnabled())
-                            LOG.trace("Encode header {} as it is not in the ignore list and the encode list is null.", entry.getKey());
+
+                        LOG.trace("Encode header {} as it is not in the ignore list and the encode list is null.", entry.getKey());
                         entry.setValue(headerEncoder.applyEncoding(entry.getValue()));
                     }
                 }
@@ -96,11 +84,11 @@ public class SanitizerMiddleware implements MiddlewareHandler {
                     exchange.getRequest().setBody(JsonMapper.toJson(bodyList));
                 } else {
                     // Body is not in JSON format or form data, skip...
-                    if(LOG.isDebugEnabled()) LOG.debug("Skip sanitization as the body is not in JSON format");
+                    LOG.debug("Skip sanitization as the body is not in JSON format");
                 }
             }
         }
-        if (LOG.isDebugEnabled()) LOG.trace("SanitizerMiddleware.execute ends.");
+        LOG.trace("SanitizerMiddleware.execute ends.");
         return successMiddlewareStatus();
     }
 

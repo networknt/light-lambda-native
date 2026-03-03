@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 public class TestExchangeCompleteListenerMiddleware implements MiddlewareHandler {
     private final Logger LOG = LoggerFactory.getLogger(TestExchangeCompleteListenerMiddleware.class);
-    public static final Attachable<TestExchangeCompleteListenerMiddleware> TEST_ATTACHMENT = Attachable.createAttachable(TestExchangeCompleteListenerMiddleware.class);
+    public static final Attachable<Object> TEST_ATTACHMENT = Attachable.createAttachable(Object.class);
     @Override
     public Status execute(LightLambdaExchange exchange) {
         exchange.addResponseCompleteListener(new LambdaResponseCompleteListener() {

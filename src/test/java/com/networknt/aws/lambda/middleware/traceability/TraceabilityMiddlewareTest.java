@@ -45,7 +45,7 @@ class TraceabilityMiddlewareTest {
         Assertions.assertNotNull(requestEvent);
 
         // X-Traceability-Id should be added to the exchange as an attachment.
-        String traceabilityId = (String) exchange.getAttachment(TraceabilityMiddleware.TRACEABILITY_ATTACHMENT_KEY);
+        String traceabilityId = exchange.getAttachment(TraceabilityMiddleware.TRACEABILITY_ATTACHMENT_KEY);
         Assertions.assertEquals("123-123-123", traceabilityId);
     }
 }

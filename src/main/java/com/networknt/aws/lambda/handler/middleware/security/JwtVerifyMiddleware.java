@@ -41,54 +41,40 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
     static final String STATUS_METHOD_NOT_ALLOWED = "ERR10008";
     static final String STATUS_OPENAPI_OPERATION_MISSED = "ERR10085";
 
-    private volatile String configName = SecurityConfig.CONFIG_NAME;
-    private volatile SecurityConfig config;
-    private volatile JwtVerifier jwtVerifier;
+
+    private SecurityConfig config;
+    private JwtVerifier jwtVerifier;
 
     public JwtVerifyMiddleware() {
-        if(LOG.isInfoEnabled()) LOG.info("JwtVerifyMiddleware is constructed");
-        config = SecurityConfig.load(configName);
-        if(config.isEnableVerifyJwt()) {
+        config = SecurityConfig.load();
+        if (config.isEnableVerifyJwt()) {
             jwtVerifier = new JwtVerifier(config);
         }
-        if(LOG.isInfoEnabled()) LOG.info("JwtVerifyMiddleware is loaded.");
+        LOG.info("JwtVerifyMiddleware is constructed");
     }
 
     /**
      * Please note that this constructor is only for testing to load different config files
      * to test different configurations.
+     *
      * @param configName String
      */
     @Deprecated
     public JwtVerifyMiddleware(String configName) {
-        this.configName = configName;
         config = SecurityConfig.load(configName);
-        if(config.isEnableVerifyJwt()) {
+        if (config.isEnableVerifyJwt()) {
             jwtVerifier = new JwtVerifier(config);
         }
-        if(LOG.isInfoEnabled()) LOG.info("JwtVerifyMiddleware is loaded.");
+        LOG.info("JwtVerifyMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if(LOG.isDebugEnabled()) LOG.debug("JwtVerifyMiddleware.executeMiddleware starts");
+        LOG.debug("JwtVerifyMiddleware.executeMiddleware starts");
         LOG.debug("JWT Verification Time - Start: {}", System.currentTimeMillis());
-        SecurityConfig newConfig = SecurityConfig.load(configName);
-        if(config != newConfig) {
-            synchronized (this) {
-                if(config != newConfig) {
-                    config = newConfig;
-                    if(config.isEnableVerifyJwt()) {
-                        jwtVerifier = new JwtVerifier(config);
-                    }
-                    if(LOG.isInfoEnabled()) LOG.info("JwtVerifyMiddleware is reloaded.");
-                }
-            }
-        }
         String reqPath = exchange.getRequest().getPath();
         if (config.getSkipPathPrefixes() != null && config.getSkipPathPrefixes().stream().anyMatch(reqPath::startsWith)) {
-            if(LOG.isTraceEnabled())
-                LOG.trace("Skip request path base on skipPathPrefixes for {}", reqPath);
+            LOG.trace("Skip request path base on skipPathPrefixes for {}", reqPath);
             return successMiddlewareStatus();
         }
         // only UnifiedSecurityHandler will have the jwkServiceIds as the third parameter.
@@ -100,21 +86,22 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
         Map<String, String> headerMap = exchange.getRequest().getHeaders();
         Optional<String> optionalAuth = MapUtil.getValueIgnoreCase(headerMap, HeaderKey.AUTHORIZATION);
 
-        if (LOG.isTraceEnabled()) LOG.trace("pathPrefix = {} and reqPath = {} and headerMap = {}", pathPrefix, reqPath, headerMap.isEmpty() ? "empty" : headerMap.toString());
+        if (LOG.isTraceEnabled())
+            LOG.trace("pathPrefix = {} and reqPath = {} and headerMap = {}", pathPrefix, reqPath, headerMap.isEmpty() ? "empty" : headerMap.toString());
 
         // if an empty authorization header or a value length less than 6 ("Basic "), return an error
-        if(optionalAuth.isEmpty()) {
-            if (LOG.isDebugEnabled()) LOG.debug("JwtVerifyMiddleware.execute ends with an error. Authorization header value is NULL.");
+        if (optionalAuth.isEmpty()) {
+            LOG.debug("JwtVerifyMiddleware.execute ends with an error. Authorization header value is NULL.");
             return new Status(STATUS_MISSING_AUTH_TOKEN);
         } else {
-          // the authorization header is not empty
-          String authorization = optionalAuth.get();
-            if(authorization.trim().length() < 6) {
+            // the authorization header is not empty
+            String authorization = optionalAuth.get();
+            if (authorization.trim().length() < 6) {
                 if (LOG.isDebugEnabled()) LOG.debug("JwtVerifyMiddleware.execute ends with an error.");
                 return new Status(STATUS_INVALID_AUTH_TOKEN);
             } else {
                 if (LOG.isTraceEnabled() && authorization.length() > 10)
-                    LOG.trace("Authorization header = " + authorization.substring(0, 10));
+                    LOG.trace("Authorization header = {}", authorization.substring(0, 10));
 
                 authorization = this.getScopeToken(authorization, headerMap);
 
@@ -123,12 +110,11 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                 String jwt = JwtVerifier.getTokenFromAuthorization(authorization);
 
                 if (jwt != null) {
-                    if (LOG.isTraceEnabled())
-                        LOG.trace("parsed jwt from authorization = " + jwt.substring(0, 10));
+                    LOG.trace("parsed jwt from authorization = {}", jwt.substring(0, 10));
                     try {
                         JwtClaims claims = jwtVerifier.verifyJwt(jwt, ignoreExpiry, true, pathPrefix, reqPath, jwkServiceIds);
                         if (LOG.isTraceEnabled())
-                            LOG.trace("claims = " + claims.toJson());
+                            LOG.trace("claims = {}", claims.toJson());
 
                         String clientId = claims.getStringClaimValue(Constants.CLIENT_ID_STRING);
                         String userId = claims.getStringClaimValue(Constants.USER_ID_STRING);
@@ -156,8 +142,7 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                         exchange.addAttachment(AUDIT_ATTACHMENT_KEY, auditInfo);
 
                         if (config.isEnableVerifyScope()) {
-                            if (LOG.isTraceEnabled())
-                                LOG.trace("verify scope from the primary token when enableVerifyScope is true");
+                            LOG.trace("verify scope from the primary token when enableVerifyScope is true");
 
                             /* get openapi operation */
                             OpenApiOperation openApiOperation = (OpenApiOperation) auditInfo.get(Constants.OPENAPI_OPERATION_STRING);
@@ -165,21 +150,12 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                             // here we assume that the OpenApiMiddleware has been executed before this middleware and the openApiOperation is set in the auditInfo.
                             Operation operation = openApiOperation.getOperation();
 
-                            if(operation == null) {
-
-                                if(config.isSkipVerifyScopeWithoutSpec()) {
-
-                                    if (LOG.isDebugEnabled())
-                                        LOG.debug("JwtVerifyHandler.execute ends without verifying scope due to spec.");
-
+                            if (operation == null) {
+                                if (config.isSkipVerifyScopeWithoutSpec()) {
+                                    LOG.debug("JwtVerifyHandler.execute ends without verifying scope due to spec.");
                                     return successMiddlewareStatus();
-                                } else {
-                                    // this will return an error message to the client.
                                 }
-
-                                if (LOG.isDebugEnabled())
-                                    LOG.debug("JwtVerifyHandler.execute ends with an error.");
-
+                                LOG.debug("JwtVerifyHandler.execute ends with an error.");
                                 return new Status(STATUS_OPENAPI_OPERATION_MISSED);
                             }
 
@@ -188,75 +164,58 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                             String scopeJwt = JwtVerifier.getTokenFromAuthorization(optionalScopeHeader.orElse(null));
                             List<String> secondaryScopes = new ArrayList<>();
                             Status status = this.hasValidSecondaryScopes(scopeJwt, secondaryScopes, ignoreExpiry, pathPrefix, reqPath, jwkServiceIds, auditInfo);
-                            if(status != null) {
-                                if (LOG.isDebugEnabled()) LOG.debug("JwtVerifyHandler.execute ends with an error.");
+                            if (status != null) {
+                                LOG.debug("JwtVerifyHandler.execute ends with an error.");
                                 return status;
                             }
                             status = this.hasValidScope(optionalScopeHeader.orElse(null), secondaryScopes, claims, operation);
-                            if(status != null) {
-                                if (LOG.isDebugEnabled()) LOG.debug("JwtVerifyHandler.execute ends with an error.");
+                            if (status != null) {
+                                LOG.debug("JwtVerifyHandler.execute ends with an error.");
                                 return status;
                             }
                         }
 
                         // pass through claims through request headers after verification is done.
-                        if(config.getPassThroughClaims() != null && !config.getPassThroughClaims().isEmpty()) {
-                            for(Map.Entry<String, String> entry: config.getPassThroughClaims().entrySet()) {
+                        if (config.getPassThroughClaims() != null && !config.getPassThroughClaims().isEmpty()) {
+                            for (Map.Entry<String, String> entry : config.getPassThroughClaims().entrySet()) {
                                 String key = entry.getKey();
                                 String header = entry.getValue();
                                 Object value = claims.getClaimValue(key);
-                                if(LOG.isTraceEnabled()) LOG.trace("pass through header {} with value {}", header, value);
+                                LOG.trace("pass through header {} with value {}", header, value);
                                 headers.put(header, value.toString());
                             }
                         }
 
-                        if (LOG.isTraceEnabled())
-                            LOG.trace("complete JWT verification for request path = " + exchange.getRequest().getPath());
-
+                        LOG.trace("complete JWT verification for request path = {}", exchange.getRequest().getPath());
                         LOG.debug("JWT Verification Time - Finish: {}", System.currentTimeMillis());
-                        if (LOG.isDebugEnabled())
-                            LOG.debug("JwtVerifyHandler.execute ends.");
-
+                        LOG.debug("JwtVerifyHandler.execute ends.");
                         return successMiddlewareStatus();
 
                     } catch (InvalidJwtException e) {
 
                         // only log it and unauthorized is returned.
                         LOG.error("InvalidJwtException: ", e);
-
-                        if (LOG.isDebugEnabled())
-                            LOG.debug("JwtVerifyHandler.execute ends with an error.");
-
+                        LOG.debug("JwtVerifyHandler.execute ends with an error.");
                         return new Status(STATUS_INVALID_AUTH_TOKEN);
 
                     } catch (ExpiredTokenException e) {
                         LOG.error("ExpiredTokenException", e);
-
-                        if (LOG.isDebugEnabled())
-                            LOG.debug("JwtVerifyHandler.execute ends with an error.");
-
+                        LOG.debug("JwtVerifyHandler.execute ends with an error.");
                         return new Status(STATUS_AUTH_TOKEN_EXPIRED);
 
                     } catch (MalformedClaimException e) {
                         LOG.error("MalformedClaimException", e);
-                        
-                        if (LOG.isDebugEnabled())
-                            LOG.debug("JwtVerifyHandler.execute ends with an error.");
-                        
+                        LOG.debug("JwtVerifyHandler.execute ends with an error.");
                         return new Status(STATUS_INVALID_AUTH_TOKEN);
-                    
+
                     } catch (VerificationException e) {
                         LOG.error("VerificationException", e);
-                        
-                        if (LOG.isDebugEnabled())
-                            LOG.debug("JwtVerifyHandler.execute ends with an error.");
-                        
+                        LOG.debug("JwtVerifyHandler.execute ends with an error.");
                         return new Status(STATUS_INVALID_AUTH_TOKEN);
-                    
+
                     }
                 } else {
-                    if (LOG.isDebugEnabled())
-                        LOG.debug("JwtVerifyHandler.execute ends with an error. Cannot extract Bearer Token from Authorization header");
+                    LOG.debug("JwtVerifyHandler.execute ends with an error. Cannot extract Bearer Token from Authorization header");
                     return new Status(STATUS_MISSING_AUTH_TOKEN);
                 }
             }
@@ -268,7 +227,7 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
      * This covers situations where there is a secondary auth token.
      *
      * @param authorization - The auth token from authorization header
-     * @param headerMap - complete header map
+     * @param headerMap     - complete header map
      * @return - return either x-scope-token or the initial auth token
      */
     protected String getScopeToken(String authorization, Map<String, String> headerMap) {
@@ -279,10 +238,10 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
 
             // get the jwt token from the X-Scope-Token header in this case and allow the verification done with the secondary token.
             Optional<String> optionalScopeToken = MapUtil.getValueIgnoreCase(headerMap, SCOPE_TOKEN);
-            if(optionalScopeToken.isPresent()) {
+            if (optionalScopeToken.isPresent()) {
                 returnToken = optionalScopeToken.get();
                 if (LOG.isTraceEnabled() && returnToken.length() > 10)
-                    LOG.trace("The replaced authorization from X-Scope-Token header = " + returnToken.substring(0, 10));
+                    LOG.trace("The replaced authorization from X-Scope-Token header = {}", returnToken.substring(0, 10));
             }
         }
         return returnToken;
@@ -291,19 +250,18 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
     /**
      * Check is the request has secondary scopes and they are valid.
      *
-     * @param scopeJwt - the scope found in jwt
+     * @param scopeJwt        - the scope found in jwt
      * @param secondaryScopes - Initially an empty list that is then filled with the secondary scopes if there are any.
-     * @param ignoreExpiry - if we ignore expiry or not (mostly for testing)
-     * @param pathPrefix - request path prefix
-     * @param reqPath - the request path as string
-     * @param jwkServiceIds - a list of serviceIds for jwk loading
-     * @param auditInfo - a map of audit info properties
+     * @param ignoreExpiry    - if we ignore expiry or not (mostly for testing)
+     * @param pathPrefix      - request path prefix
+     * @param reqPath         - the request path as string
+     * @param jwkServiceIds   - a list of serviceIds for jwk loading
+     * @param auditInfo       - a map of audit info properties
      * @return - return null if there is no error. Otherwise, return the error status.
      */
     protected Status hasValidSecondaryScopes(String scopeJwt, List<String> secondaryScopes, boolean ignoreExpiry, String pathPrefix, String reqPath, List<String> jwkServiceIds, Map<String, Object> auditInfo) {
         if (scopeJwt != null) {
-            if (LOG.isTraceEnabled())
-                LOG.trace("start verifying scope token = " + scopeJwt.substring(0, 10));
+            if (LOG.isTraceEnabled()) LOG.trace("start verifying scope token = {}", scopeJwt.substring(0, 10));
 
             try {
                 JwtClaims scopeClaims = jwtVerifier.verifyJwt(scopeJwt, ignoreExpiry, true, pathPrefix, reqPath, jwkServiceIds);
@@ -344,10 +302,10 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
     /**
      * Makes sure the provided scope in the JWT is valid for the main scope or secondary scopes.
      *
-     * @param scopeHeader - the scope header
+     * @param scopeHeader     - the scope header
      * @param secondaryScopes - list of secondary scopes (can be empty)
-     * @param claims - claims found in jwt
-     * @param operation - the openapi operation
+     * @param claims          - claims found in jwt
+     * @param operation       - the openapi operation
      * @return - return a Status object if there are any error. Otherwise, return null.
      */
     protected Status hasValidScope(String scopeHeader, List<String> secondaryScopes, JwtClaims claims, Operation operation) {
@@ -366,11 +324,9 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                         if (securityParameter != null) break;
                     }
 
-                    if (securityParameter != null)
-                        specScopes = securityParameter.getParameters();
+                    if (securityParameter != null) specScopes = securityParameter.getParameters();
 
-                    if (specScopes != null)
-                        break;
+                    if (specScopes != null) break;
                 }
             }
 

@@ -25,7 +25,7 @@ public class CacheExplorerHandler implements LambdaHandler {
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if (logger.isTraceEnabled()) logger.trace("CacheExplorerHandler.execute starts.");
+        logger.trace("CacheExplorerHandler.execute starts.");
         Map<String, String> headers = Map.of("Content-Type", "application/json");
         String name = exchange.getRequest().getPathParameters().get(CACHE_NAME);
         CacheManager cacheManager = SingletonServiceFactory.getBean(CacheManager.class);
@@ -56,7 +56,7 @@ public class CacheExplorerHandler implements LambdaHandler {
                     .withBody(status.toString());
             exchange.setInitialResponse(res);
         }
-        if (logger.isTraceEnabled()) logger.trace("CacheExplorerHandler.execute ends.");
+        logger.trace("CacheExplorerHandler.execute ends.");
         return this.successMiddlewareStatus();
     }
 

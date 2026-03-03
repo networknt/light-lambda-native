@@ -23,6 +23,7 @@ public class RequestHeaderMiddleware extends HeaderMiddleware implements Middlew
 
     /**
      * Constructor with configuration for testing purpose only
+     *
      * @param configName String
      */
     public RequestHeaderMiddleware(String configName) {
@@ -32,48 +33,43 @@ public class RequestHeaderMiddleware extends HeaderMiddleware implements Middlew
 
     @Override
     public Status execute(final LightLambdaExchange exchange) {
-        if(LOG.isTraceEnabled()) LOG.trace("RequestHeaderMiddleware.executeMiddleware starts.");
-        HeaderConfig config = HeaderConfig.load(configName);
-        if (!config.isEnabled()) {
-            if(LOG.isTraceEnabled()) LOG.trace("RequestHeaderMiddleware is not enabled.");
-            return disabledMiddlewareStatus();
-        }
+        LOG.trace("RequestHeaderMiddleware.executeMiddleware starts.");
         APIGatewayProxyRequestEvent requestEvent = exchange.getRequest();
-        if(requestEvent != null) {
-            if(LOG.isTraceEnabled()) LOG.trace("Request event is not null.");
+        if (requestEvent != null) {
+            LOG.trace("Request event is not null.");
             var requestHeaders = requestEvent.getHeaders();
-            if(requestHeaders != null) {
-                if(LOG.isTraceEnabled()) LOG.trace("Request headers is not null.");
+            if (requestHeaders != null) {
+                LOG.trace("Request headers is not null.");
                 // handle all request header
                 List<String> removeList = config.getRequestRemoveList();
                 if (removeList != null) {
-                    if(LOG.isTraceEnabled()) LOG.trace("Request header removeList found.");
+                    LOG.trace("Request header removeList found.");
                     removeHeaders(removeList, requestHeaders);
                 }
                 Map<String, String> updateMap = config.getRequestUpdateMap();
-                if(updateMap != null) {
-                    if(LOG.isTraceEnabled()) LOG.trace("Request header updateMap found.");
+                if (updateMap != null) {
+                    LOG.trace("Request header updateMap found.");
                     updateHeaders(updateMap, requestHeaders);
                 }
 
                 // handle per path prefix header if configured
                 Map<String, HeaderPathPrefixConfig> pathPrefixHeader = config.getPathPrefixHeader();
-                if(pathPrefixHeader != null) {
+                if (pathPrefixHeader != null) {
                     String path = exchange.getRequest().getPath();
                     for (Map.Entry<String, HeaderPathPrefixConfig> entry : pathPrefixHeader.entrySet()) {
-                        if(path.startsWith(entry.getKey())) {
-                            if(LOG.isTraceEnabled()) LOG.trace("Found path {} with prefix {}", path, entry.getKey());
+                        if (path.startsWith(entry.getKey())) {
+                            LOG.trace("Found path {} with prefix {}", path, entry.getKey());
                             HeaderPathPrefixConfig headerPathPrefixConfig = entry.getValue();
                             HeaderRequestConfig headerRequestConfig = headerPathPrefixConfig.getRequest();
-                            if(headerRequestConfig != null) {
+                            if (headerRequestConfig != null) {
                                 List<String> requestHeaderRemoveList = headerRequestConfig.getRemove();
-                                if(requestHeaderRemoveList != null) {
-                                    if(LOG.isTraceEnabled()) LOG.trace("Request header path prefix removeList found.");
+                                if (requestHeaderRemoveList != null) {
+                                    LOG.trace("Request header path prefix removeList found.");
                                     removeHeaders(requestHeaderRemoveList, requestHeaders);
                                 }
                                 Map<String, String> requestHeaderUpdateMap = headerRequestConfig.getUpdate();
-                                if(requestHeaderUpdateMap != null) {
-                                    if(LOG.isTraceEnabled()) LOG.trace("Request header path prefix updateMap found.");
+                                if (requestHeaderUpdateMap != null) {
+                                    LOG.trace("Request header path prefix updateMap found.");
                                     updateHeaders(requestHeaderUpdateMap, requestHeaders);
                                 }
                             }
@@ -82,7 +78,7 @@ public class RequestHeaderMiddleware extends HeaderMiddleware implements Middlew
                 }
             }
         }
-        if(LOG.isTraceEnabled()) LOG.trace("RequestHeaderMiddleware.executeMiddleware ends.");
+        LOG.trace("RequestHeaderMiddleware.executeMiddleware ends.");
         return successMiddlewareStatus();
     }
 }

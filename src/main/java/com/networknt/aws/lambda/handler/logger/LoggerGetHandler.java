@@ -20,9 +20,10 @@ import java.util.Map;
 public class LoggerGetHandler implements LambdaHandler {
     static final Logger logger = LoggerFactory.getLogger(LoggerGetHandler.class);
     public static final String HANDLER_IS_DISABLED = "ERR10065";
-
+    private final LoggerConfig config;
     public LoggerGetHandler() {
-        if(logger.isInfoEnabled()) logger.info("LoggerGetHandler is constructed");
+        this.config = LoggerConfig.load();
+        logger.info("LoggerGetHandler is constructed");
     }
 
     @Override
@@ -33,8 +34,7 @@ public class LoggerGetHandler implements LambdaHandler {
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if (logger.isTraceEnabled()) logger.trace("LoggerGetHandler.handleRequest starts.");
-        LoggerConfig config = LoggerConfig.load();
+        logger.trace("LoggerGetHandler.handleRequest starts.");
         Map<String, String> headers = Map.of("Content-Type", "application/json");
         if (config.isEnabled()) {
             List<LoggerInfo> loggersList = new ArrayList<LoggerInfo>();
@@ -55,7 +55,7 @@ public class LoggerGetHandler implements LambdaHandler {
         } else {
             return new Status(HANDLER_IS_DISABLED, "LoggerGetHandler");
         }
-        if (logger.isTraceEnabled()) logger.trace("LoggerGetHandler.handleRequest ends.");
+        logger.trace("LoggerGetHandler.handleRequest ends.");
         return this.successMiddlewareStatus();
     }
 }

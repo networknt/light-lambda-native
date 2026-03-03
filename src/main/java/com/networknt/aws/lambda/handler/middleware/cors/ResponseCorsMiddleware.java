@@ -26,6 +26,7 @@ public class ResponseCorsMiddleware implements MiddlewareHandler {
         LOG.info("ResponseCorsMiddleware is constructed");
     }
 
+
     @Override
     public Status execute(LightLambdaExchange exchange) {
         if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware.executeMiddleware starts.");

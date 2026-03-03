@@ -12,19 +12,22 @@ import java.util.*;
 public abstract class HeaderMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(HeaderMiddleware.class);
     protected String configName = HeaderConfig.CONFIG_NAME;
+    protected final HeaderConfig config;
 
-    public HeaderMiddleware() {
+    protected HeaderMiddleware() {
+        this.config = HeaderConfig.load(configName);
         LOG.info("HeaderMiddleware is constructed");
     }
 
-    public HeaderMiddleware(String configName) {
+    protected HeaderMiddleware(String configName) {
         this.configName = configName;
+        this.config = HeaderConfig.load(configName);
         LOG.info("HeaderMiddleware is constructed with config {}", configName);
     }
 
     @Override
     public boolean isEnabled() {
-        return HeaderConfig.load(configName).isEnabled();
+        return config.isEnabled();
     }
 
     public void removeHeaders(List<String> removeList, Map<String, String> headers) {

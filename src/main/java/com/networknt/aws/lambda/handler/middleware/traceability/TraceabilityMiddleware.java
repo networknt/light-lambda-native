@@ -15,22 +15,19 @@ import org.slf4j.MDC;
 import java.util.HashMap;
 import java.util.Optional;
 
+@Deprecated
 public class TraceabilityMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(TraceabilityMiddleware.class);
-    public static final LightLambdaExchange.Attachable<TraceabilityMiddleware> TRACEABILITY_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(TraceabilityMiddleware.class);
-
+    public static final LightLambdaExchange.Attachable<String> TRACEABILITY_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(String.class);
+    private final TraceabilityConfig config;
     public TraceabilityMiddleware() {
-        if (LOG.isInfoEnabled()) LOG.info("TraceabilityMiddleware is constructed");
+        this.config = TraceabilityConfig.load();
+        LOG.info("TraceabilityMiddleware is constructed");
     }
 
     @Override
     public Status execute(final LightLambdaExchange exchange) {
-        TraceabilityConfig config = TraceabilityConfig.load();
-        if (!config.isEnabled())
-            return disabledMiddlewareStatus();
-
-        if (LOG.isDebugEnabled())
-            LOG.debug("TraceabilityMiddleware.executeMiddleware starts.");
+        LOG.debug("TraceabilityMiddleware.executeMiddleware starts.");
 
         String tid = null;
         if(exchange.getRequest() != null && exchange.getRequest().getHeaders() != null) {
@@ -43,14 +40,12 @@ public class TraceabilityMiddleware implements MiddlewareHandler {
             exchange.addAttachment(TRACEABILITY_ATTACHMENT_KEY, tid);
         }
 
-        if (LOG.isDebugEnabled())
-            LOG.debug("TraceabilityMiddleware.executeMiddleware ends.");
-
+        LOG.debug("TraceabilityMiddleware.executeMiddleware ends.");
         return successMiddlewareStatus();
     }
 
     @Override
     public boolean isEnabled() {
-        return TraceabilityConfig.load().isEnabled();
+        return this.config.isEnabled();
     }
 }

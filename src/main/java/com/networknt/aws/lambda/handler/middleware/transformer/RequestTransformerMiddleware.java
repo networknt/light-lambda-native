@@ -24,52 +24,54 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
     private static final Logger LOG = LoggerFactory.getLogger(RequestTransformerMiddleware.class);
     static final String REQUEST_TRANSFORM = "req-tra";
 
-    private static RequestTransformerConfig CONFIG;
+    private final RequestTransformerConfig config;
+
     public RequestTransformerMiddleware() {
         super();
-        CONFIG = RequestTransformerConfig.load();
+        config = RequestTransformerConfig.load();
         LOG.info("RequestTransformerMiddleware is constructed");
     }
 
     /**
      * Constructor with configuration for testing purpose only
-     * @param cfg RequestTransformerConfig
+     *
+     * @param configName name of the configuration to load
      */
-    public RequestTransformerMiddleware(RequestTransformerConfig cfg) {
+    public RequestTransformerMiddleware(String configName) {
         super();
-        CONFIG = cfg;
+        config = RequestTransformerConfig.load(configName);
         LOG.info("RequestTransformerMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if(LOG.isDebugEnabled()) LOG.trace("RequestTransformerMiddleware.execute starts.");
+        LOG.trace("RequestTransformerMiddleware.execute starts.");
         String requestPath = exchange.getRequest().getPath();
-        if (CONFIG.getAppliedPathPrefixes() != null && CONFIG.getAppliedPathPrefixes().stream().anyMatch(s -> requestPath.startsWith(s))) {
+        if (config.getAppliedPathPrefixes() != null && config.getAppliedPathPrefixes().stream().anyMatch(requestPath::startsWith)) {
             String method = exchange.getRequest().getHttpMethod();
-            Map<String, Object> auditInfo = (Map<String, Object>)exchange.getAttachment(AUDIT_ATTACHMENT_KEY);
+            Map<String, Object> auditInfo = (Map<String, Object>) exchange.getAttachment(AUDIT_ATTACHMENT_KEY);
             // checked the RuleLoaderStartupHook to ensure it is loaded. If not, return an error to the caller.
-            if(endpointRulesMap == null) {
+            if (endpointRulesMap == null) {
                 LOG.error("endpointRules is null");
             }
             // need to get the rule/rules to execute from the RuleLoaderStartupHook. First, get the endpoint.
             String endpoint, serviceEntry = null;
             // Grab ServiceEntry from config
             endpoint = ConfigUtils.toInternalKey(method.toLowerCase(), exchange.getRequest().getPath());
-            if(LOG.isDebugEnabled()) LOG.debug("request endpoint: " + endpoint);
+            LOG.debug("request endpoint: {}", endpoint);
             serviceEntry = ConfigUtils.findServiceEntry(method.toLowerCase(), exchange.getRequest().getPath(), endpointRulesMap);
-            if(LOG.isDebugEnabled()) LOG.debug("request serviceEntry: " + serviceEntry);
+            LOG.debug("request serviceEntry: {}", serviceEntry);
 
             // get the rules (maybe multiple) based on the endpoint.
-            Map<String, List> endpointRules = (Map<String, List>)endpointRulesMap.get(serviceEntry);
-            if(endpointRules == null) {
-                if(LOG.isDebugEnabled()) LOG.debug("endpointRules iS NULL");
+            Map<String, List> endpointRules = (Map<String, List>) endpointRulesMap.get(serviceEntry);
+            if (endpointRules == null) {
+                LOG.debug("endpointRules iS NULL");
             } else {
-                if(LOG.isDebugEnabled()) LOG.debug("endpointRules: " + endpointRules.get(REQUEST_TRANSFORM).size());
+                LOG.debug("endpointRules: {}", endpointRules.get(REQUEST_TRANSFORM).size());
             }
-            if(endpointRules != null) {
+            if (endpointRules != null) {
                 List<String> requestTransformRules = endpointRules.get(REQUEST_TRANSFORM);
-                if(requestTransformRules != null) {
+                if (requestTransformRules != null) {
                     boolean finalResult = true;
                     // call the rule engine to transform the request metadata or body. The input contains all the request elements
                     Map<String, Object> objMap = new HashMap<>();
@@ -84,15 +86,15 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                         // the body is json or xml which is text based. If it is binary, we will not touch it. We first try to get the injected attachment from the RequestBodyInterceptor. However, if
                         // the RequestBodyInterceptor is not configured run first, we need to get the buffer from the exchange directly.
                         String bodyString = exchange.getRequest().getBody();
-                        if(bodyString != null) {
+                        if (bodyString != null) {
                             objMap.put("requestBody", bodyString);
                         }
                     }
                     Map<String, Object> result = null;
                     // iterate the rules and execute them in sequence. Break only if one rule is successful.
-                    if(LOG.isDebugEnabled()) LOG.debug("requestTransformRules list count: " + requestTransformRules.size());
-                    for(String ruleId: requestTransformRules) {
-                        if(LOG.isDebugEnabled()) LOG.debug("ruleId found: {}", ruleId);
+                    LOG.debug("requestTransformRules list count: {}", requestTransformRules.size());
+                    for (String ruleId : requestTransformRules) {
+                        LOG.debug("ruleId found: {}", ruleId);
                         try {
                             result = ruleEngine.executeRule(ruleId, objMap);
                             boolean res = (Boolean) result.get(RuleConstants.RESULT);
@@ -107,69 +109,69 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                             break;
                         }
                     }
-                    if(finalResult) {
-                        for(Map.Entry<String, Object> entry: result.entrySet()) {
-                            if(LOG.isTraceEnabled()) LOG.trace("key = " + entry.getKey() + " value = " + entry.getValue());
+                    if (finalResult) {
+                        for (Map.Entry<String, Object> entry : result.entrySet()) {
+                            LOG.trace("key = {} value = {}", entry.getKey(), entry.getValue());
                             // you can only update the response headers and response body in the transformation.
-                            switch(entry.getKey()) {
+                            switch (entry.getKey()) {
                                 case "requestPath":
-                                    String reqPath = (String)result.get("requestPath");
+                                    String reqPath = (String) result.get("requestPath");
                                     exchange.getRequest().setPath(reqPath);
-                                    if(LOG.isTraceEnabled()) LOG.trace("requestPath is changed to " + reqPath);
+                                    LOG.trace("requestPath is changed to {}", reqPath);
                                     break;
                                 case "queryString":
                                     // we have pass the queryParameters to the rule engine, the plugin developer should use that
                                     // to add or remove entries, and then convert the map to a json string.
-                                    String queryString = (String)result.get("queryString");
-                                    if(LOG.isTraceEnabled()) LOG.trace("queryString = " + queryString);
-                                    if(queryString != null) {
+                                    String queryString = (String) result.get("queryString");
+                                    LOG.trace("queryString = {}", queryString);
+                                    if (queryString != null) {
                                         Map<String, Object> queryParameters = JsonMapper.string2Map(queryString);
                                         exchange.getRequest().setQueryStringParameters(convertMapValueToString(queryParameters));
                                     }
                                     break;
                                 case "requestHeaders":
                                     // if requestHeaders object is null, ignore it.
-                                    Map<String, Object> requestHeaders = (Map<String, Object>)result.get("requestHeaders");
-                                    if(requestHeaders != null && requestHeaders.size() > 0) {
+                                    Map<String, Object> requestHeaders = (Map<String, Object>) result.get("requestHeaders");
+                                    if (requestHeaders != null && requestHeaders.size() > 0) {
                                         // manipulate the request headers.
-                                        List<String> removeList = (List)requestHeaders.get("remove");
-                                        if(removeList != null) {
+                                        List<String> removeList = (List) requestHeaders.get("remove");
+                                        if (removeList != null) {
                                             removeList.forEach(s -> {
-                                                if(LOG.isTraceEnabled()) LOG.trace("removing request header: " + s);
+                                                LOG.trace("removing request header: {}", s);
                                                 MapUtil.delValueIgnoreCase(exchange.getRequest().getHeaders(), s);
                                             });
                                         }
-                                        Map<String, Object> updateMap = (Map)requestHeaders.get("update");
-                                        if(updateMap != null) {
+                                        Map<String, Object> updateMap = (Map) requestHeaders.get("update");
+                                        if (updateMap != null) {
                                             updateMap.forEach((k, v) -> {
-                                                if(LOG.isTraceEnabled()) LOG.trace("updating request header: " + k + " value: " + v);
-                                                exchange.getRequest().getHeaders().put(k, (String)v);
+                                                LOG.trace("updating request header = {} value = {}", k, v);
+                                                exchange.getRequest().getHeaders().put(k, (String) v);
                                             });
                                         }
                                     }
                                     break;
                                 case "requestBody":
-                                    String requestBody = (String)result.get("requestBody");
-                                    if(LOG.isTraceEnabled()) LOG.trace("requestBody = " + requestBody);
+                                    String requestBody = (String) result.get("requestBody");
+                                    LOG.trace("requestBody = {}", requestBody);
                                     exchange.getRequest().setBody(requestBody);
                                     break;
                                 case "responseBody":
-                                    String responseBody = (String)result.get("responseBody");
-                                    if(LOG.isTraceEnabled()) LOG.trace("responseBody = " + responseBody);
+                                    String responseBody = (String) result.get("responseBody");
+                                    LOG.trace("responseBody = {}", responseBody);
                                     // Send the response body and return immediately just like the admin endpoSint.
                                     var responseEvent = new APIGatewayProxyResponseEvent();
                                     var headers = new HashMap<String, String>();
                                     headers.put(HeaderKey.CONTENT_TYPE, HeaderValue.APPLICATION_JSON);
                                     responseEvent.setHeaders(headers);
-                                    responseEvent.setStatusCode(Objects.requireNonNullElse((Integer)result.get("statusCode"), 200));
+                                    responseEvent.setStatusCode(Objects.requireNonNullElse((Integer) result.get("statusCode"), 200));
                                     responseEvent.setBody(responseBody);
                                     exchange.setInitialResponse(responseEvent);
                                     break;
                                 case "validationError":
                                     // If the rule engine returns any validationError entry, the message should be able to
                                     // converted back to Status
-                                    String errorMessage = (String)result.get("errorMessage");
-                                    if(LOG.isTraceEnabled()) LOG.trace("Entry key validationError with errorMessage {} ", errorMessage);
+                                    String errorMessage = (String) result.get("errorMessage");
+                                    LOG.trace("Entry key validationError with errorMessage {} ", errorMessage);
                                     // we are expecting the errorMessage can be converted to Status object.
                                     return JsonMapper.fromJson(errorMessage, Status.class);
                             }
@@ -178,13 +180,13 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                 }
             }
         }
-        if(LOG.isDebugEnabled()) LOG.trace("RequestTransformerMiddleware.execute ends.");
+        LOG.trace("RequestTransformerMiddleware.execute ends.");
         return successMiddlewareStatus();
     }
 
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
+        return config.isEnabled();
     }
 
 }

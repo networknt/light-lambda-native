@@ -2,7 +2,6 @@ package com.networknt.aws.lambda.handler.middleware.transformer;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.networknt.aws.lambda.LightLambdaExchange;
-import com.networknt.config.Config;
 import com.networknt.restrans.ResponseTransformerConfig;
 import com.networknt.rule.RuleConstants;
 import com.networknt.status.Status;
@@ -18,7 +17,7 @@ import java.util.Map;
 import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.AUDIT_ATTACHMENT_KEY;
 
 public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware {
-    private static ResponseTransformerConfig CONFIG;
+    private final ResponseTransformerConfig config;
     private static final Logger LOG = LoggerFactory.getLogger(ResponseTransformerMiddleware.class);
     private static final String RESPONSE_TRANSFORM = "res-tra";
     private static final String RESPONSE_HEADERS = "responseHeaders";
@@ -40,17 +39,14 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
 
     public ResponseTransformerMiddleware() {
         super();
-        CONFIG = ResponseTransformerConfig.load();
+        config = ResponseTransformerConfig.load();
         LOG.info("ResponseTransformerMiddleware is constructed");
     }
 
-    /**
-     * Constructor with configuration for testing purpose only
-     * @param cfg ResponseTransformerConfig
-     */
-    public ResponseTransformerMiddleware(ResponseTransformerConfig cfg) {
+
+    public ResponseTransformerMiddleware(String configName) {
         super();
-        CONFIG = cfg;
+        config = ResponseTransformerConfig.load(configName);
         LOG.info("ResponseTransformerMiddleware is constructed");
     }
 
@@ -60,9 +56,9 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
         if (LOG.isDebugEnabled()) LOG.trace("ResponseTransformerMiddleware.execute starts.");
         APIGatewayProxyRequestEvent readOnlyRequest = exchange.getReadOnlyRequest();
         String requestPath = readOnlyRequest.getPath();
-        if (CONFIG.getAppliedPathPrefixes() != null && CONFIG.getAppliedPathPrefixes().stream().anyMatch(requestPath::startsWith)) {
+        if (config.getAppliedPathPrefixes() != null && config.getAppliedPathPrefixes().stream().anyMatch(requestPath::startsWith)) {
             String responseBody = exchange.getResponse().getBody();
-            if (LOG.isTraceEnabled()) LOG.trace("original response body = " + responseBody);
+            LOG.trace("original response body = {}", responseBody);
 
             // call the rule engine to transform the response body and response headers. The input contains all the request
             // and response elements.
@@ -75,9 +71,9 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
             objMap.put(PATH_PARAMETERS,  readOnlyRequest.getPathParameters());
             objMap.put(METHOD, method);
             objMap.put(REQUEST_PATH, readOnlyRequest.getPath());
-            if (method.toString().equalsIgnoreCase(POST)
-                    || method.toString().equalsIgnoreCase(PUT)
-                    || method.toString().equalsIgnoreCase(PATCH)) {
+            if (method.equalsIgnoreCase(POST)
+                    || method.equalsIgnoreCase(PUT)
+                    || method.equalsIgnoreCase(PATCH)) {
                 String requestBody = readOnlyRequest.getBody();
                 objMap.put(REQUEST_BODY, requestBody);
             }
@@ -87,28 +83,16 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
             objMap.put(AUDIT_INFO, auditInfo);
             objMap.put(STATUS_CODE, exchange.getStatusCode());
 
-            // need to get the rule/rules to execute from the RuleLoaderStartupHook. First, get the endpoint.
-            String endpoint, serviceEntry = null;
-            if (auditInfo != null) {
-                if (LOG.isDebugEnabled())
-                    LOG.debug("auditInfo exists. Grab endpoint from it.");
-                endpoint = (String) auditInfo.get("endpoint");
-            } else {
-                if (LOG.isDebugEnabled())
-                    LOG.debug("auditInfo is NULL. Grab endpoint from exchange.");
-                endpoint = exchange.getRequest().getPath() + "@" + method.toLowerCase();
-            }
-
             // checked the RuleLoaderStartupHook to ensure it is loaded. If not, return an error to the caller.
             if (endpointRulesMap == null) {
                 LOG.error("endpointRules is null");
             }
 
             // Grab ServiceEntry from config
-            endpoint = ConfigUtils.toInternalKey(method.toLowerCase(), readOnlyRequest.getPath());
-            if(LOG.isDebugEnabled()) LOG.debug("request endpoint: " + endpoint);
-            serviceEntry = ConfigUtils.findServiceEntry(method.toLowerCase(), readOnlyRequest.getPath(), endpointRulesMap);
-            if(LOG.isDebugEnabled()) LOG.debug("request serviceEntry: " + serviceEntry);
+            String endpoint = ConfigUtils.toInternalKey(method.toLowerCase(), readOnlyRequest.getPath());
+            LOG.debug("request endpoint: {}", endpoint);
+            String serviceEntry = ConfigUtils.findServiceEntry(method.toLowerCase(), readOnlyRequest.getPath(), endpointRulesMap);
+            LOG.debug("request serviceEntry: {}", serviceEntry);
 
             // get the rules (maybe multiple) based on the endpoint.
             Map<String, List> endpointRules = (Map<String, List>) endpointRulesMap.get(serviceEntry);
@@ -142,7 +126,7 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
             }
             if(finalResult) {
                 for (Map.Entry<String, Object> entry : result.entrySet()) {
-                    if (LOG.isTraceEnabled()) LOG.trace("key = {} value = {}", entry.getKey(), entry.getValue());
+                    LOG.trace("key = {} value = {}", entry.getKey(), entry.getValue());
 
                     // you can only update the response headers and response body in the transformation.
                     switch (entry.getKey()) {
@@ -175,31 +159,9 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
         return successMiddlewareStatus();
     }
 
-    private Map<String, Object> createExchangeInfoMap(LightLambdaExchange exchange, String method, String responseBody, Map<String, Object> auditInfo) {
-        Map<String, Object> objMap = new HashMap<>();
-        objMap.put(REQUEST_HEADERS,  exchange.getRequest().getHeaders());
-        objMap.put(RESPONSE_HEADERS, exchange.getResponse().getHeaders());
-        objMap.put(QUERY_PARAMETERS, exchange.getRequest().getQueryStringParameters());
-        objMap.put(PATH_PARAMETERS,  exchange.getRequest().getPathParameters());
-        objMap.put(METHOD, method);
-        objMap.put(REQUEST_PATH, exchange.getRequest().getPath());
-        if (method.toString().equalsIgnoreCase(POST)
-                || method.toString().equalsIgnoreCase(PUT)
-                || method.toString().equalsIgnoreCase(PATCH)) {
-            String requestBody = exchange.getRequest().getBody();
-            objMap.put(REQUEST_BODY, requestBody);
-        }
-        if (responseBody != null) {
-            objMap.put(RESPONSE_BODY, responseBody);
-        }
-        objMap.put(AUDIT_INFO, auditInfo);
-        objMap.put(STATUS_CODE, exchange.getStatusCode());
-        return objMap;
-    }
-
     @Override
     public boolean isEnabled() {
-        return CONFIG.isEnabled();
+        return config.isEnabled();
     }
 
 }
