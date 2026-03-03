@@ -20,7 +20,7 @@ import java.util.UUID;
 public class CorrelationMiddleware implements MiddlewareHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(CorrelationMiddleware.class);
-    private static final LightLambdaExchange.Attachable<CorrelationMiddleware> CORRELATION_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(CorrelationMiddleware.class);
+    private static final LightLambdaExchange.Attachable<String> CORRELATION_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(String.class);
 
     private final CorrelationConfig config;
 

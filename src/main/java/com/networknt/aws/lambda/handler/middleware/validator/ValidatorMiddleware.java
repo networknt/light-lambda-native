@@ -3,11 +3,8 @@ package com.networknt.aws.lambda.handler.middleware.validator;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware;
-import com.networknt.aws.lambda.utility.HeaderKey;
-import com.networknt.aws.lambda.utility.HeaderValue;
 import com.networknt.aws.lambda.validator.RequestValidator;
 import com.networknt.aws.lambda.validator.SchemaValidator;
-import com.networknt.config.Config;
 import com.networknt.openapi.ApiNormalisedPath;
 import com.networknt.openapi.NormalisedPath;
 import com.networknt.openapi.OpenApiOperation;
@@ -28,7 +25,7 @@ public class ValidatorMiddleware implements MiddlewareHandler {
 
     RequestValidator requestValidator;
 
-    public final ValidatorConfig config;
+    private final ValidatorConfig config;
 
     public ValidatorMiddleware() {
         config = ValidatorConfig.load();

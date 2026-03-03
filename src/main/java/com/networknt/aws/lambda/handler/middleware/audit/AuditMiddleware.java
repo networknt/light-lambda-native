@@ -27,7 +27,7 @@ import java.util.*;
  */
 public class AuditMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(AuditMiddleware.class);
-    public static final LightLambdaExchange.Attachable<AuditMiddleware> AUDIT_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(AuditMiddleware.class);
+    public static final LightLambdaExchange.Attachable<Map> AUDIT_ATTACHMENT_KEY = LightLambdaExchange.Attachable.createAttachable(Map.class);
     static final String STATUS_CODE = "statusCode";
     static final String RESPONSE_TIME = "responseTime";
     static final String TIMESTAMP = "timestamp";

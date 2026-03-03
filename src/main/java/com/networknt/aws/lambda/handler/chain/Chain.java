@@ -37,27 +37,6 @@ public class Chain {
 
 
     /**
-     * Add to chain from string parameter
-     *
-     * @param className - class name in string format
-     * @return - this
-     */
-    @SuppressWarnings("unchecked")
-    public Chain add(String className) {
-        try {
-
-            if (Class.forName(className).getSuperclass().equals(LambdaHandler.class))
-                return this.add((Class<? extends LambdaHandler>) Class.forName(className));
-
-            else throw new RuntimeException(className + " is not a member of LambdaMiddleware...");
-
-        } catch (ClassNotFoundException e) {
-            LOG.error("Failed to find class with the name: {}", className);
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
      * Add to chain from class parameter
      * @param  middleware - middleware class
      * @return - this

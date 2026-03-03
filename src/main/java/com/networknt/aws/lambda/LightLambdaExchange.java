@@ -4,7 +4,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.exception.LambdaExchangeStateException;
-import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.handler.chain.ChainExecutor;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.aws.lambda.handler.middleware.ExceptionUtil;
@@ -174,7 +173,7 @@ public final class LightLambdaExchange {
      * @return - returns the complete and final request event.
      */
     public APIGatewayProxyRequestEvent getFinalizedRequest(boolean fromListener) {
-        if(!fromListener) {
+        if (!fromListener) {
             // the call any listener should not invoke listener again to prevent deal loop.
             for (int i = requestCompleteListeners.size() - 1; i >= 0; --i) {
                 LambdaRequestCompleteListener listener = requestCompleteListeners.get(i);
@@ -191,7 +190,7 @@ public final class LightLambdaExchange {
             throw LambdaExchangeStateException
                     .missingStateException(this.state, FLAG_REQUEST_SET);
 
-        if(!fromListener) {
+        if (!fromListener) {
             this.state |= FLAG_REQUEST_DONE;
         }
 
@@ -206,7 +205,7 @@ public final class LightLambdaExchange {
      * @return - returns the complete and final response event.
      */
     public APIGatewayProxyResponseEvent getFinalizedResponse(boolean fromListener) {
-        if(!fromListener) {
+        if (!fromListener) {
             // the call any listener should not invoke listener again to prevent deal loop.
             for (int i = responseCompleteListeners.size() - 1; i >= 0; --i) {
                 LambdaResponseCompleteListener listener = responseCompleteListeners.get(i);
@@ -236,7 +235,7 @@ public final class LightLambdaExchange {
             throw LambdaExchangeStateException
                     .missingStateException(this.state, FLAG_RESPONSE_SET);
 
-        if(!fromListener) {
+        if (!fromListener) {
             this.state |= FLAG_RESPONSE_DONE;
             this.state |= FLAG_EXCHANGE_COMPLETE;
         }
@@ -421,22 +420,19 @@ public final class LightLambdaExchange {
      * @param o   - object value.
      * @param <T> - Middleware key type.
      */
-    public <T> void addAttachment(final Attachable<T> key, final Object o) {
+    public <T> void addAttachment(final Attachable<T> key, final T o) {
         this.attachments.put(key, o);
     }
 
     /**
      * Get attachment object for given key.
      *
-     * @param attachable - middleware key
+     * @param attachable - attachment key
      * @return - returns the object for the provided key. Can return null if it does not exist.
      */
+    @SuppressWarnings("unchecked")
     public <T> T getAttachment(final Attachable<T> attachable) {
         return (T) this.attachments.get(attachable);
-    }
-
-    public Map<Attachable<?>, Object> getAttachments() {
-        return attachments;
     }
 
     /**
@@ -444,16 +440,7 @@ public final class LightLambdaExchange {
      *
      * @param <T> -
      */
-    public static class Attachable<T> {
-        private final Class<T> key;
-
-        private Attachable(Class<T> key) {
-            this.key = key;
-        }
-
-        public Class<T> getKey() {
-            return key;
-        }
+    public record Attachable<T>(Class<T> key) {
 
         /**
          * Creates a new attachable key.
