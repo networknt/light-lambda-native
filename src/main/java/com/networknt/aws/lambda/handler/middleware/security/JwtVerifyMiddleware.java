@@ -186,7 +186,7 @@ public class JwtVerifyMiddleware implements MiddlewareHandler {
                             }
                         }
 
-                        LOG.trace("complete JWT verification for request path = {}" + exchange.getRequest().getPath());
+                        LOG.trace("complete JWT verification for request path = {}", exchange.getRequest().getPath());
                         LOG.debug("JWT Verification Time - Finish: {}", System.currentTimeMillis());
                         LOG.debug("JwtVerifyHandler.execute ends.");
                         return successMiddlewareStatus();
