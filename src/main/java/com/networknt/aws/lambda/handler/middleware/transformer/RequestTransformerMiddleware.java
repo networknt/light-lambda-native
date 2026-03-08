@@ -116,7 +116,7 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                                     break;
                                 }
                             }
-                            if (finalResult) {
+                            if (finalResult && result != null) {
                                 for (Map.Entry<String, Object> entry : result.entrySet()) {
                                     LOG.trace("key = {} value = {}", entry.getKey(), entry.getValue());
                                     // you can only update the response headers and response body in the transformation.
