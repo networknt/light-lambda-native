@@ -85,7 +85,8 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
             objMap.put(AUDIT_INFO, auditInfo);
             objMap.put(STATUS_CODE, exchange.getStatusCode());
 
-            // checked the RuleExecutor to ensure it is loaded. If not, return an error to the caller.
+            // Check that the RuleExecutor is loaded. If it is not available, log an error and continue
+            // without applying any response transformation (middleware will still return success).
             RuleExecutor ruleExecutor = SingletonServiceFactory.getBean(RuleExecutor.class);
             if(ruleExecutor == null) {
                 LOG.error("ruleExecutor is null");
