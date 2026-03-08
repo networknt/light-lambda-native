@@ -61,7 +61,7 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                 if (endpointRules == null) {
                     LOG.error("endpointRules is null");
                 } else {
-                    // need to get the rule/rules to execute from the RuleLoaderStartupHook. First, get the endpoint.
+                    // need to get the rule/rules to execute from the RuleExecutor. First, get the endpoint.
                     String endpoint, serviceEntry = null;
                     // Grab ServiceEntry from config
                     endpoint = ConfigUtils.toInternalKey(method.toLowerCase(), exchange.getRequest().getPath());
