@@ -130,7 +130,7 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
                             break;
                         }
                     }
-                    if(finalResult) {
+                    if (finalResult && result != null) {
                         for (Map.Entry<String, Object> entry : result.entrySet()) {
                             LOG.trace("key = {} value = {}", entry.getKey(), entry.getValue());
 
