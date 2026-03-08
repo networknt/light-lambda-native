@@ -1,9 +1,6 @@
 package com.networknt.aws.lambda.handler.middleware.transformer;
 
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.config.Config;
-import com.networknt.rule.*;
-import com.networknt.service.SingletonServiceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
