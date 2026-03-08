@@ -4,6 +4,8 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.restrans.ResponseTransformerConfig;
 import com.networknt.rule.RuleConstants;
+import com.networknt.rule.RuleExecutor;
+import com.networknt.service.SingletonServiceFactory;
 import com.networknt.status.Status;
 import com.networknt.utility.ConfigUtils;
 import com.networknt.utility.MapUtil;
@@ -83,74 +85,80 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
             objMap.put(AUDIT_INFO, auditInfo);
             objMap.put(STATUS_CODE, exchange.getStatusCode());
 
-            // checked the RuleLoaderStartupHook to ensure it is loaded. If not, return an error to the caller.
-            if (endpointRulesMap == null) {
-                LOG.error("endpointRules is null");
-            }
-
-            // Grab ServiceEntry from config
-            String endpoint = ConfigUtils.toInternalKey(method.toLowerCase(), readOnlyRequest.getPath());
-            LOG.debug("request endpoint: {}", endpoint);
-            String serviceEntry = ConfigUtils.findServiceEntry(method.toLowerCase(), readOnlyRequest.getPath(), endpointRulesMap);
-            LOG.debug("request serviceEntry: {}", serviceEntry);
-
-            // get the rules (maybe multiple) based on the endpoint.
-            Map<String, List> endpointRules = (Map<String, List>) endpointRulesMap.get(serviceEntry);
-            if (endpointRules == null) {
-                if (LOG.isDebugEnabled())
-                    LOG.debug("endpointRules iS NULL");
-                // if there is no endpoint rules, we will not do any transformation.
-                return successMiddlewareStatus();
+            // checked the RuleExecutor to ensure it is loaded. If not, return an error to the caller.
+            RuleExecutor ruleExecutor = SingletonServiceFactory.getBean(RuleExecutor.class);
+            if(ruleExecutor == null) {
+                LOG.error("ruleExecutor is null");
             } else {
-                if (LOG.isDebugEnabled())
-                    LOG.debug("endpointRules: {}", endpointRules.get(RESPONSE_TRANSFORM).size());
-            }
+                Map<String, Object> endpointRules = ruleExecutor.getEndpointRules();
+                if (endpointRules == null) {
+                    LOG.error("ruleExecutor.getEndpointRule() is null");
+                } else {
+                    // Grab ServiceEntry from config
+                    String endpoint = ConfigUtils.toInternalKey(method.toLowerCase(), readOnlyRequest.getPath());
+                    LOG.debug("request endpoint: {}", endpoint);
+                    String serviceEntry = ConfigUtils.findServiceEntry(method.toLowerCase(), readOnlyRequest.getPath(), endpointRules);
+                    LOG.debug("request serviceEntry: {}", serviceEntry);
 
-            boolean finalResult = true;
-            List<String> responseTransformRules = endpointRules.get(RESPONSE_TRANSFORM);
-            Map<String, Object> result = null;
-            // iterate the rules and execute them in sequence. Break only if one rule is successful.
-            for(String ruleId: responseTransformRules) {
-                try {
-                    result = ruleEngine.executeRule(ruleId, objMap);
-                    boolean res = (Boolean) result.get(RuleConstants.RESULT);
-                    if (!res) {
-                        finalResult = false;
-                        break;
+                    // get the rules (maybe multiple) based on the endpoint.
+                    Map<String, List> serviceEntryRules = (Map<String, List>) endpointRules.get(serviceEntry);
+                    if (serviceEntryRules == null) {
+                        if (LOG.isDebugEnabled())
+                            LOG.debug("serviceEntryRules iS NULL");
+                        // if there is no endpoint rules, we will not do any transformation.
+                        return successMiddlewareStatus();
+                    } else {
+                        if (LOG.isDebugEnabled())
+                            LOG.debug("serviceEntryRules: {}", serviceEntryRules.get(RESPONSE_TRANSFORM).size());
                     }
-                } catch (Exception e) {
-                    LOG.error("Exception:", e);
-                    finalResult = false;
-                    break;
-                }
-            }
-            if(finalResult) {
-                for (Map.Entry<String, Object> entry : result.entrySet()) {
-                    LOG.trace("key = {} value = {}", entry.getKey(), entry.getValue());
 
-                    // you can only update the response headers and response body in the transformation.
-                    switch (entry.getKey()) {
-                        case RESPONSE_HEADERS:
-                            // if responseHeaders object is null, ignore it.
-                            Map<String, Object> responseHeaders = (Map) result.get(RESPONSE_HEADERS);
-                            if (responseHeaders != null) {
-                                // manipulate the response headers.
-                                List<String> removeList = (List) responseHeaders.get(REMOVE);
-                                if (removeList != null) {
-                                    removeList.forEach(s -> MapUtil.delValueIgnoreCase(exchange.getResponse().getHeaders(), s));
-                                }
-                                Map<String, Object> updateMap = (Map) responseHeaders.get(UPDATE);
-                                if (updateMap != null) {
-                                    updateMap.forEach((k, v) -> exchange.getResponse().getHeaders().put(k, (String) v));
-                                }
+                    boolean finalResult = true;
+                    List<String> responseTransformRules = serviceEntryRules.get(RESPONSE_TRANSFORM);
+                    Map<String, Object> result = null;
+                    // iterate the rules and execute them in sequence. Break only if one rule is successful.
+                    for(String ruleId: responseTransformRules) {
+                        try {
+                            result = ruleExecutor.getRuleEngine().executeRule(ruleId, objMap);
+                            boolean res = (Boolean) result.get(RuleConstants.RESULT);
+                            if (!res) {
+                                finalResult = false;
+                                break;
                             }
+                        } catch (Exception e) {
+                            LOG.error("Exception:", e);
+                            finalResult = false;
                             break;
-                        case RESPONSE_BODY:
-                            responseBody = (String) result.get(RESPONSE_BODY);
-                            if (responseBody != null) {
-                                exchange.getResponse().setBody(responseBody);
+                        }
+                    }
+                    if(finalResult) {
+                        for (Map.Entry<String, Object> entry : result.entrySet()) {
+                            LOG.trace("key = {} value = {}", entry.getKey(), entry.getValue());
+
+                            // you can only update the response headers and response body in the transformation.
+                            switch (entry.getKey()) {
+                                case RESPONSE_HEADERS:
+                                    // if responseHeaders object is null, ignore it.
+                                    Map<String, Object> responseHeaders = (Map) result.get(RESPONSE_HEADERS);
+                                    if (responseHeaders != null) {
+                                        // manipulate the response headers.
+                                        List<String> removeList = (List) responseHeaders.get(REMOVE);
+                                        if (removeList != null) {
+                                            removeList.forEach(s -> MapUtil.delValueIgnoreCase(exchange.getResponse().getHeaders(), s));
+                                        }
+                                        Map<String, Object> updateMap = (Map) responseHeaders.get(UPDATE);
+                                        if (updateMap != null) {
+                                            updateMap.forEach((k, v) -> exchange.getResponse().getHeaders().put(k, (String) v));
+                                        }
+                                    }
+                                    break;
+                                case RESPONSE_BODY:
+                                    responseBody = (String) result.get(RESPONSE_BODY);
+                                    if (responseBody != null) {
+                                        exchange.getResponse().setBody(responseBody);
+                                    }
+                                    break;
                             }
-                            break;
+                        }
                     }
                 }
             }

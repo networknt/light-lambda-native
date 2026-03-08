@@ -26,6 +26,8 @@ service.singletons:
   - com.networknt.cache.CacheManager:
     # - com.networknt.aws.lambda.cache.DynamoDbCacheManager
     - com.networknt.cache.CaffeineCacheManager
+  - com.networknt.rule.RuleExecutor:
+    - com.networknt.rule.MultiThreadRuleExecutor
 
 # cache.yml
 cache.caches:
@@ -144,10 +146,6 @@ client.tokenCcServiceIdAuthServers:
       - market.r
       - market.w
 
-# rule-loader.yml
-rule-loader.ruleSource: config-folder
-rule-loader.endpointRules: {"/v1/pets@post":{"req-tra":["petstore-request-transformer"],"res-tra":["petstore-response-transformer"]},"/v2/pets@post":{"req-tra":["petstore-request-validation"]}}
-
 # response-transformer.yml
 response-transformer.appliedPathPrefixes:
   - /v1/pets
@@ -167,3 +165,69 @@ cors.allowedMethods:
   - POST
   - DELETE
   - PATCH
+
+# rule.yml
+rule.endpointRules:
+  /v1/pets@post:
+    req-tra:
+      - petstore-request-transformer
+    res-tra:
+      - petstore-response-transformer
+  /v2/pets@post:
+    req-tra:
+      - petstore-request-validation
+
+rule.ruleBodies:
+  petstore-request-transformer:
+    ruleId: petstore-request-transformer
+    hostId: N2CMw0HGQXeLvC1wBfln2A
+    ruleType: req-tra
+    common: Y
+    ruleName: Transform the request body to add a new field.
+    conditions:
+      - conditionId: path-pets
+        propertyPath: requestPath
+        operatorCode: equals
+        index: 1
+        conditionValues:
+          - conditionValueId: path
+            conditionValue: /v1/pets
+    actions:
+      - actionId: body-transform
+        actionClassName: com.networknt.aws.lambda.middleware.transformer.DummyRequestBodyUpdateAction
+
+  petstore-request-validation:
+    ruleId: petstore-request-validation
+    hostId: N2CMw0HGQXeLvC1wBfln2A
+    ruleType: req-tra
+    common: Y
+    ruleName: Transformer the validate the request and return an error message immediately.
+    conditions:
+      - conditionId: path-pets
+        propertyPath: requestPath
+        operatorCode: equals
+        index: 1
+        conditionValues:
+          - conditionValueId: path
+            conditionValue: /v2/pets
+    actions:
+      - actionId: request-validation
+        actionClassName: com.networknt.aws.lambda.middleware.transformer.DummyRequestValidationAction
+
+  petstore-response-transformer:
+    ruleId: petstore-response-transformer
+    hostId: N2CMw0HGQXeLvC1wBfln2A
+    ruleType: res-tra
+    common: Y
+    ruleName: Transform the response body to add a new field.
+    conditions:
+      - conditionId: path-pets
+        propertyPath: requestPath
+        operatorCode: equals
+        index: 1
+        conditionValues:
+          - conditionValueId: path
+            conditionValue: /v1/pets
+    actions:
+      - actionId: body-transform
+        actionClassName: com.networknt.aws.lambda.middleware.transformer.DummyResponseBodyUpdateAction
