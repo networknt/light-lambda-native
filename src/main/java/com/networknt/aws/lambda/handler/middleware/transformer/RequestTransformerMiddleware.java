@@ -24,6 +24,7 @@ import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.
 public class RequestTransformerMiddleware extends AbstractTransformerMiddleware {
     private static final Logger LOG = LoggerFactory.getLogger(RequestTransformerMiddleware.class);
     static final String REQUEST_TRANSFORM = "req-tra";
+    private static final String STATUS_SERVICE_NOT_FOUND = "ERR11406";
 
     private final RequestTransformerConfig config;
 
@@ -51,11 +52,12 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
         if (config.getAppliedPathPrefixes() != null && config.getAppliedPathPrefixes().stream().anyMatch(requestPath::startsWith)) {
             String method = exchange.getRequest().getHttpMethod();
             Map<String, Object> auditInfo = (Map<String, Object>) exchange.getAttachment(AUDIT_ATTACHMENT_KEY);
-            // checked the RuleExecutor to ensure it is loaded. If not, return an error to the caller.
+            // Check the RuleExecutor to ensure it is loaded. If not, return an error to the caller.
             RuleExecutor ruleExecutor = SingletonServiceFactory.getBean(RuleExecutor.class);
             Map<String, Object> endpointRules = null;
             if(ruleExecutor == null) {
-                LOG.error("ruleExecutor is null");
+                LOG.error("RuleExecutor service is not configured or could not be loaded");
+                return new Status(STATUS_SERVICE_NOT_FOUND, RuleExecutor.class.getName());
             } else {
                 endpointRules = ruleExecutor.getEndpointRules();
                 if (endpointRules == null) {
