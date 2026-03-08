@@ -201,7 +201,7 @@ rule.ruleBodies:
     hostId: N2CMw0HGQXeLvC1wBfln2A
     ruleType: req-tra
     common: Y
-    ruleName: Transformer the validate the request and return an error message immediately.
+    ruleName: Transform and validate the request and return an error message immediately.
     conditions:
       - conditionId: path-pets
         propertyPath: requestPath
