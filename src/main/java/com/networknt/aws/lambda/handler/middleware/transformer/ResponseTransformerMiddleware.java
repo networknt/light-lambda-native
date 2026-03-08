@@ -93,7 +93,7 @@ public class ResponseTransformerMiddleware extends AbstractTransformerMiddleware
             } else {
                 Map<String, Object> endpointRules = ruleExecutor.getEndpointRules();
                 if (endpointRules == null) {
-                    LOG.error("ruleExecutor.getEndpointRule() is null");
+                    LOG.error("ruleExecutor.getEndpointRules() is null");
                 } else {
                     // Grab ServiceEntry from config
                     String endpoint = ConfigUtils.toInternalKey(method.toLowerCase(), readOnlyRequest.getPath());
