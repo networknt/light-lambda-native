@@ -22,8 +22,8 @@ import software.amazon.awssdk.services.lambda.LambdaAsyncClient;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -106,8 +106,12 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
                 LOG.error("Failed to invoke lambda function: {}", functionName);
                 return new Status(FAILED_TO_INVOKE_LAMBDA, functionName);
             }
-            LOG.debug("Invoke Time - Finish: {}", System.currentTimeMillis());
             var responseEvent = JsonMapper.fromJson(res, APIGatewayProxyResponseEvent.class);
+            LOG.trace("Converted Json string to APIGatewayProxyResponseEvent: {}", responseEvent);
+            if (responseEvent.getIsBase64Encoded() == null && responseEvent.getBody() != null) {
+                LOG.trace("Response event does not have base64encoding set, setting false as default...");
+                responseEvent.setIsBase64Encoded(false);
+            }
             exchange.setInitialResponse(responseEvent);
             LOG.trace("LambdaProxyMiddleware.execute ends.");
             return this.successMiddlewareStatus();
@@ -148,8 +152,12 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
             CompletableFuture<String> futureResponse = client.invoke(request)
                     .thenApply(res -> {
                         this.optionalMetricsInject(startTime, exchange);
-                        LOG.trace("LambdaProxyMiddleware.invokeFunction response: {}", res);
-                        return new String(res.payload().asByteArray(), StandardCharsets.UTF_8);
+                        var responseString = res.payload().asUtf8String();
+                        if (LOG.isTraceEnabled()) {
+                            LOG.trace("Response logs: {}", Base64.getDecoder().decode(res.logResult()));
+                            LOG.trace("UTF-8 Response: {}", responseString);
+                        }
+                        return responseString;
                     })
                     .exceptionally(e -> {
                         LOG.error("Error invoking lambda function: {}", functionName, e);
