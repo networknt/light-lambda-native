@@ -7,13 +7,12 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import com.networknt.aws.lambda.handler.Handler;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.utility.PathTemplateMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 
 /**
@@ -36,33 +35,52 @@ public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, AP
     }
 
     @Override
-    public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent, final Context context) {
+    public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent request, final Context context) {
+
         if (LOG.isDebugEnabled()) {
             LOG.debug("file.encoding: {}", Charset.defaultCharset().displayName());
-            LOG.debug("sun.stdout.encoding: {}", System.getProperty("sun.stdout.encoding"));
-            LOG.debug("sun.stderr.encoding: {}", System.getProperty("sun.stderr.encoding"));
             LOG.debug("native.encoding: {}", System.getProperty("native.encoding"));
+            LOG.debug("Lambda CCC --start with request: {}", request);
         }
 
-        LOG.debug("Lambda CCC --start with request: {}", apiGatewayProxyRequestEvent);
-        var requestPath = apiGatewayProxyRequestEvent.getPath();
-        var requestMethod = apiGatewayProxyRequestEvent.getHttpMethod();
+        var requestPath = request.getPath();
+        var requestMethod = request.getHttpMethod();
+
+        if (shouldBase64EncodeRequest(request)) {
+            byte[] bodyBytes = request.getBody().getBytes(StandardCharsets.UTF_8);
+            request.setBody(Base64.getEncoder().encodeToString(bodyBytes));
+            request.setIsBase64Encoded(true);
+        }
 
         LOG.debug("Request path: {} -- Request method: {}", requestPath, requestMethod);
 
-        Chain chain = Handler.getChain(apiGatewayProxyRequestEvent);
+        Chain chain = Handler.getChain(request);
         if (chain == null)
             chain = Handler.getDefaultChain();
 
         final var exchange = new LightLambdaExchange(context, chain);
         exchange.addAttachment(APP_ID, config.getLambdaAppId());
 
-        exchange.setInitialRequest(apiGatewayProxyRequestEvent);
+        exchange.setInitialRequest(request);
         exchange.executeChain();
 
         APIGatewayProxyResponseEvent response = exchange.getFinalizedResponse(false);
 
+        if (shouldBase64EncodeResponse(response)) {
+            byte[] bodyBytes = response.getBody().getBytes(StandardCharsets.UTF_8);
+            response.setBody(Base64.getEncoder().encodeToString(bodyBytes));
+            response.setIsBase64Encoded(true);
+        }
+
         LOG.debug("Lambda CCC --end with response: {}", response);
         return response;
+    }
+
+    private boolean shouldBase64EncodeResponse(final APIGatewayProxyResponseEvent response) {
+        return config.isEncodeBase64Response() && response.getBody() != null && !Boolean.TRUE.equals(response.getIsBase64Encoded());
+    }
+
+    private boolean shouldBase64EncodeRequest(final APIGatewayProxyRequestEvent request) {
+        return config.isEncodeBase64Request() && request.getBody() != null && !Boolean.TRUE.equals(request.getIsBase64Encoded());
     }
 }
