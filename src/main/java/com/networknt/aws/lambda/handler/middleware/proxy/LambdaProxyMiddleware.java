@@ -154,7 +154,8 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
                         this.optionalMetricsInject(startTime, exchange);
                         var responseString = res.payload().asUtf8String();
                         if (LOG.isTraceEnabled()) {
-                            LOG.trace("Response logs: {}", Base64.getDecoder().decode(res.logResult()));
+                            var decodedLogs = res.logResult() == null ? null : Base64.getDecoder().decode(res.logResult());
+                            LOG.trace("Response logs: {}", decodedLogs);
                             LOG.trace("UTF-8 Response: {}", responseString);
                         }
                         return responseString;

@@ -77,10 +77,10 @@ public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, AP
     }
 
     private boolean shouldBase64EncodeResponse(final APIGatewayProxyResponseEvent response) {
-        return config.isEncodeBase64Response() && response.getBody() != null && Boolean.FALSE.equals(response.getIsBase64Encoded());
+        return config.isEncodeBase64Response() && response.getBody() != null && !Boolean.TRUE.equals(response.getIsBase64Encoded());
     }
 
     private boolean shouldBase64EncodeRequest(final APIGatewayProxyRequestEvent request) {
-        return config.isEncodeBase64Request() && request.getBody() != null && Boolean.FALSE.equals(request.getIsBase64Encoded());
+        return config.isEncodeBase64Request() && request.getBody() != null && !Boolean.TRUE.equals(request.getIsBase64Encoded());
     }
 }
