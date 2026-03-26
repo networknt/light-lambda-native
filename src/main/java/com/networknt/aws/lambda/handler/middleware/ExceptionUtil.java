@@ -13,13 +13,19 @@ import java.util.List;
  *
  */
 public class ExceptionUtil {
+
+    private ExceptionUtil() {
+        throw new IllegalStateException("ExceptionUtil is a utility class");
+    }
+
     /**
-     * Convert the middleware results to APIGatewayProxyResponseEvent
+     * Convert the middleware results to APIGatewayProxyResponseEvent.
+     * The first error result from the result list gets converted into an error returned to the client.
      *
-     * @param middlewareResults a list of middleware results
-     * @return APIGatewayProxyResponseEvent
+     * @param middlewareResults A list of middleware results.
+     * @return APIGatewayProxyResponseEvent containing status information.
      */
-    public static APIGatewayProxyResponseEvent convert(List<Status> middlewareResults) {
+    public static APIGatewayProxyResponseEvent convert(final List<Status> middlewareResults) {
         var responseEvent = new APIGatewayProxyResponseEvent();
         var headers = new HashMap<String, String>();
 
@@ -30,6 +36,7 @@ public class ExceptionUtil {
             if (res != null && res.getCode().startsWith("ERR")) {
                 responseEvent.setStatusCode(res.getStatusCode());
                 responseEvent.setBody(res.toString());
+                responseEvent.setIsBase64Encoded(false);
                 return responseEvent;
             }
         return new APIGatewayProxyResponseEvent();
