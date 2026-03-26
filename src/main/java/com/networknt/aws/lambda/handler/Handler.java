@@ -2,7 +2,6 @@ package com.networknt.aws.lambda.handler;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.networknt.aws.lambda.handler.chain.Chain;
-import com.networknt.config.Config;
 import com.networknt.handler.config.EndpointSource;
 import com.networknt.handler.config.HandlerConfig;
 import com.networknt.handler.config.PathChain;
@@ -13,9 +12,9 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Handler {
-
 
     private static final Logger LOG = LoggerFactory.getLogger(Handler.class);
     // Accessed directly.
@@ -26,13 +25,18 @@ public class Handler {
     static final Map<String, Chain> handlerListById = new HashMap<>();
     static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
     static Chain defaultChain;
-
+    private static final AtomicBoolean handlersInitialized = new AtomicBoolean(false);
     public static void init() {
-        HandlerConfig config = HandlerConfig.load();
-        initHandlers(config);
-        initChains(config);
-        initPaths(config);
-        initDefaultHandlers(config);
+        if (handlersInitialized.compareAndExchange(false, true)) {
+            LOG.debug("Starting first time initialization for handlers.");
+            HandlerConfig config = HandlerConfig.load();
+            initHandlers(config);
+            initChains(config);
+            initPaths(config);
+            initDefaultHandlers(config);
+        } else {
+            LOG.warn("Init called when handlers area already loaded.");
+        }
     }
 
     /**
