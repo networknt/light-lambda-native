@@ -82,7 +82,9 @@ public class Handler {
         if (config != null && config.getPaths() != null) {
 
             for (var pathChain : config.getPaths()) {
-                pathChain.validate(HandlerConfig.CONFIG_NAME + " config"); // raises exception on misconfiguration
+                pathChain.validate(
+                        HandlerConfig.CONFIG_NAME + " config path " + pathChain.getPath(),
+                        config.getPaths()); // raises exception on misconfiguration
 
                 if (pathChain.getPath() == null)
                     addSourceChain(pathChain);
@@ -110,12 +112,17 @@ public class Handler {
             var sourceClass = Class.forName(sourceChain.getSource());
             var source = (EndpointSource) (sourceClass.getDeclaredConstructor().newInstance());
 
+            List<PathChain> sourcedPaths = new ArrayList<>();
             for (var endpoint : source.listEndpoints()) {
                 var sourcedPath = new PathChain();
                 sourcedPath.setPath(endpoint.getPath());
                 sourcedPath.setMethod(endpoint.getMethod());
                 sourcedPath.setExec(sourceChain.getExec());
-                sourcedPath.validate(sourceChain.getSource());
+                sourcedPaths.add(sourcedPath);
+            }
+
+            for (var sourcedPath : sourcedPaths) {
+                sourcedPath.validate(sourceChain.getSource(), sourcedPaths);
                 addPathChain(sourcedPath);
             }
         } catch (Exception e) {
