@@ -27,7 +27,7 @@ public class Handler {
     static Chain defaultChain;
     private static final AtomicBoolean handlersInitialized = new AtomicBoolean(false);
     public static void init() {
-        if (handlersInitialized.compareAndExchange(false, true)) {
+        if (handlersInitialized.compareAndSet(false, true)) {
             LOG.debug("Starting first time initialization for handlers.");
             HandlerConfig config = HandlerConfig.load();
             initHandlers(config);
