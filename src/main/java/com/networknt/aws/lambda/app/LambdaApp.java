@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -27,11 +28,16 @@ public class LambdaApp implements RequestHandler<APIGatewayProxyRequestEvent, AP
     private static final Logger LOG = LoggerFactory.getLogger(LambdaApp.class);
 
     public static final LightLambdaExchange.Attachable<String> APP_ID = LightLambdaExchange.Attachable.createAttachable(String.class);
-    private final LambdaAppConfig config;
+    private static LambdaAppConfig config;
+    private static final AtomicBoolean appInitialized = new AtomicBoolean(false);
     public LambdaApp() {
-        this.config = LambdaAppConfig.load();
-        Handler.init();
-        LOG.info("LambdaApp is constructed");
+        if (appInitialized.compareAndSet(false, true)) {
+            config = LambdaAppConfig.load();
+            Handler.init();
+            LOG.info("LambdaApp is constructed");
+        } else {
+            LOG.info("LambdaApp was already initialized. Using cached configs.");
+        }
     }
 
     @Override
