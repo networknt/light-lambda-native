@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Handler {
 
@@ -25,18 +24,12 @@ public class Handler {
     static final Map<String, Chain> handlerListById = new HashMap<>();
     static final Map<String, PathTemplateMatcher<String>> methodToMatcherMap = new HashMap<>();
     static Chain defaultChain;
-    private static final AtomicBoolean handlersInitialized = new AtomicBoolean(false);
     public static void init() {
-        if (handlersInitialized.compareAndSet(false, true)) {
-            LOG.debug("Starting first time initialization for handlers.");
-            HandlerConfig config = HandlerConfig.load();
-            initHandlers(config);
-            initChains(config);
-            initPaths(config);
-            initDefaultHandlers(config);
-        } else {
-            LOG.warn("Init called when handlers area already loaded.");
-        }
+        HandlerConfig config = HandlerConfig.load();
+        initHandlers(config);
+        initChains(config);
+        initPaths(config);
+        initDefaultHandlers(config);
     }
 
     /**
