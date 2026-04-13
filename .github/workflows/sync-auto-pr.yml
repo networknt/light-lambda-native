@@ -1,0 +1,34 @@
+name: Auto-Create PR from Sync to Master
+on:
+  push:
+    branches:
+      - sync
+
+permissions:
+  pull-requests: write # Required to create the PR
+  contents: read
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if a PR already exists to prevent duplicate errors
+          PR_EXISTS=$(gh pr list --base master --head sync --state open --json number --jq 'length')
+
+          if [ "$PR_EXISTS" -eq "0" ]; then
+            gh pr create \
+              --base master \
+              --head sync \
+              --title "Sync: Customer updates to Master" \
+              --body "Automated PR to merge overnight updates from the customer's \`sync\` branch into \`master\`."
+            echo "Pull request created successfully."
+          else
+            echo "PR already exists. The new commits from this push are automatically added to the open PR."
+          fi
