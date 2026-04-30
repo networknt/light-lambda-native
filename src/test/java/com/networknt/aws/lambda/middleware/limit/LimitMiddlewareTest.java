@@ -42,6 +42,7 @@ public class LimitMiddlewareTest {
         APIGatewayProxyResponseEvent responseEvent = exchange.getFinalizedResponse(false);
         Assertions.assertNotNull(responseEvent);
         Assertions.assertEquals(429, responseEvent.getStatusCode());
+        Assertions.assertFalse(responseEvent.getIsBase64Encoded());
         LOG.info("responseStatus: " + responseEvent.getStatusCode());
     }
 
