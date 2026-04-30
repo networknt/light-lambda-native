@@ -67,6 +67,7 @@ public class LimitMiddleware implements MiddlewareHandler {
             responseEvent.setHeaders(headers);
             int statusCode = config.getErrorCode()==0 ? 429:config.getErrorCode();
             responseEvent.setStatusCode(statusCode);
+            responseEvent.setIsBase64Encoded(false);
             responseEvent.setBody(status.toString());
             exchange.setInitialResponse(responseEvent);
             LOG.warn("LimitHandler.handleRequest ends with an error code {}", RATE_LIMIT_EXCEEDED);
