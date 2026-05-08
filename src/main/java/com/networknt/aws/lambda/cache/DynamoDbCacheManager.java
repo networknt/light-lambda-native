@@ -100,7 +100,37 @@ public class DynamoDbCacheManager implements CacheManager {
 
     @Override
     public void delete(String cacheName, String key) {
-        // Implement delete logic if needed
+        String applicationId = cacheName.split(":")[0];
+        String tableName = cacheName.split(":")[1];
+
+        LOG.debug("Deleting table entry attribute of applicationId: {}, table name: {}, attribute key: {}", applicationId, tableName, key);
+
+        Map<String, AttributeValue> itemKey = new HashMap<>();
+        itemKey.put(HASH_ID_KEY, AttributeValue.builder().s(applicationId).build());
+
+        Map<String, AttributeValueUpdate> attributeUpdates = new HashMap<>();
+        attributeUpdates.put(key, AttributeValueUpdate.builder()
+                .action(AttributeAction.DELETE)
+                .build());
+
+        dynamoClient.updateItem(UpdateItemRequest.builder()
+                .tableName(tableName)
+                .key(itemKey)
+                .attributeUpdates(attributeUpdates)
+                .build());
+    }
+
+    @Override
+    public void clear(String cacheName) {
+        String applicationId = cacheName.split(":")[0];
+        String tableName = cacheName.split(":")[1];
+
+        LOG.debug("Clearing table entry of applicationId: {}, table name: {}", applicationId, tableName);
+
+        dynamoClient.deleteItem(DeleteItemRequest.builder()
+                .tableName(tableName)
+                .key(Collections.singletonMap(HASH_ID_KEY, AttributeValue.builder().s(applicationId).build()))
+                .build());
     }
 
     @Override
