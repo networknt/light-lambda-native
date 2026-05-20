@@ -20,7 +20,7 @@ users:
     paths:
       - /v1/address
   - username: user2
-    password: CRYPT:0754fbc37347c136be7725cbf62b6942:71756e13c2400985d0402ed6f49613d0
+    password: CRYPT:a508e270eff9893dfb54886c55c41a13:89a1623c67956fb59646a4b2:1834a7a8f9edae1f47075cfe51acbcaed840dbea474bbe53
     paths:
       - /v2/pet
       - /v2/address
