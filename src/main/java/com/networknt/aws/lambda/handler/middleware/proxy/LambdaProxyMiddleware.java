@@ -25,6 +25,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -104,7 +105,7 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
         if (!exchange.hasFailedState()) {
             /* invoke lambda function */
             var path = exchange.getRequest().getPath();
-            var method = exchange.getRequest().getHttpMethod().toLowerCase();
+            var method = normalizeMethod(exchange.getRequest().getHttpMethod());
             LOG.debug("Request path: {} -- Request method: {} -- Start time: {}", path, method, System.currentTimeMillis());
             var functionName = resolveFunctionName(path, method);
             if (functionName == null) {
@@ -154,15 +155,30 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
     private void populateMethodToMatcherMap(final Map<String, String> functions) {
         this.methodToMatcherMap.clear();
         for (var entry : functions.entrySet()) {
-            var endpoint = entry.getKey().split("@");
-            var path = endpoint[0];
-            var method = endpoint[1];
+            var endpoint = entry.getKey();
+            var separatorIndex = endpoint.lastIndexOf('@');
+            if (separatorIndex < 1 || separatorIndex == endpoint.length() - 1) {
+                LOG.error("Skipping lambda-proxy function '{}': the key must use the 'path@method' format.", endpoint);
+                continue;
+            }
+            var path = endpoint.substring(0, separatorIndex);
+            var method = normalizeMethod(endpoint.substring(separatorIndex + 1));
             PathTemplateMatcher<String> matcher = this.methodToMatcherMap.computeIfAbsent(method,
                     k -> new PathTemplateMatcher<>());
             if (matcher.get(path) == null)
                 matcher.add(path, entry.getValue());
-            this.methodToMatcherMap.put(method, matcher);
         }
+    }
+
+    /**
+     * Normalizes an HTTP method to lower case so that the route table built from the configuration
+     * and the lookup performed for an incoming request always agree on the key.
+     *
+     * @param method the HTTP method to normalize
+     * @return the method in lower case
+     */
+    private static String normalizeMethod(final String method) {
+        return method.toLowerCase(Locale.ROOT);
     }
 
     private String invokeFunction(

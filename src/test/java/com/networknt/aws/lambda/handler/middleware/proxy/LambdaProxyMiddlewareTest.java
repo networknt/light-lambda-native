@@ -9,6 +9,7 @@ import com.networknt.status.Status;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -90,5 +91,58 @@ public class LambdaProxyMiddlewareTest {
         Status status = Assertions.assertDoesNotThrow(
                 () -> middleware.execute(exchangeFor("/v1/unknown", "GET")));
         Assertions.assertEquals(LambdaProxyMiddleware.FAILED_TO_INVOKE_LAMBDA, status.getCode());
+    }
+
+    /**
+     * The route table is keyed by the configured method and looked up with the request method, so both
+     * sides must agree on case. An upper case configuration key used to register a route that no
+     * request could ever reach.
+     */
+    @Test
+    public void testUpperCaseConfiguredMethodStillRoutes() {
+        var middleware = new LambdaProxyMiddleware(Map.of("/v1/pets@GET", "PetsGetFunction"));
+        Assertions.assertEquals("PetsGetFunction", middleware.resolveFunctionName("/v1/pets", "get"));
+    }
+
+    @Test
+    public void testMixedCaseConfiguredMethodStillRoutes() {
+        var middleware = new LambdaProxyMiddleware(Map.of("/v1/pets@Delete", "PetsDeleteFunction"));
+        Assertions.assertEquals("PetsDeleteFunction", middleware.resolveFunctionName("/v1/pets", "delete"));
+    }
+
+    /**
+     * The request method is upper case on the wire, so an upper case configuration key must be
+     * reachable through the same normalization {@code execute} applies before the lookup.
+     */
+    @Test
+    public void testUpperCaseConfiguredMethodIsReachableByAnUpperCaseRequest() {
+        var middleware = new LambdaProxyMiddleware(Map.of("/v1/pets@POST", "PetsPostFunction"));
+        var exchange = exchangeFor("/v1/pets", "POST");
+        var method = exchange.getRequest().getHttpMethod().toLowerCase(java.util.Locale.ROOT);
+        Assertions.assertEquals("PetsPostFunction",
+                middleware.resolveFunctionName(exchange.getRequest().getPath(), method));
+    }
+
+    /**
+     * A path containing '@' must still split on the separator before the method rather than the first
+     * '@' in the key.
+     */
+    @Test
+    public void testPathContainingSeparatorIsSplitOnTheLastSeparator() {
+        var middleware = new LambdaProxyMiddleware(Map.of("/v1/users/{user@domain}@get", "UserGetFunction"));
+        Assertions.assertEquals("UserGetFunction", middleware.resolveFunctionName("/v1/users/a@b.com", "get"));
+    }
+
+    @Test
+    public void testMalformedConfigurationKeysAreSkippedWithoutFailingStartup() {
+        var functions = new HashMap<String, String>();
+        functions.put("/v1/pets", "MissingMethodFunction");
+        functions.put("@get", "MissingPathFunction");
+        functions.put("/v1/pets@", "EmptyMethodFunction");
+        functions.put("/v1/pets@get", "PetsGetFunction");
+
+        var middleware = Assertions.assertDoesNotThrow(() -> new LambdaProxyMiddleware(functions));
+        Assertions.assertEquals("PetsGetFunction", middleware.resolveFunctionName("/v1/pets", "get"),
+                "a malformed entry must not prevent the valid entries from being registered");
     }
 }
