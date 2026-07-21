@@ -94,7 +94,8 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
             var path = exchange.getRequest().getPath();
             var method = exchange.getRequest().getHttpMethod().toLowerCase();
             LOG.debug("Request path: {} -- Request method: {} -- Start time: {}", path, method, System.currentTimeMillis());
-            PathTemplateMatcher.PathMatchResult<String> result = methodToMatcherMap.get(method).match(path);
+            PathTemplateMatcher<String> matcher = methodToMatcherMap.get(method);
+            PathTemplateMatcher.PathMatchResult<String> result = matcher == null ? null : matcher.match(path);
             if (result == null) {
                 LOG.error("No lambda function found for path: {} and method: {}", path, method);
                 return new Status(FAILED_TO_INVOKE_LAMBDA, path + "@" + method);
