@@ -49,6 +49,18 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
         LOG.info("LambdaProxyMiddleware is constructed");
     }
 
+    /**
+     * Builds only the route table from the supplied function mapping, without creating an AWS Lambda
+     * client. Visible for testing so that the routing behaviour can be exercised without AWS access.
+     *
+     * @param functions the endpoint to Lambda function mapping, keyed by {@code path@method}
+     */
+    LambdaProxyMiddleware(final Map<String, String> functions) {
+        this.config = null;
+        this.client = null;
+        populateMethodToMatcherMap(functions);
+    }
+
     private LambdaAsyncClient initClient(LambdaProxyConfig config) {
         /* Create our netty client */
         var readTimeout = config.getReadTimeout();
@@ -94,13 +106,11 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
             var path = exchange.getRequest().getPath();
             var method = exchange.getRequest().getHttpMethod().toLowerCase();
             LOG.debug("Request path: {} -- Request method: {} -- Start time: {}", path, method, System.currentTimeMillis());
-            PathTemplateMatcher<String> matcher = methodToMatcherMap.get(method);
-            PathTemplateMatcher.PathMatchResult<String> result = matcher == null ? null : matcher.match(path);
-            if (result == null) {
+            var functionName = resolveFunctionName(path, method);
+            if (functionName == null) {
                 LOG.error("No lambda function found for path: {} and method: {}", path, method);
                 return new Status(FAILED_TO_INVOKE_LAMBDA, path + "@" + method);
             }
-            var functionName = result.getValue();
             LOG.trace("Function name: {}", functionName);
             var res = this.invokeFunction(this.client, functionName, exchange);
             if (res == null) {
@@ -120,6 +130,25 @@ public class LambdaProxyMiddleware implements MiddlewareHandler {
             LOG.error("Exchange has failed state {}", exchange.getState());
             return new Status(EXCHANGE_HAS_FAILED_STATE, exchange.getState());
         }
+    }
+
+    /**
+     * Resolves the Lambda function configured for the given request path and HTTP method.
+     * <p>
+     * Returns {@code null} both when no matcher is registered for the method and when the method has a
+     * matcher but no template matches the path, so that the caller can treat every routing miss the
+     * same way.
+     *
+     * @param path   the request path
+     * @param method the request HTTP method, already normalized to lower case
+     * @return the configured Lambda function name, or {@code null} when the request does not route
+     */
+    String resolveFunctionName(final String path, final String method) {
+        PathTemplateMatcher<String> matcher = this.methodToMatcherMap.get(method);
+        if (matcher == null)
+            return null;
+        PathTemplateMatcher.PathMatchResult<String> result = matcher.match(path);
+        return result == null ? null : result.getValue();
     }
 
     private void populateMethodToMatcherMap(final Map<String, String> functions) {
