@@ -109,6 +109,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                         APIGatewayProxyResponseEvent res = new APIGatewayProxyResponseEvent()
                                 .withStatusCode(response.statusCode())
                                 .withHeaders(convertJdkHeaderToMap(response.headers().map()))
+                                .withIsBase64Encoded(false)
                                 .withBody(response.body());
                         if (config.isMetricsInjection()) {
                             if (metricsMiddleware == null)
@@ -138,6 +139,7 @@ public class LambdaRouterMiddleware implements MiddlewareHandler {
                         APIGatewayProxyResponseEvent res = new APIGatewayProxyResponseEvent()
                                 .withStatusCode(response.statusCode())
                                 .withHeaders(convertJdkHeaderToMap(response.headers().map()))
+                                .withIsBase64Encoded(false)
                                 .withBody(response.body());
                         if (config.isMetricsInjection()) {
                             if (metricsMiddleware == null)

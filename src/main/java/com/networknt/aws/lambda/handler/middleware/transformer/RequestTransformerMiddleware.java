@@ -173,6 +173,7 @@ public class RequestTransformerMiddleware extends AbstractTransformerMiddleware 
                                             headers.put(HeaderKey.CONTENT_TYPE, HeaderValue.APPLICATION_JSON);
                                             responseEvent.setHeaders(headers);
                                             responseEvent.setStatusCode(Objects.requireNonNullElse((Integer) result.get("statusCode"), 200));
+                                            responseEvent.setIsBase64Encoded(false);
                                             responseEvent.setBody(responseBody);
                                             exchange.setInitialResponse(responseEvent);
                                             break;

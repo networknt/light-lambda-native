@@ -45,6 +45,7 @@ public class LoggerSetHandler implements LambdaHandler {
                 var res = new APIGatewayProxyResponseEvent()
                         .withStatusCode(200)
                         .withHeaders(headers)
+                        .withIsBase64Encoded(false)
                         .withBody(JsonMapper.toJson(loggers));
                 exchange.setInitialResponse(res);
             }

@@ -91,6 +91,7 @@ public class RequestCorsMiddleware implements MiddlewareHandler {
 
     private Status handlePreflightRequest(LightLambdaExchange exchange, List<String> allowedOrigins, List<String> allowedMethods) {
         APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent();
+        responseEvent.setIsBase64Encoded(false);
         Map<String, String> requestHeaders = exchange.getRequest().getHeaders();
         Map<String, String> responseHeaders = new HashMap<>();
         if (MapUtil.getValueIgnoreCase(requestHeaders, ORIGIN).isPresent()) {

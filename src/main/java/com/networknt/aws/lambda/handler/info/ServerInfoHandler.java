@@ -32,6 +32,7 @@ public class ServerInfoHandler implements LambdaHandler {
             var res = new APIGatewayProxyResponseEvent()
                     .withStatusCode(200)
                     .withHeaders(headers)
+                    .withIsBase64Encoded(false)
                     .withBody(JsonMapper.toJson((infoMap)));
 
             exchange.setInitialResponse(res);
@@ -42,6 +43,7 @@ public class ServerInfoHandler implements LambdaHandler {
             var res = new APIGatewayProxyResponseEvent()
                     .withStatusCode(status.getStatusCode())
                     .withHeaders(headers)
+                    .withIsBase64Encoded(false)
                     .withBody(status.toString());
             exchange.setInitialResponse(res);
             return status;
