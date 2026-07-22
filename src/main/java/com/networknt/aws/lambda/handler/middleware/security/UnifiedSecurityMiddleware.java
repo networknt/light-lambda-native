@@ -76,6 +76,7 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
                                 headers.put(HeaderKey.WWW_AUTHENTICATE, "Basic realm=\"Default Realm\"");
                                 responseEvent.setHeaders(headers);
                                 responseEvent.setStatusCode(status.getStatusCode());
+                                responseEvent.setIsBase64Encoded(false);
                                 responseEvent.setBody(status.toString());
                                 exchange.setInitialResponse(responseEvent);
                                 if (LOG.isDebugEnabled())

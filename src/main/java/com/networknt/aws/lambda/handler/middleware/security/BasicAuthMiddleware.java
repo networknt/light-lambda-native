@@ -112,6 +112,7 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
                 headers.put(HeaderKey.WWW_AUTHENTICATE, "Basic realm=\"Default Realm\"");
                 responseEvent.setHeaders(headers);
                 responseEvent.setStatusCode(status.getStatusCode());
+                responseEvent.setIsBase64Encoded(false);
                 responseEvent.setBody(status.toString());
                 exchange.setInitialResponse(responseEvent);
                 if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
@@ -126,6 +127,7 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
             headers.put(HeaderKey.WWW_AUTHENTICATE, "Basic realm=\"Basic Auth\"");
             responseEvent.setHeaders(headers);
             responseEvent.setStatusCode(status.getStatusCode());
+            responseEvent.setIsBase64Encoded(false);
             responseEvent.setBody(status.toString());
             exchange.setInitialResponse(responseEvent);
             if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");

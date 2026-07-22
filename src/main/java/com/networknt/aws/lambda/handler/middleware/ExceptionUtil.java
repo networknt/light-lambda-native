@@ -39,6 +39,8 @@ public class ExceptionUtil {
                 responseEvent.setIsBase64Encoded(false);
                 return responseEvent;
             }
-        return new APIGatewayProxyResponseEvent();
+        var defaultResponseEvent = new APIGatewayProxyResponseEvent();
+        defaultResponseEvent.setIsBase64Encoded(false);
+        return defaultResponseEvent;
     }
 }

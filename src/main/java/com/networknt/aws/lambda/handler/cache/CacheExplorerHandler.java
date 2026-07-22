@@ -39,12 +39,14 @@ public class CacheExplorerHandler implements LambdaHandler {
                 var res = new APIGatewayProxyResponseEvent()
                         .withStatusCode(200)
                         .withHeaders(headers)
+                        .withIsBase64Encoded(false)
                         .withBody(JsonMapper.toJson((map)));
                 exchange.setInitialResponse(res);
             } else {
                 var res = new APIGatewayProxyResponseEvent()
                         .withStatusCode(200)
                         .withHeaders(headers)
+                        .withIsBase64Encoded(false)
                         .withBody(JsonMapper.toJson((cacheMap)));
                 exchange.setInitialResponse(res);
             }
@@ -53,6 +55,7 @@ public class CacheExplorerHandler implements LambdaHandler {
             var res = new APIGatewayProxyResponseEvent()
                     .withStatusCode(status.getStatusCode())
                     .withHeaders(headers)
+                    .withIsBase64Encoded(false)
                     .withBody(status.toString());
             exchange.setInitialResponse(res);
         }
