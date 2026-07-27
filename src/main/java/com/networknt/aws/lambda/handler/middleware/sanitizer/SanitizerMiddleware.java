@@ -16,6 +16,7 @@ import java.util.Map;
 
 public class SanitizerMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(SanitizerMiddleware.class);
+    static final String CONTENT_TYPE_MISMATCH = "ERR10015";
     private final SanitizerConfig config;
     private final EncoderWrapper bodyEncoder;
     private final EncoderWrapper headerEncoder;
@@ -74,22 +75,58 @@ public class SanitizerMiddleware implements MiddlewareHandler {
             String body = exchange.getRequest().getBody();
             if (body != null && !body.isEmpty()) {
                 body = body.trim();
-                if (body.startsWith("{")) {
-                    Map<String, Object> bodyMap = JsonMapper.string2Map(body);
-                    bodyEncoder.encodeNode(bodyMap);
-                    exchange.getRequest().setBody(JsonMapper.toJson(bodyMap));
-                } else if (body.startsWith("[")) {
-                    List bodyList = JsonMapper.string2List(body);
-                    bodyEncoder.encodeList(bodyList);
-                    exchange.getRequest().setBody(JsonMapper.toJson(bodyList));
-                } else {
-                    // Body is not in JSON format or form data, skip...
-                    LOG.debug("Skip sanitization as the body is not in JSON format");
+                String contentType = getContentType(exchange.getRequest().getHeaders());
+                try {
+                    if (body.startsWith("{")) {
+                        Map<String, Object> bodyMap = JsonMapper.string2Map(body);
+                        if (bodyMap == null) {
+                            // the body is not a valid JSON object, JsonMapper.string2Map returned null.
+                            LOG.error("Invalid JSON body received; unable to parse as a JSON object.");
+                            return new Status(CONTENT_TYPE_MISMATCH, contentType);
+                        }
+                        bodyEncoder.encodeNode(bodyMap);
+                        exchange.getRequest().setBody(JsonMapper.toJson(bodyMap));
+                    } else if (body.startsWith("[")) {
+                        List bodyList = JsonMapper.string2List(body);
+                        if (bodyList == null) {
+                            // the body is not a valid JSON array, JsonMapper.string2List returned null.
+                            LOG.error("Invalid JSON body received; unable to parse as a JSON array.");
+                            return new Status(CONTENT_TYPE_MISMATCH, contentType);
+                        }
+                        bodyEncoder.encodeList(bodyList);
+                        exchange.getRequest().setBody(JsonMapper.toJson(bodyList));
+                    } else {
+                        // Body is not in JSON format or form data, skip...
+                        LOG.debug("Skip sanitization as the body is not in JSON format");
+                    }
+                } catch (Exception e) {
+                    // catch any exception thrown while parsing/encoding the body (e.g. malformed JSON)
+                    // so that it doesn't bubble up as an unhandled NullPointerException/RuntimeException
+                    // resulting in a 500 response.
+                    LOG.error("Exception while sanitizing the request body: {}", e.getMessage(), e);
+                    return new Status(CONTENT_TYPE_MISMATCH, contentType);
                 }
             }
         }
         LOG.trace("SanitizerMiddleware.execute ends.");
         return successMiddlewareStatus();
+    }
+
+    /**
+     * Looks up the Content-Type header value from the given headers map, ignoring case.
+     *
+     * @param headers the request headers, may be null
+     * @return the Content-Type header value, or "unknown" if not present
+     */
+    private static String getContentType(Map<String, String> headers) {
+        if (headers != null) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                if ("Content-Type".equalsIgnoreCase(entry.getKey())) {
+                    return entry.getValue();
+                }
+            }
+        }
+        return "unknown";
     }
 
     @Override

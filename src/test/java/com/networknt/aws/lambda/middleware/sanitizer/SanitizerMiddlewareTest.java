@@ -2,6 +2,7 @@ package com.networknt.aws.lambda.middleware.sanitizer;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.InvocationResponse;
 import com.networknt.aws.lambda.LambdaContext;
 import com.networknt.aws.lambda.TestUtils;
@@ -83,6 +84,33 @@ public class SanitizerMiddlewareTest {
         Map<String, Object> map = JsonMapper.string2Map(bodyResult);
         // works on both linux and Windows due to EncodeWrapper
         Assertions.assertEquals("<script>alert(\\'test\\')</script>", map.get("key"));
+    }
+
+    @Test
+    public void testSanitizerMiddlewareInvalidJsonBody() {
+        var apiGatewayProxyRequestEvent = TestUtils.createTestRequestEvent();
+        // invalid JSON: unquoted string value for "field"
+        String body = "{\n    \"field\": a\n}";
+        apiGatewayProxyRequestEvent.setBody(body);
+        InvocationResponse invocation = InvocationResponse.builder()
+                .requestId("12345")
+                .event(apiGatewayProxyRequestEvent)
+                .build();
+        APIGatewayProxyRequestEvent requestEvent = invocation.getEvent();
+        Context lambdaContext = new LambdaContext(invocation.getRequestId());
+
+        Chain requestChain = new Chain();
+        SanitizerMiddleware sanitizerMiddleware = new SanitizerMiddleware("sanitizer_test");
+        requestChain.addChainable(sanitizerMiddleware);
+        requestChain.setFinalized(true);
+        this.exchange = new LightLambdaExchange(lambdaContext, requestChain);
+        this.exchange.setInitialRequest(requestEvent);
+        this.exchange.executeChain();
+
+        APIGatewayProxyResponseEvent responseEvent = exchange.getFinalizedResponse(false);
+        Assertions.assertNotNull(responseEvent);
+        Assertions.assertEquals(400, responseEvent.getStatusCode());
+        LOG.info("responseStatus: " + responseEvent.getStatusCode());
     }
 
 }
