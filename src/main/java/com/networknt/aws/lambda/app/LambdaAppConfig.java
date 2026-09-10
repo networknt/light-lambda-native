@@ -19,7 +19,7 @@ public class LambdaAppConfig {
     public static final String ENCODE_BASE64_REQUEST = "encodeBase64Request";
 
     private final Map<String, Object> mappedConfig;
-    private static LambdaAppConfig instance;
+    private static volatile LambdaAppConfig instance;
 
     @StringField(configFieldName = LAMBDA_APP_ID, externalizedKeyName = LAMBDA_APP_ID, description = "The lambda application identifier.")
     private String lambdaAppId;
