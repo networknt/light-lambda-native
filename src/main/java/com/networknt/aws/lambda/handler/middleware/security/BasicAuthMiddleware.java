@@ -14,6 +14,7 @@ import com.networknt.utility.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,19 +69,19 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
                 return this.handleAnonymousAuth(exchange, requestPath, config);
             }
             // verify the header with the config file. assuming it is basic authentication first.
-            if (BASIC_PREFIX.equalsIgnoreCase(auth.substring(0, 5))) {
+            if (auth.regionMatches(true, 0, BASIC_PREFIX, 0, BASIC_PREFIX.length())) {
                 // check if the length is greater than 6 for issue1513
                 if(auth.trim().length() == 5) {
-                    LOG.error("Invalid/Unsupported authorization header {}", auth);
-                    return new Status(INVALID_AUTHORIZATION_HEADER, auth);
+                    LOG.error("Invalid/Unsupported Basic authorization header.");
+                    return new Status(INVALID_AUTHORIZATION_HEADER, BASIC_PREFIX);
                 } else {
                     return this.handleBasicAuth(exchange, requestPath, auth);
                 }
-            } else if (BEARER_PREFIX.equalsIgnoreCase(auth.substring(0, 6))) {
+            } else if (auth.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
                 return this.handleBearerToken(exchange, requestPath, auth, config);
             } else {
-                LOG.error("Invalid/Unsupported authorization header {}", auth.substring(0, 10));
-                return new Status(INVALID_AUTHORIZATION_HEADER, auth.substring(0, 10));
+                LOG.error("Invalid/Unsupported authorization header.");
+                return new Status(INVALID_AUTHORIZATION_HEADER, "unknown");
             }
         }
     }
@@ -156,11 +157,15 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
         if (pos != -1) {
             String username = credentials.substring(0, pos);
             String password = credentials.substring(pos + 1);
-            if(LOG.isTraceEnabled()) LOG.trace("input username = {}, password = {}", username, StringUtils.maskHalfString(password));
             UserAuth user = config.getUsers().get(username);
             // if user cannot be found in the config, return immediately.
             if (user == null) {
-                LOG.error("User '{}' is not found in the configuration file.", username);
+                LOG.error("Basic authentication failed: user is not configured.");
+                if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
+                return new Status(INVALID_USERNAME_OR_PASSWORD);
+            }
+            if (StringUtils.isEmpty(password)) {
+                LOG.error("Basic authentication rejected an empty password.");
                 if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
                 return new Status(INVALID_USERNAME_OR_PASSWORD);
             }
@@ -169,23 +174,23 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
                     && StringUtils.isEmpty(user.getPassword())
                     && config.isEnableAD()) {
                 // Call LdapUtil with LDAP authentication and authorization given user is matched, password is empty, and AD is enabled.
-                if(LOG.isTraceEnabled()) LOG.trace("Call LdapUtil with LDAP authentication and authorization for user = {}", username);
+                if(LOG.isTraceEnabled()) LOG.trace("Call LdapUtil for Basic authentication.");
                 if (!handleLdapAuth(user, password)) {
                     if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
                     return new Status(INVALID_USERNAME_OR_PASSWORD);
                 }
             } else {
-                if(LOG.isTraceEnabled()) LOG.trace("Validate basic auth based on config username {} and password {}", user.getUsername(), StringUtils.maskHalfString(user.getPassword()));
                 // if username matches config, password matches config, and path matches config, pass
                 if (!(user.getUsername().equals(username)
-                        && password.equals(user.getPassword()))) {
-                    LOG.error("Invalid username or password with authorization header = {}", StringUtils.maskHalfString(auth));
+                        && user.getPassword() != null
+                        && MessageDigest.isEqual(password.getBytes(UTF_8), user.getPassword().getBytes(UTF_8)))) {
+                    LOG.error("Invalid Basic username or password.");
                     if (LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
                     return new Status(INVALID_USERNAME_OR_PASSWORD);
                 }
             }
             // Here we have passed the authentication. Let's do the authorization with the paths.
-            if(LOG.isTraceEnabled()) LOG.trace("Username and password validation is done for user = {}", username);
+            if(LOG.isTraceEnabled()) LOG.trace("Basic username and password validation is done.");
             boolean match = false;
             for (String path : user.getPaths()) {
                 if (requestPath.startsWith(path)) {
@@ -194,14 +199,14 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
                 }
             }
             if (!match) {
-                LOG.error("Request path '{}' is not authorized for user '{}", requestPath, user.getUsername());
+                LOG.error("Basic user is not authorized for the requested path.");
                 if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
                 return new Status(NOT_AUTHORIZED_REQUEST_PATH, requestPath, user.getUsername());
             }
         } else {
             LOG.error("Invalid basic authentication header. It must be username:password base64 encode.");
             if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
-            return new Status(INVALID_BASIC_HEADER, auth.substring(0, 10));
+            return new Status(INVALID_BASIC_HEADER, BASIC_PREFIX);
         }
         return successMiddlewareStatus();
     }
@@ -235,7 +240,7 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
         if (!config.isAllowBearerToken()) {
             LOG.error("Not a basic authentication header, and bearer token is not allowed.");
             if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
-            return new Status(INVALID_BASIC_HEADER, auth.substring(0, 10));
+            return new Status(INVALID_BASIC_HEADER, BEARER_PREFIX);
         } else {
             // bearer token is allowed, we need to validate it and check the allowed paths.
             UserAuth user = config.getUsers().get(BasicAuthConfig.BEARER);

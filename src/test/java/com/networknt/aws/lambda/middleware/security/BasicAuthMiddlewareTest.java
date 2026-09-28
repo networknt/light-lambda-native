@@ -42,6 +42,32 @@ public class BasicAuthMiddlewareTest {
         return encodeCredentialsFullFormat(username, password, ":");
     }
 
+    @Test
+    public void testEmptyConfiguredPasswordIsRejected() {
+        Assertions.assertEquals("", BasicAuthConfig.load().getUsers().get("blankPassword").getPassword());
+        var requestEvent = TestUtils.createTestRequestEvent();
+        requestEvent.setPath("/v2/pet");
+        requestEvent.getHeaders().put(HeaderKey.AUTHORIZATION, "BASIC " + encodeCredentials("blankPassword", ""));
+        var exchange = new LightLambdaExchange(new LambdaContext("empty-password"), null);
+        exchange.setInitialRequest(requestEvent);
+        Status status = new BasicAuthMiddleware("basic-auth").execute(exchange);
+        Assertions.assertEquals(401, status.getStatusCode());
+        Assertions.assertEquals("ERR10047", status.getCode());
+    }
+
+    @Test
+    public void testShortMalformedAuthorizationHeadersAreRejected() {
+        for (String header : new String[] {"x", "Basic eA"}) {
+            var requestEvent = TestUtils.createTestRequestEvent();
+            requestEvent.setPath("/v2/pet");
+            requestEvent.getHeaders().put(HeaderKey.AUTHORIZATION, header);
+            var exchange = new LightLambdaExchange(new LambdaContext("short-header"), null);
+            exchange.setInitialRequest(requestEvent);
+            Status status = new BasicAuthMiddleware("basic-auth").execute(exchange);
+            Assertions.assertEquals(401, status.getStatusCode(), header);
+        }
+    }
+
     /**
      * Test with right credentials but incorrect path. Expect 401 status code.
      */
