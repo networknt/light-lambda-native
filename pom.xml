@@ -93,7 +93,7 @@
         <version.jose4j>0.9.7</version.jose4j>
         <version.logback>1.6.3</version.logback>
         <version.maven-shade>3.2.4</version.maven-shade>
-        <version.maven-javadoc>3.4.1</version.maven-javadoc>
+        <version.maven-javadoc>3.12.0</version.maven-javadoc>
         <version.maven-jar>3.3.0</version.maven-jar>
         <version.maven-compiler>3.8.1</version.maven-compiler>
         <version.maven-deploy>2.8.2</version.maven-deploy>
