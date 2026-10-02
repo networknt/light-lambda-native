@@ -67,6 +67,11 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
                 return this.handleAnonymousAuth(exchange, requestPath, config);
             }
             AuthorizationScheme scheme = AuthorizationScheme.parse(auth);
+            // A bare scheme must not reach handleBearerToken, which only checks paths.
+            if (scheme != AuthorizationScheme.UNKNOWN && !AuthorizationScheme.hasCredentials(auth, scheme)) {
+                LOG.error("Invalid/Unsupported authorization header.");
+                return new Status(INVALID_AUTHORIZATION_HEADER, scheme.name());
+            }
             if (scheme == AuthorizationScheme.BASIC) {
                 return this.handleBasicAuth(exchange, requestPath, auth);
             } else if (scheme == AuthorizationScheme.BEARER) {
@@ -186,10 +191,10 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
                 }
             }
             if (!match) {
-                LOG.error("Request path '{}' is not authorized for user '{}'",
-                        requestPath.replace('\r', ' ').replace('\n', ' '), user.getUsername());
+                String safePath = requestPath.replace('\r', ' ').replace('\n', ' ');
+                LOG.error("Request path '{}' is not authorized for user '{}'", safePath, user.getUsername());
                 if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
-                return new Status(NOT_AUTHORIZED_REQUEST_PATH, requestPath, user.getUsername());
+                return new Status(NOT_AUTHORIZED_REQUEST_PATH, safePath, user.getUsername());
             }
         } else {
             LOG.error("Invalid basic authentication header. It must be username:password base64 encode.");

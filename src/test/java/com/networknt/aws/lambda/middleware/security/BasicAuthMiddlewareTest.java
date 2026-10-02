@@ -71,8 +71,19 @@ public class BasicAuthMiddlewareTest {
             exchange.setInitialRequest(requestEvent);
             Status status = new BasicAuthMiddleware("basic-auth").execute(exchange);
             Assertions.assertEquals(401, status.getStatusCode(), header);
-            Assertions.assertEquals(header.equals("Basic eA") || header.startsWith("Bearer")
+            Assertions.assertEquals(header.equals("Basic eA") || header.equals("Bearer x")
                     ? "ERR10046" : "ERR12003", status.getCode(), header);
+        }
+    }
+
+    @Test
+    public void testBareBearerRejectedWhenBearerTokensAllowed() {
+        var middleware = new BasicAuthMiddleware("basic-auth-bearer");
+        Assertions.assertTrue(BasicAuthConfig.load("basic-auth-bearer").isAllowBearerToken());
+        for (String header : new String[] {"Bearer", "Bearer ", "bearer   "}) {
+            Status status = middleware.execute(exchangeFor(header));
+            Assertions.assertEquals(401, status.getStatusCode(), header);
+            Assertions.assertEquals("ERR12003", status.getCode(), header);
         }
     }
 
@@ -156,6 +167,8 @@ public class BasicAuthMiddlewareTest {
             exchange.getRequest().setPath("/denied\r\nforged-line");
             Status status = basic.execute(exchange);
             Assertions.assertEquals("ERR10071", status.getCode());
+            Assertions.assertFalse(status.toString().contains("\r") || status.toString().contains("\n"));
+            Assertions.assertTrue(status.toString().contains("/denied  forged-line"));
             Assertions.assertTrue(appender.list.stream().anyMatch(event -> event.getFormattedMessage()
                     .equals("Request path '/denied  forged-line' is not authorized for user 'user1'")));
         } finally {
