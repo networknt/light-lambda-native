@@ -30,3 +30,7 @@ users:
     paths:
       - /v1/party
       - /info
+
+  - username: bearer
+    paths:
+      - /v2/pet

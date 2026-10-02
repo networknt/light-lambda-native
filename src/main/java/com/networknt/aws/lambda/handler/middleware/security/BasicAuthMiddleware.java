@@ -7,7 +7,6 @@ import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.utility.MapUtil;
 import com.networknt.basicauth.BasicAuthConfig;
 import com.networknt.basicauth.UserAuth;
-import com.networknt.config.Config;
 import com.networknt.ldap.LdapUtil;
 import com.networknt.status.Status;
 import com.networknt.utility.StringUtils;
@@ -15,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.MessageDigest;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -68,21 +66,14 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
             if(auth.trim().isEmpty()) {
                 return this.handleAnonymousAuth(exchange, requestPath, config);
             }
-            // verify the header with the config file. assuming it is basic authentication first.
-            if (auth.regionMatches(true, 0, BASIC_PREFIX, 0, BASIC_PREFIX.length())) {
-                // check if the length is greater than 6 for issue1513
-                if(auth.trim().length() == 5) {
-                    LOG.error("Invalid/Unsupported Basic authorization header.");
-                    return new Status(INVALID_AUTHORIZATION_HEADER, BASIC_PREFIX);
-                } else {
-                    return this.handleBasicAuth(exchange, requestPath, auth);
-                }
-            } else if (auth.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
+            AuthorizationScheme scheme = AuthorizationScheme.parse(auth);
+            if (scheme == AuthorizationScheme.BASIC) {
+                return this.handleBasicAuth(exchange, requestPath, auth);
+            } else if (scheme == AuthorizationScheme.BEARER) {
                 return this.handleBearerToken(exchange, requestPath, auth, config);
-            } else {
-                LOG.error("Invalid/Unsupported authorization header.");
-                return new Status(INVALID_AUTHORIZATION_HEADER, "unknown");
             }
+            LOG.error("Invalid/Unsupported authorization header.");
+            return new Status(INVALID_AUTHORIZATION_HEADER, "unknown");
         }
     }
 
@@ -148,6 +139,10 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
      * @return Status to indicate if an error or success.
      */
     public Status handleBasicAuth(LightLambdaExchange exchange, String requestPath, String auth) {
+        if (!AuthorizationScheme.hasCredentials(auth, AuthorizationScheme.BASIC)) {
+            LOG.error("Invalid/Unsupported Basic authorization header.");
+            return new Status(INVALID_AUTHORIZATION_HEADER, BASIC_PREFIX);
+        }
         String credentials = auth.substring(6);
         int pos = credentials.indexOf(':');
         if (pos == -1) {
@@ -158,31 +153,23 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
             String username = credentials.substring(0, pos);
             String password = credentials.substring(pos + 1);
             UserAuth user = config.getUsers().get(username);
-            // if user cannot be found in the config, return immediately.
-            if (user == null) {
-                LOG.error("Basic authentication failed: user is not configured.");
+            // Reserved users describe authorization policies, never Basic identities.
+            if (user == null || StringUtils.isEmpty(password)
+                    || BasicAuthConfig.ANONYMOUS.equals(username) || BasicAuthConfig.BEARER.equals(username)) {
+                LOG.error("Invalid Basic username or password.");
                 if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
                 return new Status(INVALID_USERNAME_OR_PASSWORD);
             }
-            if (StringUtils.isEmpty(password)) {
-                LOG.error("Basic authentication rejected an empty password.");
-                if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
-                return new Status(INVALID_USERNAME_OR_PASSWORD);
-            }
-            // At this point, we know the user is found in the config file.
-            if (username.equals(user.getUsername())
-                    && StringUtils.isEmpty(user.getPassword())
-                    && config.isEnableAD()) {
-                // Call LdapUtil with LDAP authentication and authorization given user is matched, password is empty, and AD is enabled.
+            if (StringUtils.isEmpty(user.getPassword()) && config.isEnableAD()) {
+                // Delegate configured identities without a local password to LDAP.
                 if(LOG.isTraceEnabled()) LOG.trace("Call LdapUtil for Basic authentication.");
                 if (!handleLdapAuth(user, password)) {
                     if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
                     return new Status(INVALID_USERNAME_OR_PASSWORD);
                 }
             } else {
-                // if username matches config, password matches config, and path matches config, pass
-                if (!(user.getUsername().equals(username)
-                        && user.getPassword() != null
+                // Compare the configured local password without early character mismatches.
+                if (!(user.getPassword() != null
                         && MessageDigest.isEqual(password.getBytes(UTF_8), user.getPassword().getBytes(UTF_8)))) {
                     LOG.error("Invalid Basic username or password.");
                     if (LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
@@ -199,7 +186,8 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
                 }
             }
             if (!match) {
-                LOG.error("Basic user is not authorized for the requested path.");
+                LOG.error("Request path '{}' is not authorized for user '{}'",
+                        requestPath.replace('\r', ' ').replace('\n', ' '), user.getUsername());
                 if(LOG.isDebugEnabled()) LOG.debug("BasicAuthMiddleware.execute ends with an error.");
                 return new Status(NOT_AUTHORIZED_REQUEST_PATH, requestPath, user.getUsername());
             }
@@ -216,7 +204,7 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
      * @param user
      * @return true if Ldap auth success, false if Ldap auth failure
      */
-    private static boolean handleLdapAuth(UserAuth user, String password) {
+    protected boolean handleLdapAuth(UserAuth user, String password) {
         boolean isAuthenticated = LdapUtil.authenticate(user.getUsername(), password);
         if (!isAuthenticated) {
             LOG.error("user '" + user.getUsername() + "' Ldap authentication failed");

@@ -88,13 +88,14 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
                             return new Status(MISSING_AUTH_TOKEN);
                         } else {
                             String authorization = optionalAuth.get();
-                            // make sure that the length is greater than 5.
-                            if (authorization.trim().length() <= 5) {
-                                LOG.error("Invalid/Unsupported authorization header {}", authorization);
-                                return new Status(INVALID_AUTHORIZATION_HEADER, authorization);
+                            AuthorizationScheme scheme = AuthorizationScheme.parse(authorization);
+                            if (!AuthorizationScheme.hasCredentials(authorization, scheme)
+                                    || scheme == AuthorizationScheme.UNKNOWN) {
+                                LOG.error("Invalid/Unsupported authorization header.");
+                                return new Status(INVALID_AUTHORIZATION_HEADER,
+                                        scheme == AuthorizationScheme.UNKNOWN ? "unknown" : scheme.name());
                             }
-                            // check if it is basic or bearer and handler it differently.
-                            if (BASIC_PREFIX.equalsIgnoreCase(authorization.substring(0, 5))) {
+                            if (scheme == AuthorizationScheme.BASIC) {
                                 Map<String, LambdaHandler> handlers = Handler.getHandlers();
                                 BasicAuthMiddleware handler = (BasicAuthMiddleware) handlers.get(BASIC_PREFIX.toLowerCase());
                                 if (handler == null) {
@@ -107,7 +108,7 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
                                     }
                                     return handler.handleBasicAuth(exchange, reqPath, authorization);
                                 }
-                            } else if (BEARER_PREFIX.equalsIgnoreCase(authorization.substring(0, 6))) {
+                            } else if (scheme == AuthorizationScheme.BEARER) {
                                 // in the case that a bearer token is used, there are three scenarios: both jwt and swt are true, only jwt is true and only swt is true
                                 // in the first case, we need to identify if the token is jwt or swt before calling the right handler to verify it.
                                 Map<String, LambdaHandler> handlers = Handler.getHandlers();
@@ -173,9 +174,8 @@ public class UnifiedSecurityMiddleware implements MiddlewareHandler {
                                     }
                                 }
                             } else {
-                                String s = authorization.length() > 10 ? authorization.substring(0, 10) : authorization;
-                                LOG.error("Invalid/Unsupported authorization header {}", s);
-                                return new Status(INVALID_AUTHORIZATION_HEADER, s);
+                                LOG.error("Invalid/Unsupported authorization header.");
+                                return new Status(INVALID_AUTHORIZATION_HEADER, "unknown");
                             }
                         }
                     } else if (pathPrefixAuth.isApikey()) {

@@ -1,0 +1,5 @@
+enabled: true
+pathPrefixAuths:
+  - prefix: /v2
+    basic: true
+    jwt: true

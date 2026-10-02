@@ -11,12 +11,18 @@ import com.networknt.aws.lambda.handler.middleware.security.BasicAuthMiddleware;
 import com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.basicauth.BasicAuthConfig;
+import com.networknt.basicauth.UserAuth;
+import com.networknt.aws.lambda.handler.middleware.security.UnifiedSecurityMiddleware;
 import com.networknt.status.Status;
 import com.networknt.utility.Constants;
 import com.networknt.utility.MapUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -57,7 +63,7 @@ public class BasicAuthMiddlewareTest {
 
     @Test
     public void testShortMalformedAuthorizationHeadersAreRejected() {
-        for (String header : new String[] {"x", "Basic eA"}) {
+        for (String header : new String[] {"x", "Basic eA", "Bearer", "Bearer x", "BasicSecret", "Basic"}) {
             var requestEvent = TestUtils.createTestRequestEvent();
             requestEvent.setPath("/v2/pet");
             requestEvent.getHeaders().put(HeaderKey.AUTHORIZATION, header);
@@ -65,7 +71,105 @@ public class BasicAuthMiddlewareTest {
             exchange.setInitialRequest(requestEvent);
             Status status = new BasicAuthMiddleware("basic-auth").execute(exchange);
             Assertions.assertEquals(401, status.getStatusCode(), header);
+            Assertions.assertEquals(header.equals("Basic eA") || header.startsWith("Bearer")
+                    ? "ERR10046" : "ERR12003", status.getCode(), header);
         }
+    }
+
+    private static LightLambdaExchange exchangeFor(String header) {
+        var request = TestUtils.createTestRequestEvent();
+        request.setPath("/v2/pet");
+        request.getHeaders().put(HeaderKey.AUTHORIZATION, header);
+        var exchange = new LightLambdaExchange(new LambdaContext("security-review"), null);
+        exchange.setInitialRequest(request);
+        return exchange;
+    }
+
+    private static class RecordingLdapMiddleware extends BasicAuthMiddleware {
+        int ldapCalls;
+
+        RecordingLdapMiddleware() {
+            super("basic-auth-ldap");
+        }
+
+        @Override
+        protected boolean handleLdapAuth(UserAuth user, String password) {
+            ldapCalls++;
+            return true;
+        }
+    }
+
+    @Test
+    public void testLdapRejectsEmptyPasswordsAndReservedUsersBeforeBind() {
+        Assertions.assertTrue(BasicAuthConfig.load("basic-auth-ldap").isEnableAD());
+        var middleware = new RecordingLdapMiddleware();
+        for (String[] credentials : new String[][] {
+                {"ldapUser", ""}, {"anonymous", "password"}, {"bearer", "password"}}) {
+            Status status = middleware.execute(exchangeFor("Basic " + encodeCredentials(credentials[0], credentials[1])));
+            Assertions.assertEquals("ERR10047", status.getCode());
+            Assertions.assertEquals(401, status.getStatusCode());
+        }
+        Assertions.assertEquals(0, middleware.ldapCalls);
+        // Positive control proves this configuration actually dispatches ordinary identities to LDAP.
+        Assertions.assertEquals(200, middleware.execute(exchangeFor("Basic " + encodeCredentials("ldapUser", "password"))).getStatusCode());
+        Assertions.assertEquals(1, middleware.ldapCalls);
+    }
+
+    @Test
+    public void testPublicBasicEntryPointRejectsMalformedHeaders() {
+        var middleware = new BasicAuthMiddleware("basic-auth");
+        for (String header : new String[] {null, "", "x", "Basic", "Basic ", "BasicSecret", "Bearer x"}) {
+            Status status = middleware.handleBasicAuth(exchangeFor("ignored"), "/v2/pet", header);
+            Assertions.assertEquals("ERR12003", status.getCode());
+            Assertions.assertEquals(401, status.getStatusCode());
+        }
+    }
+
+    @Test
+    public void testUnifiedRejectsMalformedHeadersWithoutEchoingCredentials() {
+        var middleware = new UnifiedSecurityMiddleware("unified-security-review");
+        for (String header : new String[] {"x", "abcde", "Secret credential-material", "Basic", "Basic ", "Bearer", "Bearer ", "BasicSecret"}) {
+            Status status = middleware.execute(exchangeFor(header));
+            Assertions.assertEquals("ERR12003", status.getCode(), header);
+            Assertions.assertEquals(401, status.getStatusCode(), header);
+            Assertions.assertFalse(status.toString().contains(header), header);
+        }
+    }
+
+    @Test
+    public void testAuthorizationLogsDoNotEchoHeadersAndSanitizeDeniedPath() {
+        Logger basicLogger = (Logger) LoggerFactory.getLogger(BasicAuthMiddleware.class);
+        Logger unifiedLogger = (Logger) LoggerFactory.getLogger(UnifiedSecurityMiddleware.class);
+        var appender = new ListAppender<ILoggingEvent>();
+        appender.start();
+        basicLogger.addAppender(appender);
+        unifiedLogger.addAppender(appender);
+        try {
+            var basic = new BasicAuthMiddleware("basic-auth");
+            var unified = new UnifiedSecurityMiddleware("unified-security-review");
+            for (String header : new String[] {"abcde", "Secret credential-material"}) {
+                basic.execute(exchangeFor(header));
+                unified.execute(exchangeFor(header));
+                Assertions.assertTrue(appender.list.stream().noneMatch(event -> event.getFormattedMessage().contains(header)));
+            }
+            var exchange = exchangeFor("Basic " + encodeCredentials("user1", "user1pass"));
+            exchange.getRequest().setPath("/denied\r\nforged-line");
+            Status status = basic.execute(exchange);
+            Assertions.assertEquals("ERR10071", status.getCode());
+            Assertions.assertTrue(appender.list.stream().anyMatch(event -> event.getFormattedMessage()
+                    .equals("Request path '/denied  forged-line' is not authorized for user 'user1'")));
+        } finally {
+            basicLogger.detachAppender(appender);
+            unifiedLogger.detachAppender(appender);
+            appender.stop();
+        }
+    }
+
+    @Test
+    public void testMixedCaseBasicSchemeAndColonInPasswordParsing() {
+        var basic = new BasicAuthMiddleware("basic-auth");
+        Assertions.assertEquals(200, basic.execute(exchangeFor("bAsIc " + encodeCredentials("user2", "password"))).getStatusCode());
+        Assertions.assertEquals("ERR10047", basic.execute(exchangeFor("Basic " + encodeCredentials("user2", "password:extra"))).getCode());
     }
 
     /**
