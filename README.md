@@ -1,3 +1,40 @@
+## Build and package
+
+Use Maven with JDK 25 (the Java version declared in `pom.xml`):
+
+```sh
+mvn clean verify
+```
+
+The executable shaded JAR is `target/lambda-native-<version>.jar`, with the
+version taken from `pom.xml`. Customers can use this JAR with a compatible
+GraalVM Native Image installation to build their own native binary.
+
+To build the Linux native binary and AWS Lambda custom-runtime ZIP, install
+Docker and `zip`, then run:
+
+```sh
+bash native-image-linux.sh
+```
+
+The script runs `mvn clean install`, reads the JAR name and Java version from
+Maven, and uses `ghcr.io/graalvm/native-image-community:<maven.compiler.target>`.
+Set `GRAALVM_IMAGE` to select a pinned image compatible with that Java version.
+Docker builds for its host architecture; use a host matching your Lambda
+architecture and verify the resulting binary against your chosen Lambda runtime.
+The ZIP is `lambda-native-custom-runtime.zip` and contains executable
+`lambda-native` and `bootstrap` files. HTTP and HTTPS protocols are enabled.
+Build or packaging failures stop the script with a nonzero exit status.
+
+Run the native-build script regression tests separately with Python 3 and `zip`:
+
+```sh
+python3 tests/test_native_image_script.py
+```
+
+These tests stub Maven and Docker to check packaging and failure handling.
+They are not run by Maven or the current CI workflow.
+
 ### Test with Main
 
 We have provided a Main class in the src folder for testing all the middleware handlers with a sample request. You can run the Main class within your IDE with debug mode to see how each middleware handler works.
