@@ -19,6 +19,10 @@ users:
     password: user1pass
     paths:
       - /v1/address
+  - username: blankPassword
+    password: ""
+    paths:
+      - /v2/pet
   - username: user2
     password: CRYPT:2f9fefa2c00d6ead365a6a20967f235d:e84bb6cccc5c5887f0331186:98eb70096c4d354e88f6e7863cdccf22897a12c2d669e26c
     paths:
