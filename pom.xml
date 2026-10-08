@@ -89,7 +89,7 @@
         <version.encoder>1.5.0</version.encoder>
         <version.lambda-core>1.4.0</version.lambda-core>
         <version.lambda-events>3.16.1</version.lambda-events>
-        <version.lambda-awssdk>2.51.3</version.lambda-awssdk>
+        <version.lambda-awssdk>2.55.12</version.lambda-awssdk>
         <version.jose4j>0.9.7</version.jose4j>
         <version.logback>1.6.3</version.logback>
         <version.maven-shade>3.2.4</version.maven-shade>
