@@ -101,7 +101,7 @@
         <version.maven-source>3.4.0</version.maven-source>
         <version.junit-jupiter>6.1.3</version.junit-jupiter>
         <version.nexus-staging-maven>1.7.0</version.nexus-staging-maven>
-        <version.maven-gpg>3.2.7</version.maven-gpg>
+        <version.maven-gpg>3.2.8</version.maven-gpg>
     </properties>
 
     <dependencyManagement>
