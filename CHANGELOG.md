@@ -1,5 +1,23 @@
 # Change Log
 
+## [2.4.1](https://github.com/networknt/light-lambda-native/tree/2.4.1) (2026-10-11)
+
+**Commits:**
+
+- upgrade to version 2.4.1 before release in master branch ([057ff51](https://github.com/networknt/light-lambda-native/commit/057ff51fa8bfb8a2e4b141efe0c966ecce6deed4)) (by Steve Hu)
+- upgrade lambda-awssdk to 2.55.13 from 2.55.12 ([c7c5413](https://github.com/networknt/light-lambda-native/commit/c7c5413a77c18c537a9a3baa24a44557c96721ae)) (by Steve Hu)
+- upgrade exec-maven to 3.6.4 from 1.6.0 ([285cbd1](https://github.com/networknt/light-lambda-native/commit/285cbd1c1be27c1d77cdad42e7bcee9c8ae4def9)) (by Steve Hu)
+- upgrade maven-gpg to 3.2.8 from 3.2.7 ([1556b76](https://github.com/networknt/light-lambda-native/commit/1556b761c95fca9ef40d7b0a27affc52e5b1b72c)) (by Steve Hu)
+- upgrade maven-source to 3.4.0 ([69e5b7b](https://github.com/networknt/light-lambda-native/commit/69e5b7b508cece334fea1cac50de545291a90a52)) (by Steve Hu)
+- build: upgrade JUnit to 6.1.3 ([99cb7d3](https://github.com/networknt/light-lambda-native/commit/99cb7d3e61a4e370aba140be11aa43379a3a4d7e)) (by Steve Hu)
+- upgrade logback to 1.6.5 from 1.6.3 ([dfa1c5d](https://github.com/networknt/light-lambda-native/commit/dfa1c5d7ab614dada869c5598600da489a4e41b4)) (by Steve Hu)
+- upgrade json-schema-validator to 2.0.8 from 2.0.7 ([790d364](https://github.com/networknt/light-lambda-native/commit/790d364813c41370354beb7f03734bb08e85215a)) (by Steve Hu)
+- upgrade http-client with project version ([00e5db5](https://github.com/networknt/light-lambda-native/commit/00e5db5bd5f6739a9f5bb1a41722a13e81dc477e)) (by Steve Hu)
+- upgrade lambda to 2.55.12 from 2.51.3 ([e18253d](https://github.com/networknt/light-lambda-native/commit/e18253dd6007ddf043ff7add793688a53de0dafe)) (by Steve Hu)
+- upgrade encoder to 1.5.0 from 1.3.1 ([cbc6593](https://github.com/networknt/light-lambda-native/commit/cbc6593f6bc8c77d668242849836bfb89ae6d661)) (by Steve Hu)
+- fixes #188 remove the json-smart from the dependencyManagement ([b3c0857](https://github.com/networknt/light-lambda-native/commit/b3c085722e488673536e8af11010766e46f5d6bc)) (by Steve Hu)
+- upgrade to version 2.4.1-SNAPSHOT after release in master branch ([f9daaa1](https://github.com/networknt/light-lambda-native/commit/f9daaa156be3b4feb3b96ffedb40e0a9a7c6077a)) (by Steve Hu)
+
 ## [2.4.0](https://github.com/networknt/light-lambda-native/tree/2.4.0) (2026-10-07)
 
 **Commits:**
