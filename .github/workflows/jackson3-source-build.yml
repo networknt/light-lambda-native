@@ -30,7 +30,7 @@ jobs:
           SOURCE_REFS: ${{ inputs.source_refs || '{}' }}
         shell: bash
         run: |
-          jq -e 'type == "object" and all(to_entries[]; (.key | IN("yaml-rule", "http-client", "light-4j", "json-overlay", "openapi-parser", "light-aws-lambda")) and (.value | type == "string" and test("^[0-9a-f]{40}$")))' <<< "$SOURCE_REFS"
+          jq -e 'type == "object" and all(to_entries[]; (.key | IN("yaml-rule", "http-client", "light-4j", "json-overlay", "openapi-parser", "light-rest-4j", "light-aws-lambda")) and (.value | type == "string" and test("^[0-9a-f]{40}$")))' <<< "$SOURCE_REFS"
           resolve() {
             local repo=$1 pr=${2:-} ref
             ref=$(jq -r --arg repo "$repo" '.[$repo] // empty' <<< "$SOURCE_REFS")
@@ -49,6 +49,7 @@ jobs:
           resolve light-4j 2821
           resolve json-overlay
           resolve openapi-parser
+          resolve light-rest-4j
           resolve light-aws-lambda 168
       - uses: actions/checkout@v4
         with:
@@ -80,6 +81,11 @@ jobs:
           repository: networknt/light-aws-lambda
           ref: ${{ steps.prerequisites.outputs.light_aws_lambda }}
           path: sources/light-aws-lambda
+      - uses: actions/checkout@v4
+        with:
+          repository: networknt/light-rest-4j
+          ref: ${{ steps.prerequisites.outputs.light_rest_4j }}
+          path: sources/light-rest-4j
       - name: Record source commits
         shell: bash
         run: |
@@ -101,6 +107,7 @@ jobs:
           mvn -f sources/yaml-rule/pom.xml "-Dmaven.repo.local=$JACKSON3_MAVEN_REPO" clean install 2>&1 | tee -a source-build.log
           mvn -f sources/json-overlay/pom.xml "-Dmaven.repo.local=$JACKSON3_MAVEN_REPO" clean install 2>&1 | tee -a source-build.log
           mvn -f sources/openapi-parser/pom.xml "-Dmaven.repo.local=$JACKSON3_MAVEN_REPO" clean install 2>&1 | tee -a source-build.log
+          mvn -f sources/light-rest-4j/pom.xml "-Dmaven.repo.local=$JACKSON3_MAVEN_REPO" clean install 2>&1 | tee -a source-build.log
           mvn -f sources/light-aws-lambda/pom.xml "-Dmaven.repo.local=$JACKSON3_MAVEN_REPO" clean install 2>&1 | tee -a source-build.log
           mvn -f consumer/pom.xml "-Dmaven.repo.local=$JACKSON3_MAVEN_REPO" clean install 2>&1 | tee -a source-build.log
       - name: Test native packaging script
@@ -113,6 +120,27 @@ jobs:
         run: |
           bash native-image-linux.sh
           python3 tests/native_runtime_smoke.py target/custom-runtime/lambda-native
+      - name: Reject remotely resolved NetworkNT snapshots
+        env:
+          SOURCE_MAVEN_REPO: ${{ runner.temp }}/m2
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          from pathlib import Path
+          root = Path(os.environ['SOURCE_MAVEN_REPO']) / 'com/networknt'
+          failures = []
+          versions = list(root.glob('*/*-SNAPSHOT'))
+          assert versions, 'No source-installed NetworkNT snapshots found'
+          for version in versions:
+              artifact = version.parent.name + '-' + version.name
+              extension = 'jar' if (version / (artifact + '.jar')).exists() else 'pom'
+              tracking = version / '_remote.repositories'
+              local_marker = artifact + '.' + extension + '>='
+              if not tracking.exists() or local_marker not in tracking.read_text().splitlines():
+                  failures.append(str(version.relative_to(root)))
+          assert not failures, 'Snapshots not installed from source: ' + ', '.join(failures)
+          print('All resolved NetworkNT snapshots were installed from source')
+          PYTHON
       - uses: actions/upload-artifact@v4
         if: always()
         with:
