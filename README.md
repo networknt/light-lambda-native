@@ -122,3 +122,11 @@ software.amazon.awssdk.services.lambda.model.ResourceNotFoundException: Function
 
 ### [AuditMiddleware](doc/audit.md)
 ### [LambdaProxyMiddleware](doc/proxy.md)
+
+## Jackson 3 migration
+
+This source line uses Jackson 3.2.3 and json-schema-validator 3.0.8. Build the Jackson 3 light-4j, http-client, REST and AWS Lambda prerequisites first; older snapshot binaries are not compatible. Jackson annotations retain their com.fasterxml.jackson.annotation package.
+
+The runtime mapper uses Jackson2Defaults with its existing permissive unknown-property override. Mapper instances are immutable. Java time and Optional support are built in. Classic SnakeYAML compatibility pins are retained until the stack-wide cleanup.
+
+Local qualification includes the full JVM suite, sanitized event/validation parity against the Jackson 2 baseline, and an offline GraalVM 25 native-image build. A native-image build does not establish deployed AWS behavior or complete reflection coverage for every middleware/configuration. The separate conformance worktree is deferred.

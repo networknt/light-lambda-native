@@ -1,9 +1,10 @@
 package com.networknt.aws.lambda;
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import com.networknt.config.Jackson2Defaults;
 
 public class TestUtils {
 
@@ -132,14 +133,14 @@ public class TestUtils {
             "  }\n" +
             "}";
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    private static final ObjectMapper OBJECT_MAPPER = Jackson2Defaults.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
 
     public static APIGatewayProxyRequestEvent createTestRequestEvent() {
         APIGatewayProxyRequestEvent apiGatewayProxyRequestEvent;
         try {
             apiGatewayProxyRequestEvent = OBJECT_MAPPER.readValue(TEST_EVENT, APIGatewayProxyRequestEvent.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
 
