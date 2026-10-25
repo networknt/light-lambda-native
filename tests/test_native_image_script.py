@@ -70,6 +70,7 @@ chmod +x target/custom-runtime/lambda-native
         self.assertIn("ghcr.io/graalvm/native-image-community:25", args)
         self.assertIn("/workspace/target/customer-runtime-9.9.jar", args)
         self.assertIn("--enable-url-protocols=http,https", args)
+        self.assertIn("-H:+AddAllCharsets", args)
         with ZipFile(self.root / "lambda-native-custom-runtime.zip") as archive:
             self.assertEqual(set(archive.namelist()), {"lambda-native", "bootstrap"})
             for info in archive.infolist():
