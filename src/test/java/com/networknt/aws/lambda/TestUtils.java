@@ -4,7 +4,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
-import com.networknt.config.Jackson2Defaults;
+import com.networknt.jackson.JacksonDefaults;
 
 public class TestUtils {
 
@@ -133,7 +133,7 @@ public class TestUtils {
             "  }\n" +
             "}";
 
-    private static final ObjectMapper OBJECT_MAPPER = Jackson2Defaults.builder()
+    private static final ObjectMapper OBJECT_MAPPER = JacksonDefaults.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
 
     public static APIGatewayProxyRequestEvent createTestRequestEvent() {

@@ -145,3 +145,9 @@ The smoke check binds an API Gateway event, runs the local health handler, and v
 `.github/workflows/jackson3-source-build.yml` builds the prerequisite source stack in a fresh isolated Maven repository and runs its full test suites. It resolves every prerequisite to a full commit SHA once and uploads `source-refs.json`, `source-commits.txt` and Surefire reports. The shared mapper policy prerequisite is light-4j #2821; merge that before its consumers.
 
 The optional `source_refs` workflow-dispatch input replays recorded full SHAs. GitHub enables dispatch only after the workflow exists on the default branch; before merge, reproduce from the recorded source checkouts locally. A green local suite is separate from a successful remote source-build run.
+
+### Exact-source CI qualification
+
+Consumer CI requires the latest full-core workflow for the exact resolved light-4j SHA to have completed successfully. Pending, failed or missing core qualification blocks the build. The core workflow continues to run its full reactor tests; consumers install that qualified source and run their own full tests and other prerequisite suites. `core-qualification.json` records the accepted run.
+
+The full dependency ledger is audited across all groups. Every NetworkNT release and snapshot must be source-installed, apart from the explicitly SHA-256-pinned Jackson 3 validator release. Known Jackson 2 yaml-rule and chaos-monkey releases are rejected even with a local-install marker. Jackson 2 dependencies in other groups are reported; ready migrations reject them except shared annotations.
