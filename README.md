@@ -148,6 +148,6 @@ The optional `source_refs` workflow-dispatch input replays recorded full SHAs. G
 
 ### Exact-source CI qualification
 
-Consumer CI requires the latest full-core workflow for the exact resolved light-4j SHA to have completed successfully. Pending, failed or missing core qualification blocks the build. The core workflow continues to run its full reactor tests; consumers install that qualified source and run their own full tests and other prerequisite suites. `core-qualification.json` records the accepted run.
+Consumer CI requires retained successful full-reactor evidence for the actual checked-out light-4j SHA and the same yaml-rule/http-client source commits. Core PR CI explicitly checks out the PR head, not its merge ref. Replay dispatches cannot qualify consumers. The attempt-specific evidence artifact records the actual checkout, prerequisite SHAs and test totals. A later pending, failed or cancelled run does not invalidate earlier valid evidence. All API pages and retained attempts are considered; missing or expired evidence blocks reuse. `core-qualification.json` records the accepted run and artifact.
 
 The full dependency ledger is audited across all groups. Every NetworkNT release and snapshot must be source-installed, apart from the explicitly SHA-256-pinned Jackson 3 validator release. Known Jackson 2 yaml-rule and chaos-monkey releases are rejected even with a local-install marker. Jackson 2 dependencies in other groups are reported; ready migrations reject them except shared annotations.
