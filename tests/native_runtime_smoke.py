@@ -11,10 +11,11 @@ import tempfile
 import threading
 
 
-def invoke(binary, handler, expected_endpoint):
+def invoke(binary, handler, expected_endpoint, count="7"):
     received = queue.Queue()
     event = {"path": "/health", "httpMethod": "GET", "body": None,
              "isBase64Encoded": False, "headers": {}, "multiValueHeaders": {},
+             "queryStringParameters": {"count": count}, "futureEventField": {"nested": True},
              "requestContext": {"requestId": "native-smoke", "identity": {"sourceIp": "127.0.0.1"}}}
 
     class RuntimeApi(http.server.BaseHTTPRequestHandler):
@@ -41,17 +42,45 @@ def invoke(binary, handler, expected_endpoint):
         config = Path(directory)
         (config / "handler.yml").write_text("""enabled: true
 handlers:
+  - com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware@spec
+  - com.networknt.aws.lambda.handler.middleware.validator.ValidatorMiddleware@validator
   - com.networknt.aws.lambda.handler.health.HealthCheckHandler@health
 chains: {}
 paths:
   - path: /health
     method: get
-    exec: [health]
+    exec: [spec, validator, health]
 defaultHandlers: [health]
 """)
         (config / "health.yml").write_text("enabled: true\ndownstreamEnabled: false\n")
         (config / "lambda-app.yml").write_text("lambdaAppId: native-smoke\nencodeBase64Request: false\nencodeBase64Response: false\n")
         (config / "values.yml").write_text("{}\n")
+        (config / "openapi-inject.yml").write_text("{}\n")
+        (config / "openapi-handler.yml").write_text("enabled: true\nmultipleSpec: false\n")
+        (config / "openapi-validator.yml").write_text("enabled: true\nskipPathPrefixes: []\n")
+        (config / "openapi.yaml").write_text("""openapi: 3.0.3
+info:
+  title: Native validation smoke
+  version: '1'
+servers:
+  - url: /
+paths:
+  /health:
+    get:
+      parameters:
+        - name: count
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Count'
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    Count:
+      type: integer
+""")
         server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), RuntimeApi)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
@@ -91,9 +120,13 @@ def main():
     assert response["statusCode"] == 200, response
     assert response["body"] == "OK", response
     assert response["isBase64Encoded"] is False, response
+    invalid = invoke(binary, "com.networknt.aws.lambda.app.LambdaApp", "response", count="invalid")
+    assert invalid["statusCode"] == 400, invalid
+    assert "ERR11004" in invalid["body"], invalid
     error = invoke(binary, "native.smoke.MissingHandler", "error")
     assert "native.smoke.MissingHandler" in error["message"], error
     print("Native Runtime smoke passed: API Gateway binding, health response and builder error serialization")
+    print("Native Runtime validation passed: unknown event fields and referenced query-schema rejection")
 
 
 if __name__ == "__main__":

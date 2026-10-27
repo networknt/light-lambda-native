@@ -5,20 +5,14 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
-import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class Jackson3NativeCompatibilityTest {
-    private ObjectMapper mainMapper() throws Exception {
-        Field field = Main.class.getDeclaredField("OBJECT_MAPPER");
-        field.setAccessible(true);
-        return (ObjectMapper) field.get(null);
-    }
 
     @Test
     void runtimeMapperKeepsPermissiveEventBinding() throws Exception {
-        APIGatewayProxyRequestEvent event = mainMapper().readValue(
+        APIGatewayProxyRequestEvent event = LambdaRuntimeMappers.mapper().readValue(
                 "{\"path\":\"/v1/pets\",\"httpMethod\":\"POST\",\"futureField\":true} trailing",
                 APIGatewayProxyRequestEvent.class);
         assertEquals("/v1/pets", event.getPath());
@@ -27,7 +21,7 @@ class Jackson3NativeCompatibilityTest {
 
     @Test
     void responseRetainsJackson2ShapeAndRoundTrips() throws Exception {
-        ObjectMapper mapper = mainMapper();
+        ObjectMapper mapper = LambdaRuntimeMappers.mapper();
         APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent()
                 .withStatusCode(200).withBody("{\"ok\":true}").withIsBase64Encoded(false);
         String json = mapper.writeValueAsString(response);
@@ -39,6 +33,6 @@ class Jackson3NativeCompatibilityTest {
     @Test
     void runtimeMapperRetainsJackson2StreamDepth() throws Exception {
         String nested = "[".repeat(600) + "0" + "]".repeat(600);
-        assertDoesNotThrow(() -> mainMapper().readTree(nested));
+        assertDoesNotThrow(() -> LambdaRuntimeMappers.mapper().readTree(nested));
     }
 }
