@@ -1,5 +1,21 @@
 [
   {
+    "name": "com.github.benmanes.caffeine.cache.SSMS",
+    "fields": [{ "name": "FACTORY" }]
+  },
+  {
+    "name": "com.github.benmanes.caffeine.cache.PSMS",
+    "methods": [{ "name": "<init>", "parameterTypes": [] }]
+  },
+  {
+    "name": "com.networknt.jsonoverlay.MapOverlay$1",
+    "methods": [{ "name": "getOverlay", "parameterTypes": [] }]
+  },
+  {
+    "name": "com.networknt.jsonoverlay.ListOverlay$1",
+    "methods": [{ "name": "getOverlay", "parameterTypes": [] }]
+  },
+  {
     "name": "com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent",
     "methods": [
       { "name": "<init>", "parameterTypes": [] }

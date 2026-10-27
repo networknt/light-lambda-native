@@ -33,7 +33,7 @@ python3 tests/test_native_image_script.py
 ```
 
 These tests stub Maven and Docker to check packaging and failure handling.
-They are not run by Maven or the current CI workflow.
+They are not run by Maven. The source-build CI workflow runs them separately from the real native smoke.
 
 ### Test with Main
 
@@ -127,7 +127,7 @@ software.amazon.awssdk.services.lambda.model.ResourceNotFoundException: Function
 
 This source line uses Jackson 3.2.3 and json-schema-validator 3.0.8. Build the Jackson 3 light-4j, http-client, REST and AWS Lambda prerequisites first; older snapshot binaries are not compatible. Jackson annotations retain their com.fasterxml.jackson.annotation package.
 
-The runtime mapper uses Jackson2Defaults with its existing permissive unknown-property override. Mapper instances are immutable. Java time and Optional support are built in. Classic SnakeYAML compatibility pins are retained until the stack-wide cleanup.
+The runtime uses the event-only `LambdaRuntimeMappers.mapper()` API from custom-runtime, built from `JacksonDefaults` with its permissive unknown-property override. Mapper instances are immutable. Java time and Optional support are built in. Classic SnakeYAML compatibility pins are retained until the stack-wide cleanup.
 
 Local qualification includes the full JVM suite, sanitized event/validation parity against the Jackson 2 baseline, and an offline GraalVM 25 native-image build. A native-image build does not establish deployed AWS behavior or complete reflection coverage for every middleware/configuration. The separate conformance worktree is deferred.
 
@@ -138,7 +138,11 @@ MAVEN_REPO_LOCAL=/path/to/isolated/m2 bash native-image-linux.sh
 python3 tests/native_runtime_smoke.py target/custom-runtime/lambda-native
 ```
 
-The smoke check binds an API Gateway event, runs the local health handler, and verifies success and builder-based error serialization. It uses no AWS endpoint or credentials. `-H:+AddAllCharsets` is required by SnakeYAML Engine's UTF-32 input detection. The check does not qualify every middleware chain or deployed AWS behavior.
+The smoke check binds API Gateway events with an unknown future field and runs specification, validator and health handlers. It checks valid referenced query/header/body schemas, invalid query/header/body values, an unknown path, a method mismatch, and builder-based error serialization. The OpenAPI document and handler/validator settings are controlled fixtures. The status catalog and injection settings are copied from the packaged application's `config/status.yml` and `config/config.yml`; their contents are not duplicated in the fixture. By default the script requires exactly one shaded `target/lambda-native-*.jar` (excluding sources and Javadoc JARs); use `--application-jar /path/to/runtime.jar` to select one explicitly.
+
+It uses no AWS endpoint or credentials. `-H:+AddAllCharsets` is required by SnakeYAML Engine's UTF-32 input detection. The check does not qualify every middleware chain, all default-resource packaging, or deployed AWS behavior.
+
+The native reflection file currently includes version-specific JSON overlay sideband accessors (`MapOverlay$1.getOverlay()` and `ListOverlay$1.getOverlay()`) and the OpenAPI path cache's Caffeine factories (`SSMS.FACTORY` and `PSMS()`), covered by this smoke. These remain application registrations until their owning libraries ship equivalent native metadata. Migrate native consumers together and remove these entries only after updated source pins and native smoke results establish equivalent coverage; moving them is separate from this mapper change.
 
 ### Reproducible Jackson 3 source build
 
