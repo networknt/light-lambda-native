@@ -9,14 +9,11 @@ import queue
 import subprocess
 import tempfile
 import threading
+import zipfile
 
 
-def invoke(binary, handler, expected_endpoint, count="7"):
+def invoke(binary, status_catalog, handler, expected_endpoint, event, *, config_catalog):
     received = queue.Queue()
-    event = {"path": "/health", "httpMethod": "GET", "body": None,
-             "isBase64Encoded": False, "headers": {}, "multiValueHeaders": {},
-             "queryStringParameters": {"count": count}, "futureEventField": {"nested": True},
-             "requestContext": {"requestId": "native-smoke", "identity": {"sourceIp": "127.0.0.1"}}}
 
     class RuntimeApi(http.server.BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -40,6 +37,7 @@ def invoke(binary, handler, expected_endpoint, count="7"):
 
     with tempfile.TemporaryDirectory(prefix="native-runtime-smoke-") as directory:
         config = Path(directory)
+        (config / "config.yml").write_bytes(config_catalog)
         (config / "handler.yml").write_text("""enabled: true
 handlers:
   - com.networknt.aws.lambda.handler.middleware.specification.OpenApiMiddleware@spec
@@ -50,19 +48,14 @@ paths:
   - path: /health
     method: get
     exec: [spec, validator, health]
-defaultHandlers: [health]
+defaultHandlers: [spec, validator, health]
 """)
         (config / "health.yml").write_text("enabled: true\ndownstreamEnabled: false\n")
         (config / "lambda-app.yml").write_text("lambdaAppId: native-smoke\nencodeBase64Request: false\nencodeBase64Response: false\n")
         (config / "values.yml").write_text("{}\n")
         (config / "service.yml").write_text("singletons: []\n")
-        # Native fixtures supply external config explicitly rather than relying on JVM resources.
-        (config / "status.yml").write_text("""ERR11004:
-  statusCode: 400
-  code: ERR11004
-  message: VALIDATOR_SCHEMA
-  description: Schema Validation Error - %s
-""")
+        (config / "status.yml").write_bytes(status_catalog)
+        # Controlled fixture settings exercise validation; this is not default-config qualification.
         (config / "openapi-inject.yml").write_text("{}\n")
         (config / "openapi-handler.yml").write_text("enabled: true\nmultipleSpec: false\n")
         (config / "openapi-validator.yml").write_text("enabled: true\nskipPathPrefixes: []\n")
@@ -81,6 +74,22 @@ paths:
           required: true
           schema:
             $ref: '#/components/schemas/Count'
+        - name: x-count
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/Count'
+      responses:
+        '200':
+          description: OK
+  /body:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payload'
       responses:
         '200':
           description: OK
@@ -88,6 +97,12 @@ components:
   schemas:
     Count:
       type: integer
+    Payload:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: integer
 """)
         server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), RuntimeApi)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -122,19 +137,48 @@ components:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("binary", type=Path)
+    parser.add_argument("--application-jar", type=Path,
+                        help="Shaded runtime JAR providing framework config and status catalog (default: target/lambda-native-*.jar)")
     args = parser.parse_args()
     binary = args.binary.resolve(strict=True)
-    response = invoke(binary, "com.networknt.aws.lambda.app.LambdaApp", "response")
+    jars = [args.application_jar] if args.application_jar else [
+        jar for jar in (Path(__file__).resolve().parents[1] / "target").glob("lambda-native-*.jar")
+        if not jar.name.endswith(("-sources.jar", "-javadoc.jar"))]
+    if len(jars) != 1:
+        parser.error("Expected one shaded runtime JAR; specify --application-jar explicitly")
+    with zipfile.ZipFile(jars[0]) as application_jar:
+        status_catalog = application_jar.read("config/status.yml")
+        config_catalog = application_jar.read("config/config.yml")
+    event = {"path": "/health", "httpMethod": "GET", "body": None,
+             "isBase64Encoded": False, "headers": {"x-count": "7"}, "multiValueHeaders": {},
+             "queryStringParameters": {"count": "7"}, "futureEventField": {"nested": True},
+             "requestContext": {"requestId": "native-smoke", "identity": {"sourceIp": "127.0.0.1"}}}
+    handler = "com.networknt.aws.lambda.app.LambdaApp"
+    response = invoke(binary, status_catalog, handler, "response", event, config_catalog=config_catalog)
     assert response["statusCode"] == 200, response
     assert response["body"] == "OK", response
     assert response["isBase64Encoded"] is False, response
-    invalid = invoke(binary, "com.networknt.aws.lambda.app.LambdaApp", "response", count="invalid")
-    assert invalid["statusCode"] == 400, invalid
-    assert "ERR11004" in invalid["body"], invalid
-    error = invoke(binary, "native.smoke.MissingHandler", "error")
+    body_event = event | {"path": "/body", "httpMethod": "POST", "body": '{"value":7}',
+                          "headers": {"content-type": "application/json"}, "queryStringParameters": {}}
+    body_response = invoke(binary, status_catalog, handler, "response", body_event, config_catalog=config_catalog)
+    assert body_response["statusCode"] == 200, body_response
+    assert body_response["body"] == "OK", body_response
+    cases = [
+        ("query", event | {"queryStringParameters": {"count": "invalid"}}, 400, "ERR11004"),
+        ("header", event | {"headers": {"x-count": "invalid"}}, 400, "ERR11004"),
+        ("body", body_event | {"body": '{"value":"invalid"}'}, 400, "ERR11004"),
+        ("unknown path", event | {"path": "/missing"}, 404, "ERR10007"),
+        ("method mismatch", event | {"httpMethod": "DELETE"}, 405, "ERR10008"),
+    ]
+    for name, invalid_event, status, code in cases:
+        invalid = invoke(binary, status_catalog, handler, "response", invalid_event, config_catalog=config_catalog)
+        assert invalid["statusCode"] == status, (name, invalid)
+        assert json.loads(invalid["body"])["code"] == code, (name, invalid)
+    error = invoke(binary, status_catalog, "native.smoke.MissingHandler", "error", event, config_catalog=config_catalog)
     assert "native.smoke.MissingHandler" in error["message"], error
     print("Native Runtime smoke passed: API Gateway binding, health response and builder error serialization")
     print("Native Runtime validation passed: unknown event fields and referenced query-schema rejection")
+    print("Native Runtime validation passed: body and header schemas, unknown path and method mismatch")
 
 
 if __name__ == "__main__":
