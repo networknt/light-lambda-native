@@ -3,13 +3,21 @@ set -euo pipefail
 
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
+maven_args=()
+if [[ -n ${MAVEN_REPO_LOCAL:-} ]]; then
+    maven_args+=("-Dmaven.repo.local=$MAVEN_REPO_LOCAL")
+fi
+if [[ ${MAVEN_OFFLINE:-0} == 1 ]]; then
+    maven_args+=(-o)
+fi
+
 # Build the shaded JAR, then obtain its name and Java level from Maven.
-mvn clean install
+mvn clean install "${maven_args[@]}"
 metadata_dir=$(mktemp -d)
 trap 'rm -rf -- "$metadata_dir"' EXIT
-mvn -q help:evaluate -Dexpression=project.build.finalName \
+mvn -q help:evaluate "${maven_args[@]}" -Dexpression=project.build.finalName \
     -Doutput="$metadata_dir/final-name"
-mvn -q help:evaluate -Dexpression=maven.compiler.target \
+mvn -q help:evaluate "${maven_args[@]}" -Dexpression=maven.compiler.target \
     -Doutput="$metadata_dir/java-version"
 jar_name=$(cat "$metadata_dir/final-name")
 java_version=$(cat "$metadata_dir/java-version")
@@ -24,6 +32,7 @@ docker run --rm --user "$(id -u):$(id -g)" \
     "$graalvm_image" \
     --enable-url-protocols=http,https \
     --no-fallback \
+    -H:+AddAllCharsets \
     --verbose \
     --initialize-at-build-time=org.slf4j,ch.qos.logback \
     --initialize-at-run-time=io.netty \

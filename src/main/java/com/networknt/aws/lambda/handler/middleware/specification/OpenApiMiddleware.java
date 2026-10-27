@@ -1,6 +1,6 @@
 package com.networknt.aws.lambda.handler.middleware.specification;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.config.Config;
@@ -40,7 +40,7 @@ public class OpenApiMiddleware implements MiddlewareHandler {
             String openapiString = Config.getInstance().getMapper().writeValueAsString(openapi);
             LOG.trace("OpenApiMiddleware openapiString: {}", openapiString);
             helper = new OpenApiHelper(openapiString);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             LOG.error("merge specification failed");
             throw new RuntimeException("merge specification failed");
         }
