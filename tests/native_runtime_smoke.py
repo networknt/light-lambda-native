@@ -56,6 +56,13 @@ defaultHandlers: [health]
         (config / "lambda-app.yml").write_text("lambdaAppId: native-smoke\nencodeBase64Request: false\nencodeBase64Response: false\n")
         (config / "values.yml").write_text("{}\n")
         (config / "service.yml").write_text("singletons: []\n")
+        # Native fixtures supply external config explicitly rather than relying on JVM resources.
+        (config / "status.yml").write_text("""ERR11004:
+  statusCode: 400
+  code: ERR11004
+  message: VALIDATOR_SCHEMA
+  description: Schema Validation Error - %s
+""")
         (config / "openapi-inject.yml").write_text("{}\n")
         (config / "openapi-handler.yml").write_text("enabled: true\nmultipleSpec: false\n")
         (config / "openapi-validator.yml").write_text("enabled: true\nskipPathPrefixes: []\n")
