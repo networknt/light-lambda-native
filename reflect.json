@@ -1,5 +1,13 @@
 [
   {
+    "name": "com.github.benmanes.caffeine.cache.SSMS",
+    "fields": [{ "name": "FACTORY" }]
+  },
+  {
+    "name": "com.github.benmanes.caffeine.cache.PSMS",
+    "methods": [{ "name": "<init>", "parameterTypes": [] }]
+  },
+  {
     "name": "com.networknt.jsonoverlay.MapOverlay$1",
     "methods": [{ "name": "getOverlay", "parameterTypes": [] }]
   },
