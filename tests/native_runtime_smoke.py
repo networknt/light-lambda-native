@@ -55,6 +55,7 @@ defaultHandlers: [health]
         (config / "health.yml").write_text("enabled: true\ndownstreamEnabled: false\n")
         (config / "lambda-app.yml").write_text("lambdaAppId: native-smoke\nencodeBase64Request: false\nencodeBase64Response: false\n")
         (config / "values.yml").write_text("{}\n")
+        (config / "service.yml").write_text("singletons: []\n")
         (config / "openapi-inject.yml").write_text("{}\n")
         (config / "openapi-handler.yml").write_text("enabled: true\nmultipleSpec: false\n")
         (config / "openapi-validator.yml").write_text("enabled: true\nskipPathPrefixes: []\n")
