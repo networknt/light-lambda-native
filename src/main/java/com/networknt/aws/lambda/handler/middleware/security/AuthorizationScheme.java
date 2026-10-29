@@ -17,7 +17,15 @@ enum AuthorizationScheme {
     }
 
     static boolean hasCredentials(String header, AuthorizationScheme scheme) {
-        return scheme != UNKNOWN && parse(header) == scheme && header.length() > scheme.name().length() + 1
-                && !header.substring(scheme.name().length() + 1).trim().isEmpty();
+        if (scheme == UNKNOWN || parse(header) != scheme) return false;
+        return hasTrimmedContent(header, scheme.name().length() + 1);
+    }
+
+    // Match String.trim() semantics without copying credential material into another String.
+    static boolean hasTrimmedContent(String header, int start) {
+        for (int i = start; i < header.length(); i++) {
+            if (header.charAt(i) > ' ') return true;
+        }
+        return false;
     }
 }
