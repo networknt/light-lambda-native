@@ -80,6 +80,40 @@ class BasicAuthCredentialsTest {
         }
     }
 
+    @Test
+    void explicitlySizedConversionHandlesMixedWidthUnicodeWithoutOverflow() throws Exception {
+        String password = "aé漢🙂:".repeat(1024);
+        String pair = "user:" + password;
+        for (String payload : new String[]{pair, Base64.getEncoder().encodeToString(pair.getBytes(UTF_8))}) {
+            BasicAuthCredentials credentials = BasicAuthCredentials.parse("Basic " + payload);
+            byte[] decoded = buffer(credentials, "decoded");
+            byte[] secret = buffer(credentials, "password");
+            try (credentials) {
+                assertEquals("user", credentials.username());
+                assertTrue(credentials.matches(password));
+                assertEquals(password, credentials.ldapPassword());
+            }
+            assertZero(decoded);
+            assertZero(secret);
+        }
+    }
+
+    @Test
+    void explicitlySizedNormalizationHandlesWorstCaseReplacementExpansion() throws Exception {
+        byte[] prefix = "user:".getBytes(UTF_8);
+        byte[] pair = java.util.Arrays.copyOf(prefix, prefix.length + 1024);
+        java.util.Arrays.fill(pair, prefix.length, pair.length, (byte) 0xff);
+        BasicAuthCredentials credentials = BasicAuthCredentials.parse("Basic " + Base64.getEncoder().encodeToString(pair));
+        byte[] decoded = buffer(credentials, "decoded");
+        byte[] secret = buffer(credentials, "password");
+        try (credentials) {
+            assertTrue(credentials.matches("\uFFFD".repeat(1024)));
+            assertEquals("\uFFFD".repeat(1024), credentials.ldapPassword());
+        }
+        assertZero(decoded);
+        assertZero(secret);
+    }
+
     private static byte[] buffer(BasicAuthCredentials credentials, String name) throws Exception {
         var field = BasicAuthCredentials.class.getDeclaredField(name);
         field.setAccessible(true);

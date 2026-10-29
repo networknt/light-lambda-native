@@ -27,7 +27,11 @@ rules and LDAP dispatch are retained. The scheme is removed at a character
 boundary, preserving the existing case-insensitive Unicode scheme matching.
 Malformed UTF-8 in Base64-decoded credentials retains the historical UTF-8
 replacement behavior for local comparison and LDAP; normalization uses temporary
-character/byte buffers cleared after use, without an immutable credential String.
+character/byte buffers cleared after use, without an immutable credential String. Conversion uses explicit encoder/decoder
+output buffers sized from their advertised maximum expansion, rather than the
+convenience charset methods that can resize and discard an earlier buffer.
+Every supplied conversion array is cleared in a finally block, including unused
+capacity; returned byte copies remain owned by their existing cleanup scopes.
 
 The protected `handleLdapAuth(UserAuth, String)` extension and the LDAP library
 still require a String. Only that branch constructs a password String; it cannot
