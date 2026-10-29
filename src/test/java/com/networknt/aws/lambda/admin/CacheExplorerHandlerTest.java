@@ -10,7 +10,9 @@ import com.networknt.aws.lambda.app.LambdaApp;
 import com.networknt.aws.lambda.handler.Handler;
 import com.networknt.aws.lambda.handler.chain.Chain;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class CacheExplorerHandlerTest {
     @Test
     public void testGetCacheJwk() {

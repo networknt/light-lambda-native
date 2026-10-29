@@ -14,6 +14,7 @@ import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.cors.CorsConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +22,7 @@ import java.util.Map;
 
 import static com.networknt.cors.CorsHeaders.ORIGIN;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class CorsMiddlewareTest {
     private static final Logger LOG = LoggerFactory.getLogger(CorsMiddlewareTest.class);
 
