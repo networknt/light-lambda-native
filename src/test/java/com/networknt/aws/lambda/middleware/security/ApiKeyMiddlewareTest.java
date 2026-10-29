@@ -10,7 +10,9 @@ import com.networknt.aws.lambda.handler.middleware.security.ApiKeyMiddleware;
 import com.networknt.status.Status;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class ApiKeyMiddlewareTest {
     /**
      * Test with a path that is in the apikey pathPrefixAuths definition. We are expecting return OK.

@@ -12,9 +12,11 @@ import com.networknt.status.Status;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class BasicAnonymousBearerTest {
 
     /**

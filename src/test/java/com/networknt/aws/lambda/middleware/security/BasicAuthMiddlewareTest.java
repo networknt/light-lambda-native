@@ -19,6 +19,7 @@ import com.networknt.utility.MapUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -29,6 +30,7 @@ import java.util.Map;
 import static com.networknt.aws.lambda.handler.middleware.audit.AuditMiddleware.AUDIT_ATTACHMENT_KEY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class BasicAuthMiddlewareTest {
 
     private static String encodeCredentialsFullFormat(String username, String password, String separator) {

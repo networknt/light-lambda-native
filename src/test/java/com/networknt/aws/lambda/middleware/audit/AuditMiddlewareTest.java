@@ -9,7 +9,9 @@ import com.networknt.aws.lambda.app.LambdaApp;
 import com.networknt.aws.lambda.utility.HeaderKey;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class AuditMiddlewareTest {
     @Test
     public void testAuditMiddleware() {
