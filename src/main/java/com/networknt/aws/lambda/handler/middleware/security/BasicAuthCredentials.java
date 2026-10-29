@@ -5,6 +5,8 @@ import org.apache.commons.codec.binary.Base64;
 import java.security.MessageDigest;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -22,12 +24,9 @@ final class BasicAuthCredentials implements AutoCloseable {
     }
 
     static BasicAuthCredentials parse(String auth) {
-        ByteBuffer encoded = UTF_8.encode(CharBuffer.wrap(auth, 6, auth.length()));
-        byte[] payload = null;
+        byte[] payload = encodeUtf8(CharBuffer.wrap(auth, 6, auth.length()));
         byte[] decoded = null;
         try {
-            payload = new byte[encoded.remaining()];
-            encoded.get(payload);
             // Preserve the existing raw username:password compatibility and lenient Base64 decoder.
             if (separator(payload) >= 0) {
                 decoded = payload;
@@ -42,30 +41,48 @@ final class BasicAuthCredentials implements AutoCloseable {
             decoded = null; // Ownership moves to the closeable credentials.
             return credentials;
         } finally {
-            encoded.clear();
-            while (encoded.hasRemaining()) encoded.put((byte) 0);
             if (payload != null) Arrays.fill(payload, (byte) 0);
             if (decoded != null) Arrays.fill(decoded, (byte) 0);
         }
     }
 
+    // Caller-supplied output prevents convenience charset APIs from discarding grown buffers.
+    private static byte[] encodeUtf8(CharBuffer characters) {
+        var encoder = UTF_8.newEncoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        int capacity = Math.multiplyExact(characters.remaining(), (int) Math.ceil(encoder.maxBytesPerChar()));
+        byte[] bytes = new byte[capacity];
+        try {
+            ByteBuffer output = ByteBuffer.wrap(bytes);
+            requireUnderflow(encoder.encode(characters, output, true));
+            requireUnderflow(encoder.flush(output));
+            return Arrays.copyOf(bytes, output.position());
+        } finally {
+            Arrays.fill(bytes, (byte) 0);
+        }
+    }
+
     // Preserve the former new String(decoded, UTF_8) replacement semantics without a String.
     private static byte[] normalizeUtf8(byte[] decoded) {
-        CharBuffer characters = UTF_8.decode(ByteBuffer.wrap(decoded));
-        ByteBuffer normalized = null;
+        var decoder = UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        int capacity = Math.multiplyExact(decoded.length, (int) Math.ceil(decoder.maxCharsPerByte()));
+        char[] characters = new char[capacity];
         try {
-            normalized = UTF_8.encode(characters);
-            byte[] result = new byte[normalized.remaining()];
-            normalized.get(result);
-            return result;
+            CharBuffer output = CharBuffer.wrap(characters);
+            requireUnderflow(decoder.decode(ByteBuffer.wrap(decoded), output, true));
+            requireUnderflow(decoder.flush(output));
+            output.flip();
+            return encodeUtf8(output);
         } finally {
-            characters.clear();
-            while (characters.hasRemaining()) characters.put('\0');
-            if (normalized != null) {
-                normalized.clear();
-                while (normalized.hasRemaining()) normalized.put((byte) 0);
-            }
+            Arrays.fill(characters, '\0');
         }
+    }
+
+    private static void requireUnderflow(CoderResult result) {
+        if (!result.isUnderflow()) throw new IllegalStateException("Unexpected UTF-8 conversion result");
     }
 
     private static int separator(byte[] bytes) {
@@ -79,7 +96,7 @@ final class BasicAuthCredentials implements AutoCloseable {
 
     boolean matches(String configuredPassword) {
         if (configuredPassword == null) return false;
-        byte[] expected = configuredPassword.getBytes(UTF_8);
+        byte[] expected = encodeUtf8(CharBuffer.wrap(configuredPassword));
         try {
             return MessageDigest.isEqual(password, expected);
         } finally {
