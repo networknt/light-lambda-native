@@ -10,7 +10,9 @@ import com.networknt.aws.lambda.handler.chain.Chain;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.app.LambdaApp;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 class HealthCheckHandlerTest {
     @Test
     void testHealthCheck() {

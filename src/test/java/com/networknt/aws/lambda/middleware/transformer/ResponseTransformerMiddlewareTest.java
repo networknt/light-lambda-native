@@ -10,12 +10,14 @@ import com.networknt.aws.lambda.handler.middleware.transformer.ResponseTransform
 import com.networknt.aws.lambda.app.LambdaApp;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class ResponseTransformerMiddlewareTest {
     private static final Logger LOG = LoggerFactory.getLogger(ResponseTransformerMiddlewareTest.class);
     LightLambdaExchange exchange;
