@@ -10,7 +10,9 @@ import com.networknt.aws.lambda.utility.HeaderKey;
 import com.networknt.utility.MapUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class ResponseHeaderMiddlewareTest {
     @Test
     void testResponseHeaderRemoveUpdate() {

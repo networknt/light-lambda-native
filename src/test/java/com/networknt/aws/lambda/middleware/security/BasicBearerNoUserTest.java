@@ -11,7 +11,9 @@ import com.networknt.basicauth.BasicAuthConfig;
 import com.networknt.status.Status;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.util.SetSystemProperty;
 
+@SetSystemProperty(key = "light_4j_config_password", value = "light")
 public class BasicBearerNoUserTest {
     /**
      * Test with Bearer header and wrong path. Expect 401 status code.
