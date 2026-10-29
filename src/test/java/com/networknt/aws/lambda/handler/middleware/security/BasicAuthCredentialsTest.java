@@ -51,6 +51,35 @@ class BasicAuthCredentialsTest {
         }
     }
 
+    @Test
+    void schemeIsRemovedAtCharacterBoundaryIncludingUnicodeCaseVariants() {
+        for (String scheme : new String[]{"Basic", "bAsIc", "Bas\u0131c", "Bas\u0130c", "Ba\u017fic"}) {
+            for (String payload : new String[]{"user:password", Base64.getEncoder().encodeToString("user:password".getBytes(UTF_8))}) {
+                assertEquals(AuthorizationScheme.BASIC, AuthorizationScheme.parse(scheme + " " + payload));
+                try (var credentials = BasicAuthCredentials.parse(scheme + " " + payload)) {
+                    assertEquals("user", credentials.username());
+                    assertTrue(credentials.matches("password"));
+                }
+            }
+        }
+    }
+
+    @Test
+    void malformedUtf8RetainsHistoricalReplacementForLocalComparisonAndLdap() {
+        for (byte[] malformed : new byte[][]{{(byte) 0xc3, '('}, {(byte) 0xe2}, {(byte) 0xff}}) {
+            byte[] prefix = "user:".getBytes(UTF_8);
+            byte[] pair = java.util.Arrays.copyOf(prefix, prefix.length + malformed.length);
+            System.arraycopy(malformed, 0, pair, prefix.length, malformed.length);
+            String previousPassword = new String(malformed, UTF_8);
+            try (var credentials = BasicAuthCredentials.parse("Basic " + Base64.getEncoder().encodeToString(pair))) {
+                assertEquals("user", credentials.username());
+                assertTrue(credentials.matches(previousPassword));
+                assertEquals(previousPassword, credentials.ldapPassword());
+                assertFalse(credentials.matches("incorrect"));
+            }
+        }
+    }
+
     private static byte[] buffer(BasicAuthCredentials credentials, String name) throws Exception {
         var field = BasicAuthCredentials.class.getDeclaredField(name);
         field.setAccessible(true);

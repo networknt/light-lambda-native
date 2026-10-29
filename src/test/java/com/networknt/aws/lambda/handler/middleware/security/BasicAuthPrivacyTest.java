@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BasicAuthPrivacyTest {
     private static final java.util.List<String> ENCODED_CANARIES = new java.util.ArrayList<>();
-    private static final String SECRET = "lambda-secret-canary:ü";
+    private static final String SECRET = "q7V9p2Z8~R4m6N1t3~H5k0W2s9ü";
 
     private static class LdapFixture extends BasicAuthMiddleware {
         boolean accepted;
@@ -98,9 +98,19 @@ class BasicAuthPrivacyTest {
 
     private static void privateText(String text) {
         assertFalse(text.contains("secret-canary"), text);
+        assertFalse(text.contains(SECRET.substring(0, 4)), text);
+        assertFalse(text.contains(SECRET.substring(SECRET.length() - 4)), text);
+        assertFalse(text.contains("ü"), text);
         for (String canary : ENCODED_CANARIES) assertFalse(text.contains(canary), text);
         assertFalse(text.contains(Base64.getEncoder().encodeToString(("local-user:" + SECRET).getBytes(UTF_8))), text);
         assertFalse(text.contains(Base64.getEncoder().encodeToString(("ldap-user:" + SECRET).getBytes(UTF_8))), text);
+    }
+
+    @Test
+    void canaryDetectorRejectsPasswordPrefixAndSuffixLeaks() {
+        assertThrows(AssertionError.class, () -> privateText("prefix=" + SECRET.substring(0, 4)));
+        assertThrows(AssertionError.class, () -> privateText("suffix=" + SECRET.substring(SECRET.length() - 4)));
+        assertThrows(AssertionError.class, () -> privateText("suffix=ü"));
     }
 
     private static void privateThrowable(IThrowableProxy throwable) {
