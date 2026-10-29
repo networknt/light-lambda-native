@@ -122,3 +122,7 @@ software.amazon.awssdk.services.lambda.model.ResourceNotFoundException: Function
 
 ### [AuditMiddleware](doc/audit.md)
 ### [LambdaProxyMiddleware](doc/proxy.md)
+
+## Basic Auth credential hardening
+
+See [A20/A25 assessment and credential ownership](doc/security/basic-auth-credentials.md) for the scoped Basic Auth hardening and remaining memory/logging limits.

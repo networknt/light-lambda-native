@@ -1,0 +1,12 @@
+enabled: true
+allowAnonymous: false
+allowBearerToken: false
+enableAD: true
+users:
+  - username: local-user
+    password: "lambda-secret-canary:ü"
+    paths:
+      - /allowed
+  - username: ldap-user
+    paths:
+      - /allowed
