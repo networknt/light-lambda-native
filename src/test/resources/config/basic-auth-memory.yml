@@ -1,0 +1,16 @@
+enabled: true
+allowAnonymous: false
+allowBearerToken: false
+enableAD: true
+users:
+  - username: local-user
+    password: "q7V9p2Z8~R4m6N1t3~H5k0W2s9ü"
+    paths:
+      - /allowed
+  - username: ldap-user
+    paths:
+      - /allowed
+  - username: replacement-user
+    password: "\uFFFD("
+    paths:
+      - /allowed
