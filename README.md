@@ -166,3 +166,7 @@ Before merging this dependent PR, merge networknt/light-aws-lambda#168. Resolve 
 Fetch each sibling repository’s master and verify the selected commit is its ancestor with `git merge-base --is-ancestor <merge-sha> origin/master`. Replace the corresponding values in `ci/jackson3-source-refs.json` with those full 40-character merge SHAs in a reviewed dependent change. Keep the remaining closure pins and the qualified core/policy SHAs unchanged. Run fresh source-build CI on that dependent commit and review its resolved-source artifact before merging. A squash or merge commit must be qualified even when its runtime tree matches the earlier pin.
 
 For later sibling updates after this PR merges, use the same manifest-update PR and fresh dependent CI procedure. Never silently advance pins or infer qualification from the sibling’s own green build.
+
+## Basic Auth credential hardening
+
+See [A20/A25 assessment and credential ownership](doc/security/basic-auth-credentials.md) for the scoped Basic Auth hardening and remaining memory/logging limits.
