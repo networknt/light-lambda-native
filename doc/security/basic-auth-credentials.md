@@ -23,7 +23,11 @@ Temporary header/payload copies and configured
 password comparison bytes are also cleared. Local comparison continues to use
 `MessageDigest.isEqual`. Existing raw `username:password` compatibility, Base64
 decoding, Unicode passwords, colons in passwords, status codes, reserved-user
-rules and LDAP dispatch are retained for valid UTF-8 credentials.
+rules and LDAP dispatch are retained. The scheme is removed at a character
+boundary, preserving the existing case-insensitive Unicode scheme matching.
+Malformed UTF-8 in Base64-decoded credentials retains the historical UTF-8
+replacement behavior for local comparison and LDAP; normalization uses temporary
+character/byte buffers cleared after use, without an immutable credential String.
 
 The protected `handleLdapAuth(UserAuth, String)` extension and the LDAP library
 still require a String. Only that branch constructs a password String; it cannot
@@ -36,9 +40,13 @@ Protect request/access/audit logs, memory dumps, diagnostics and transport.
 ## Verification boundaries
 
 Focused JVM tests exercise the existing Basic authentication contract, owned
-buffer cleanup for successful/malformed/empty/exceptional scopes, and synthetic
+buffer cleanup for successful/malformed/empty/exceptional scopes and through the
+real middleware's return and LDAP-exception paths, and synthetic
 local/LDAP outcomes at TRACE. Log checks inspect messages, argument arrays, MDC
 and throwable causes/suppressed exceptions; returned status content is checked
-for canaries as well. LDAP is a local test double. No live LDAP bind, AWS
+for canaries as well. Distinct password prefix/suffix fragments and the Unicode
+suffix are checked in addition to full encoded credentials. Negative controls
+verify these checks catch partial logging and omitted middleware cleanup.
+LDAP is a local test double. No live LDAP bind, AWS
 deployment, native-image rebuild or partner rescan is implied by these tests.
 Deployment requires rebuilding and distributing the native Lambda artifact.

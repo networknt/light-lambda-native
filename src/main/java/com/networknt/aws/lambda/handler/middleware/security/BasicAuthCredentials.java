@@ -3,6 +3,8 @@ package com.networknt.aws.lambda.handler.middleware.security;
 import org.apache.commons.codec.binary.Base64;
 
 import java.security.MessageDigest;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -20,21 +22,49 @@ final class BasicAuthCredentials implements AutoCloseable {
     }
 
     static BasicAuthCredentials parse(String auth) {
-        byte[] header = auth.getBytes(UTF_8);
+        ByteBuffer encoded = UTF_8.encode(CharBuffer.wrap(auth, 6, auth.length()));
         byte[] payload = null;
         byte[] decoded = null;
         try {
-            payload = Arrays.copyOfRange(header, 6, header.length);
+            payload = new byte[encoded.remaining()];
+            encoded.get(payload);
             // Preserve the existing raw username:password compatibility and lenient Base64 decoder.
-            decoded = separator(payload) >= 0 ? payload : Base64.decodeBase64(payload);
+            if (separator(payload) >= 0) {
+                decoded = payload;
+            } else {
+                decoded = Base64.decodeBase64(payload);
+                byte[] normalized = normalizeUtf8(decoded);
+                Arrays.fill(decoded, (byte) 0);
+                decoded = normalized;
+            }
             BasicAuthCredentials credentials = new BasicAuthCredentials(decoded);
             if (decoded == payload) payload = null;
             decoded = null; // Ownership moves to the closeable credentials.
             return credentials;
         } finally {
-            Arrays.fill(header, (byte) 0);
+            encoded.clear();
+            while (encoded.hasRemaining()) encoded.put((byte) 0);
             if (payload != null) Arrays.fill(payload, (byte) 0);
             if (decoded != null) Arrays.fill(decoded, (byte) 0);
+        }
+    }
+
+    // Preserve the former new String(decoded, UTF_8) replacement semantics without a String.
+    private static byte[] normalizeUtf8(byte[] decoded) {
+        CharBuffer characters = UTF_8.decode(ByteBuffer.wrap(decoded));
+        ByteBuffer normalized = null;
+        try {
+            normalized = UTF_8.encode(characters);
+            byte[] result = new byte[normalized.remaining()];
+            normalized.get(result);
+            return result;
+        } finally {
+            characters.clear();
+            while (characters.hasRemaining()) characters.put('\0');
+            if (normalized != null) {
+                normalized.clear();
+                while (normalized.hasRemaining()) normalized.put((byte) 0);
+            }
         }
     }
 

@@ -60,9 +60,7 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
         } else {
             /* contains auth header */
             String auth = optionalAuth.get();
-            int firstNonblank = 0;
-            while (firstNonblank < auth.length() && auth.charAt(firstNonblank) <= ' ') firstNonblank++;
-            if (firstNonblank == auth.length()) {
+            if (!AuthorizationScheme.hasTrimmedContent(auth, 0)) {
                 return this.handleAnonymousAuth(exchange, requestPath, config);
             }
             AuthorizationScheme scheme = AuthorizationScheme.parse(auth);
@@ -147,7 +145,7 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
             LOG.error("Invalid/Unsupported Basic authorization header.");
             return new Status(INVALID_AUTHORIZATION_HEADER, BASIC_PREFIX);
         }
-        try (BasicAuthCredentials credentials = BasicAuthCredentials.parse(auth)) {
+        try (BasicAuthCredentials credentials = parseCredentials(auth)) {
             if (!credentials.hasSeparator()) {
                 LOG.error("Invalid basic authentication header. It must be username:password base64 encode.");
                 return new Status(INVALID_BASIC_HEADER, BASIC_PREFIX);
@@ -193,6 +191,11 @@ public class BasicAuthMiddleware implements MiddlewareHandler {
             }
         }
         return successMiddlewareStatus();
+    }
+
+    // Package-local boundary lets lifecycle tests observe buffers used by the real middleware.
+    BasicAuthCredentials parseCredentials(String auth) {
+        return BasicAuthCredentials.parse(auth);
     }
 
     /**
