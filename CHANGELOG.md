@@ -1,5 +1,20 @@
 # Change Log
 
+## [2.5.0](https://github.com/networknt/light-lambda-native/tree/2.5.0) (2026-11-04)
+
+**Commits:**
+
+- upgrade to version 2.5.0 before release in 2.x branch ([865c988](https://github.com/networknt/light-lambda-native/commit/865c9888b1fa4548bf29b6ec6571f7f4dfa8cb0c)) (by Steve Hu)
+- upgrade to version 2.5.0-SNAPSHOT after release in 2.x branch ([6a235db](https://github.com/networknt/light-lambda-native/commit/6a235db39f87b061da57671468d364c0dbe6a4f2)) (by Steve Hu)
+- upgrade lambda-awssdk to 2.57.8 from 2.55.13 ([bcbbd8d](https://github.com/networknt/light-lambda-native/commit/bcbbd8db3ba92959c2e0f6c6d93ff60d2eafce73)) (by Steve Hu)
+- upgrade lambda-core to 1.4.1 from 1.4.0 ([1881ba2](https://github.com/networknt/light-lambda-native/commit/1881ba2001e8d6ef59bc3a76d12ac80e15976b52)) (by Steve Hu)
+- upgrade encoder to 1.6.0 from 1.5.0 ([8969e6c](https://github.com/networknt/light-lambda-native/commit/8969e6c4da184ca303645a709028065aeef33a29)) (by Steve Hu)
+- upgrade jackson to 2.22.4 from 2.22.3 ([9fad8e5](https://github.com/networknt/light-lambda-native/commit/9fad8e599a6f6eaa622f2b521d7422b76e39cad5)) (by Steve Hu)
+- upgrade logback to 1.6.6 from 1.6.5 ([abaa8f0](https://github.com/networknt/light-lambda-native/commit/abaa8f05efea2113624957e53cdc62203bf6ddf7)) (by Steve Hu)
+- Supply explicit passwords for encrypted Lambda test fixtures (#195) ([4ffd747](https://github.com/networknt/light-lambda-native/commit/4ffd7470d522799ef0c37f6ff2a520e285e412de)) (by Steve Hu)
+- \[2.x\] Harden Basic Auth credential buffers and verify A25 privacy (#193) ([1196b01](https://github.com/networknt/light-lambda-native/commit/1196b014492cf03b2e97c1e55c220ec0af4b0fec)) (by Steve Hu)
+- upgrade to version 2.4.2-SNAPSHOT after release in master branch ([785235d](https://github.com/networknt/light-lambda-native/commit/785235d5324697958a573cfa6ad6e664615e19ab)) (by Steve Hu)
+
 ## [2.4.1](https://github.com/networknt/light-lambda-native/tree/2.4.1) (2026-10-11)
 
 **Commits:**
