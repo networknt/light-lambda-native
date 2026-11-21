@@ -4,7 +4,6 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.config.Config;
 import com.networknt.cors.CorsConfig;
 import com.networknt.status.Status;
 import com.networknt.utility.MapUtil;
@@ -14,73 +13,43 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 import static com.networknt.cors.CorsHeaders.*;
-import static com.networknt.cors.CorsUtil.sanitizeDefaultPort;
 
-/**
- * This middleware is responsible for adding CORS headers to the response and return it if the request
- * is a CORS preflight request. If the preflight request has the correct origin and method, it will return
- * 200 with the correct headers. Otherwise, 403 will be returned.
- *
- * If the request is a normal request with origin header and the origin is not matched, it will return 403.
- *
- * @author Steve Hu
- *
- */
+/** Validate CORS requests with the shared compiled cors-config policy. */
 public class RequestCorsMiddleware implements MiddlewareHandler {
     private static final Logger LOG = LoggerFactory.getLogger(RequestCorsMiddleware.class);
     private static final String SUC10200 = "SUC10200";
     private static final String CORS_PREFLIGHT_REQUEST_FAILED = "ERR10092";
-
     private static final String ONE_HOUR_IN_SECONDS = "3600";
 
-    private final CorsConfig config;
+    static final LightLambdaExchange.Attachable<AcceptedOrigin> ACCEPTED_ORIGIN =
+            LightLambdaExchange.Attachable.createAttachable(AcceptedOrigin.class);
+    record AcceptedOrigin(String origin, List<String> methods) { }
+    private record OriginHeader(boolean present, String value) { }
+
     public RequestCorsMiddleware() {
-        this.config = CorsConfig.load();
+        CorsConfig.load();
         LOG.info("RequestCorsMiddleware is constructed");
     }
 
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        LOG.trace("RequestCorsMiddleware.executeMiddleware starts.");
-
-        APIGatewayProxyRequestEvent requestEvent = exchange.getRequest();
-        if(requestEvent != null) {
-            LOG.trace("Request event is not null.");
-
-            List<String> allowedOrigins = config.getAllowedOrigins();
-            List<String> allowedMethods = config.getAllowedMethods();
-
-            Map<String, String> requestHeaders = requestEvent.getHeaders();
-            if(isCorsRequest(requestHeaders)) {
-                // set the allowed origins and methods based on the path prefix.
-                if (config.getPathPrefixAllowed() != null) {
-                    String requestPath = requestEvent.getPath();
-                    for(Map.Entry<String, Object> entry: config.getPathPrefixAllowed().entrySet()) {
-                        if (requestPath.startsWith(entry.getKey())) {
-                            Map endpointCorsMap = (Map) entry.getValue();
-                            allowedOrigins = (List<String>) endpointCorsMap.get(CorsConfig.ALLOWED_ORIGINS);
-                            allowedMethods = (List<String>) endpointCorsMap.get(CorsConfig.ALLOWED_METHODS);
-                            break;
-                        }
-                    }
-                }
-                // if it is a preflight request, then handle it and return.
-                if (isPreflightedRequest(requestEvent.getHttpMethod())) {
-                    // it is a preflight request. Handle it and return the response.
-                    return handlePreflightRequest(exchange, allowedOrigins, allowedMethods);
-                } else {
-                    // normal request with origin header. check the origin and reject if it is not matched.
-                    String origin = matchOrigin(requestEvent, allowedOrigins);
-                    if(origin == null) {
-                        return new Status(CORS_PREFLIGHT_REQUEST_FAILED);
-                    }
-                }
+        CorsConfig config = CorsConfig.load();
+        if (!config.isEnabled()) return disabledMiddlewareStatus();
+        APIGatewayProxyRequestEvent request = exchange.getRequest();
+        if (request == null) return successMiddlewareStatus();
+        OriginHeader header = originHeader(request);
+        if (!header.present) return successMiddlewareStatus();
+        CorsConfig.Policy policy = config.policyForPath(request.getPath() == null ? "/" : request.getPath());
+        if (header.value == null || !policy.origins().matches(header.value)) {
+            if (isPreflightedRequest(request.getHttpMethod())) {
+                exchange.setInitialResponse(new APIGatewayProxyResponseEvent().withIsBase64Encoded(false)
+                        .withStatusCode(403).withHeaders(Map.of("Vary", "Origin")));
             }
+            return new Status(CORS_PREFLIGHT_REQUEST_FAILED);
         }
-        // need to set the response header for the normal cors request that passed the origin check. It needs
-        // to be set in the response chain instead of request chain.
-
-        LOG.trace("RequestCorsMiddleware.executeMiddleware ends.");
+        AcceptedOrigin accepted = new AcceptedOrigin(header.value, policy.methods());
+        exchange.addAttachment(ACCEPTED_ORIGIN, accepted);
+        if (isPreflightedRequest(request.getHttpMethod())) return handlePreflightRequest(exchange, accepted);
         return successMiddlewareStatus();
     }
 
@@ -89,70 +58,45 @@ public class RequestCorsMiddleware implements MiddlewareHandler {
         return CorsConfig.load().isEnabled();
     }
 
-    private Status handlePreflightRequest(LightLambdaExchange exchange, List<String> allowedOrigins, List<String> allowedMethods) {
-        APIGatewayProxyResponseEvent responseEvent = new APIGatewayProxyResponseEvent();
-        responseEvent.setIsBase64Encoded(false);
+    private Status handlePreflightRequest(LightLambdaExchange exchange, AcceptedOrigin accepted) {
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put(ACCESS_CONTROL_ALLOW_ORIGIN, accepted.origin);
+        headers.put("Vary", "Origin");
+        headers.put(ACCESS_CONTROL_ALLOW_METHODS, convertToString(accepted.methods));
         Map<String, String> requestHeaders = exchange.getRequest().getHeaders();
-        Map<String, String> responseHeaders = new HashMap<>();
-        if (MapUtil.getValueIgnoreCase(requestHeaders, ORIGIN).isPresent()) {
-            if(matchOrigin(exchange.getRequest(), allowedOrigins) != null) {
-                responseHeaders.put(ACCESS_CONTROL_ALLOW_ORIGIN, MapUtil.getValueIgnoreCase(requestHeaders, ORIGIN).get());
-                responseHeaders.put("Vary", "Origin");
-            } else {
-                responseEvent.setHeaders(responseHeaders);
-                responseEvent.setStatusCode(403);
-                exchange.setInitialResponse(responseEvent);
-                return new Status(CORS_PREFLIGHT_REQUEST_FAILED);
-            }
-        }
-        responseHeaders.put(ACCESS_CONTROL_ALLOW_METHODS, convertToString(allowedMethods));
-        Optional<String> acRequestHeaders = MapUtil.getValueIgnoreCase(requestHeaders, ACCESS_CONTROL_REQUEST_HEADERS);
-        if (acRequestHeaders.isPresent()) {
-            responseHeaders.put(ACCESS_CONTROL_ALLOW_HEADERS, acRequestHeaders.get());
-        } else {
-            responseHeaders.put(ACCESS_CONTROL_ALLOW_HEADERS, "Content-Type, WWW-Authenticate, Authorization");
-        }
-        responseHeaders.put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-        responseHeaders.put(ACCESS_CONTROL_MAX_AGE, ONE_HOUR_IN_SECONDS);
-        responseEvent.setHeaders(responseHeaders);
-        responseEvent.setStatusCode(200);
-        exchange.setInitialResponse(responseEvent);
+        String requestedHeaders = requestHeaders == null ? null
+                : MapUtil.getValueIgnoreCase(requestHeaders, ACCESS_CONTROL_REQUEST_HEADERS).orElse(null);
+        headers.put(ACCESS_CONTROL_ALLOW_HEADERS, requestedHeaders == null
+                ? "Content-Type, WWW-Authenticate, Authorization" : requestedHeaders);
+        headers.put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+        headers.put(ACCESS_CONTROL_MAX_AGE, ONE_HOUR_IN_SECONDS);
+        exchange.setInitialResponse(new APIGatewayProxyResponseEvent().withIsBase64Encoded(false)
+                .withStatusCode(200).withHeaders(headers));
         return new Status(SUC10200);
     }
 
-    /**
-     * Match the Origin header with the allowed origins.
-     * If it doesn't match then a 403 response code is set on the response and it returns null.
-     * @param requestEvent the current request event.
-     * @param allowedOrigins list of sanitized allowed origins.
-     * @return the first matching origin, null otherwise.
-     */
-    static String matchOrigin(APIGatewayProxyRequestEvent requestEvent, Collection<String> allowedOrigins) {
-        Map<String, String> requestHeaders = requestEvent.getHeaders();
-        Optional<String> optionalOrigin = MapUtil.getValueIgnoreCase(requestHeaders, ORIGIN);
-        String origin = optionalOrigin.orElse(null);
-        LOG.trace("origin from the request header = {} allowedOrigins = {}", origin, allowedOrigins);
-        if (origin != null && allowedOrigins != null && !allowedOrigins.isEmpty()) {
-            for (String allowedOrigin : allowedOrigins) {
-                if (allowedOrigin.equalsIgnoreCase(sanitizeDefaultPort(origin))) {
-                    return allowedOrigin;
-                }
-            }
+    private static OriginHeader originHeader(APIGatewayProxyRequestEvent request) {
+        List<String> singles = originValues(request.getHeaders());
+        List<List<String>> multiples = originValues(request.getMultiValueHeaders());
+        boolean present = !singles.isEmpty() || !multiples.isEmpty();
+        if (!present || singles.size() > 1 || multiples.size() > 1) return new OriginHeader(present, null);
+        if (!multiples.isEmpty()) {
+            List<String> values = multiples.getFirst();
+            if (values == null || values.size() != 1) return new OriginHeader(true, null);
+            String value = values.getFirst();
+            return new OriginHeader(true, singles.isEmpty() || Objects.equals(singles.getFirst(), value) ? value : null);
         }
-        LOG.debug("Request rejected due to HOST/ORIGIN mis-match.");
-        return null;
+        return new OriginHeader(true, singles.getFirst());
     }
 
-    static boolean isCorsRequest(Map<String, String> requestHeaders) {
-        // all cors request will have origin header regardless it is a preflight request
-        // or normal request with method other than OPTIONS.
-        return MapUtil.getValueIgnoreCase(requestHeaders, ORIGIN).isPresent();
+    private static <T> List<T> originValues(Map<String, T> headers) {
+        if (headers == null) return List.of();
+        return headers.entrySet().stream().filter(entry -> ORIGIN.equalsIgnoreCase(entry.getKey()))
+                .map(Map.Entry::getValue).toList();
     }
 
-    static boolean isPreflightedRequest(String requestMethod) {
-        // only the preflight request will have OPTIONS method, and it should be checked
-        // after it is confirmed a cors request with origin header.
-        return "OPTIONS".equalsIgnoreCase(requestMethod);
+    static boolean isPreflightedRequest(String method) {
+        return "OPTIONS".equalsIgnoreCase(method);
     }
 
     static String convertToString(List<String> list) {

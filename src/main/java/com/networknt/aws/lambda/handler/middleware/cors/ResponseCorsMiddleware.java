@@ -3,57 +3,52 @@ package com.networknt.aws.lambda.handler.middleware.cors;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.networknt.aws.lambda.LightLambdaExchange;
 import com.networknt.aws.lambda.handler.MiddlewareHandler;
-import com.networknt.config.Config;
 import com.networknt.cors.CorsConfig;
 import com.networknt.status.Status;
-import com.networknt.utility.MapUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-/**
- * This middleware is responsible for adding CORS headers to the response if the request is a CORS request.
- * It means the request has a header Origin. The middleware will add the following headers to the response:
- * Access-Control-Allow-Origin: The value of the Origin header
- * Access-Control-Allow-Methods: The value of the Access-Control-Request-Method header
- *
- * @author Steve Hu
- */
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.networknt.cors.CorsHeaders.*;
+
+/** Apply the request's validated origin/policy snapshot after downstream response headers exist. */
 public class ResponseCorsMiddleware implements MiddlewareHandler {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ResponseCorsMiddleware.class);
-
-    public ResponseCorsMiddleware() {
-        LOG.info("ResponseCorsMiddleware is constructed");
-    }
-
-
     @Override
     public Status execute(LightLambdaExchange exchange) {
-        if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware.executeMiddleware starts.");
-        CorsConfig config = CorsConfig.load();
-        if (!config.isEnabled()) {
-            if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware is not enabled.");
-            return disabledMiddlewareStatus();
+        RequestCorsMiddleware.AcceptedOrigin accepted = exchange.getAttachment(RequestCorsMiddleware.ACCEPTED_ORIGIN);
+        if (accepted == null && !CorsConfig.load().isEnabled()) return disabledMiddlewareStatus();
+        APIGatewayProxyResponseEvent response = exchange.getResponse();
+        if (response == null) return successMiddlewareStatus();
+        Map<String, String> headers = new LinkedHashMap<>();
+        if (response.getHeaders() != null) headers.putAll(response.getHeaders());
+        addVaryOrigin(headers);
+        if (accepted != null) {
+            putHeader(headers, ACCESS_CONTROL_ALLOW_ORIGIN, accepted.origin());
+            putHeader(headers, ACCESS_CONTROL_ALLOW_METHODS, RequestCorsMiddleware.convertToString(accepted.methods()));
+            putHeader(headers, ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         }
-        APIGatewayProxyResponseEvent responseEvent = exchange.getResponse();
-        if(responseEvent != null) {
-            if (LOG.isTraceEnabled()) LOG.trace("Response event is not null.");
-            var responseHeaders = responseEvent.getHeaders();
-            if (responseHeaders != null) {
-                if (LOG.isTraceEnabled()) LOG.trace("Response headers is not null.");
-                if (MapUtil.getValueIgnoreCase(exchange.getReadOnlyRequest().getHeaders(), "Origin").isPresent()) {
-                    // this is a CORS request, and it is passed the CORS check in the RequestCorsMiddleware.
-                    responseHeaders.put("Access-Control-Allow-Origin", exchange.getReadOnlyRequest().getHeaders().get("Origin"));
-                }
-            }
-        }
-        if(LOG.isTraceEnabled()) LOG.trace("RequestCorsMiddleware.executeMiddleware ends.");
+        response.setHeaders(headers);
         return successMiddlewareStatus();
+    }
+
+    private static void addVaryOrigin(Map<String, String> headers) {
+        String vary = headers.entrySet().stream().filter(entry -> "Vary".equalsIgnoreCase(entry.getKey()))
+                .map(Map.Entry::getValue).filter(Objects::nonNull).collect(Collectors.joining(", "));
+        boolean covered = Arrays.stream(vary.split(",")).map(String::trim)
+                .anyMatch(token -> token.equals("*") || token.equalsIgnoreCase("Origin"));
+        putHeader(headers, "Vary", covered ? vary : vary.isBlank() ? "Origin" : vary + ", Origin");
+    }
+
+    private static void putHeader(Map<String, String> headers, String name, String value) {
+        headers.keySet().removeIf(key -> name.equalsIgnoreCase(key));
+        headers.put(name, value);
     }
 
     @Override
     public boolean isEnabled() {
         return CorsConfig.load().isEnabled();
     }
-
 }

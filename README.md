@@ -35,6 +35,44 @@ python3 tests/test_native_image_script.py
 These tests stub Maven and Docker to check packaging and failure handling.
 They are not run by Maven. The source-build CI workflow runs them separately from the real native smoke.
 
+### Scoped CORS policies
+
+The request middleware uses `CorsConfig.policyForPath(path)` and its compiled
+origin matcher for both preflight and actual requests. This requires the
+`cors-config` implementation introduced by
+[light-4j PR #2847](https://github.com/networknt/light-4j/pull/2847); upgrade the
+middleware and framework artifact together. Older middleware that compares raw
+origin strings does not support wildcard patterns.
+
+With `cors.enabled: true`, global and per-path origins support HTTP/HTTPS
+patterns such as `https://*.example.com`, including nested subdomains and excluding
+the apex. Explicit origins retain custom schemes, ASCII/Punycode hosts, and
+normalized default ports. Public/private PSL suffixes and malformed patterns fail
+validation. Per-path policies replace global origins and methods using the shared
+first-prefix matching contract. Lambda retains explicit-allowlist matching and
+does not add Undertow's implicit server-origin fallback.
+
+The request phase validates a single Origin across API Gateway's single-value
+and multi-value header representations. Conflicting or duplicate values are
+rejected. The response phase uses that validated request snapshot, returns the
+actual Origin, and merges `Vary: Origin` with backend cache keys. No-Origin
+requests pass through without CORS allow headers. Invalid configuration refreshes
+retain the last valid policy; a missing configuration or absent `enabled` key
+stays disabled.
+
+To qualify a coordinated source change locally without publishing artifacts,
+check out the matching light-4j source in a sibling directory and run:
+
+```sh
+mvn -f ../light-4j/pom.xml -pl cors-config -am install -DskipTests
+mvn test -Dtest=CorsMiddlewareTest,CorsPolicyIntegrationTest
+```
+
+`CorsPolicyIntegrationTest` covers actual/preflight matching, path isolation,
+custom schemes/default ports, API Gateway header ambiguity, reload, and response
+snapshot/cache behavior without contacting AWS. Native-image and deployed AWS
+qualification are separate from these JVM tests.
+
 ### Test with Main
 
 We have provided a Main class in the src folder for testing all the middleware handlers with a sample request. You can run the Main class within your IDE with debug mode to see how each middleware handler works.
