@@ -1,5 +1,18 @@
 # Change Log
 
+## [2.5.1](https://github.com/networknt/light-lambda-native/tree/2.5.1) (2026-11-21)
+
+**Commits:**
+
+- upgrade to version 2.5.1 before release in 2.x branch ([422472d](https://github.com/networknt/light-lambda-native/commit/422472d15e7febe1bd8c463e7b682d023ebcc1cd)) (by Steve Hu)
+- upgrade logback to 1.6.8 from 1.6.7 ([77d2fb8](https://github.com/networknt/light-lambda-native/commit/77d2fb8819245e2b72be7a87d89b4566a491b16e)) (by Steve Hu)
+- upgrade lambda-awssdk to 2.59.5 from 2.57.8 ([5b7d0b8](https://github.com/networknt/light-lambda-native/commit/5b7d0b8319d394de4fc1b73d9b82f737cc0e145f)) (by Steve Hu)
+- upgrade logback to 1.6.7 from 1.6.6 ([d8e0da0](https://github.com/networknt/light-lambda-native/commit/d8e0da02c6a4ed5537fa561c867b0b5d847f489f)) (by Steve Hu)
+- upgrade exec-maven to 3.7.0 from 3.6.4 ([7534c43](https://github.com/networknt/light-lambda-native/commit/7534c4303bcc4764360081f8812ed7a77344de43)) (by Steve Hu)
+- upgrade maven-compiler to 3.16.0 from 3.8.1 ([71ea919](https://github.com/networknt/light-lambda-native/commit/71ea9192c89a217c8e6267917123551cd1e35cac)) (by Steve Hu)
+- upgrade maven-surefire to 3.6.1 from 3.6.0 ([61c954e](https://github.com/networknt/light-lambda-native/commit/61c954e0db2c2fb693a10a76373ee3ed6b53de71)) (by Steve Hu)
+- upgrade to version 2.5.1-SNAPSHOT after release in 2.x branch ([02acce4](https://github.com/networknt/light-lambda-native/commit/02acce402a78cec214583f54ea38b952762fb40a)) (by Steve Hu)
+
 ## [2.5.0](https://github.com/networknt/light-lambda-native/tree/2.5.0) (2026-11-04)
 
 **Commits:**
